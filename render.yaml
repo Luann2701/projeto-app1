@@ -2,8 +2,6 @@ services:
   - type: web
     name: projeto-app1
     env: python
-    envVars:
-      - key: DATABASE_URL
-        value: "postgresql://neondb_owner:npg_tTgO4BQyLm0X@ep-hidden-hill-a4proh4y-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+    runtime: python-3.12
     buildCommand: pip install -r requirements.txt
     startCommand: python app.py
