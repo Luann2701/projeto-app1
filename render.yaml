@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: projeto-app1
+    env: python
+    runtime: python-3.12.3
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
