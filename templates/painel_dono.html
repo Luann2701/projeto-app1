@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Painel do Dono</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card grande">
+
+    <h1>👑 Painel do Dono</h1>
+
+    <div style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: center;">
+        <a href="/admin/eventos" class="btn">
+            📤 Gerenciar Eventos
+        </a>
+
+        <a href="/admin/horarios" class="btn">
+            🕒 Gerenciar Horários
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for categoria, mensagem in messages %}
+                <div class="alert {{ categoria }}">
+                    {{ mensagem }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- FILTROS -->
+    <form method="GET" class="filtros">
+        <input type="date" name="data" value="{{ data_filtro or '' }}">
+
+        <select name="quadra">
+            <option value="">Todas as quadras</option>
+            <option value="Quadra 1" {% if quadra_filtro == 'Quadra 1' %}selected{% endif %}>Quadra 1</option>
+            <option value="Quadra 2" {% if quadra_filtro == 'Quadra 2' %}selected{% endif %}>Quadra 2</option>
+            <option value="Quadra 3" {% if quadra_filtro == 'Quadra 3' %}selected{% endif %}>Quadra 3</option>
+        </select>
+
+        <button type="submit" class="btn pequeno">Filtrar</button>
+        <a href="/painel_dono" class="btn secundario pequeno">Limpar</a>
+    </form>
+
+    <!-- TABELA -->
+    <div class="tabela-box">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Telefone</th>
+                    <th>Esporte</th>
+                    <th>Quadra</th>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for r in reservas %}
+                <tr>
+                    <td>{{ r[0] }}</td> <!-- Cliente (email) -->
+                    <td>{{ r[1] or '-' }}</td> <!-- Telefone -->
+                    <td>{{ r[2] }}</td> <!-- Esporte -->
+                    <td>{{ r[3] }}</td> <!-- Quadra -->
+                    <td>{{ r[4] }}</td> <!-- Data -->
+                    <td>{{ r[5] }}</td> <!-- Horário -->
+
+                    <td>
+                        {% if r[6] %}
+                            <span class="status pago">Pago</span>
+                        {% else %}
+                            <span class="status pendente">Pendente</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <form method="POST" action="/cancelar_reserva"
+                              onsubmit="return confirm('Tem certeza que deseja cancelar esta reserva?');">
+
+                            <input type="hidden" name="usuario" value="{{ r[0] }}">
+                            <input type="hidden" name="esporte" value="{{ r[2] }}">
+                            <input type="hidden" name="quadra" value="{{ r[3] }}">
+                            <input type="hidden" name="data" value="{{ r[4] }}">
+                            <input type="hidden" name="horario" value="{{ r[5] }}">
+
+                            <button type="submit" class="btn pequeno secundario">
+                                ❌ Cancelar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8">Nenhuma reserva encontrada</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <a href="/logout" class="btn secundario">Sair</a>
+
+</div>
+
+</body>
+</html>

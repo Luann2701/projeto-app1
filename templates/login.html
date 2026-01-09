@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Arena Corpo Ativo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+
+    <h1>Arena Corpo Ativo</h1>
+    <h2>Acesse sua conta</h2>
+
+    <form method="POST">
+        
+        <input 
+            type="email" 
+            name="usuario" 
+            placeholder="Email"
+            required
+        >
+
+        <input 
+            type="password" 
+            name="senha" 
+            id="senha"
+            placeholder="Senha" 
+            required
+        >
+
+        <div class="mostrar-senha">
+            <input type="checkbox" id="verSenha" onclick="mostrarSenha()">
+            <label for="verSenha">Mostrar senha</label>
+        </div>
+
+        <a href="/esqueci_senha" class="link-esqueci">
+            Esqueceu sua senha?
+        </a>
+
+        <button type="submit" class="btn">Entrar</button>
+    </form>
+
+    <a href="/cadastro" class="btn secundario">Criar conta</a>
+
+    <!-- BOTÃO GOOGLE -->
+    <a href="/login/google" class="btn google-btn">
+        <img 
+            src="https://developers.google.com/identity/images/g-logo.png"
+            alt="Google"
+            class="google-icon"
+        >
+        Entrar com Google
+    </a>
+
+    <!-- BOTÃO VOLTAR -->
+    <a href="{{ url_for('inicio') }}" class="btn btn-voltar-padrao">
+    Voltar
+    </a>
+
+</div>
+
+<script>
+function mostrarSenha() {
+    const campo = document.getElementById("senha");
+    campo.type = campo.type === "password" ? "text" : "password";
+}
+</script>
+
+</body>
+</html>

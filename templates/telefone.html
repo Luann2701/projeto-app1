@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Telefone</title>
+
+    <!-- CSS GLOBAL DO APP -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+    <h2>Informe seu telefone</h2>
+
+    <form method="POST">
+        <input 
+            type="text" 
+            name="telefone"
+            id="telefone"
+            placeholder="(00) 00000-0000"
+            required
+        >
+
+        <button type="submit" class="btn">Continuar</button>
+    </form>
+
+    <a href="/login" class="btn secundario btn-voltar-padrao">Voltar</a>
+</div>
+
+<script>
+const input = document.getElementById("telefone");
+
+input.addEventListener("input", function(e) {
+    let v = e.target.value.replace(/\D/g, "");
+
+    if (v.length > 11) v = v.slice(0, 11);
+
+    if (v.length > 10) {
+        v = v.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    } else if (v.length > 6) {
+        v = v.replace(/(\d{2})(\d{4})(\d+)/, "($1) $2-$3");
+    } else if (v.length > 2) {
+        v = v.replace(/(\d{2})(\d+)/, "($1) $2");
+    } else {
+        v = v.replace(/(\d+)/, "($1");
+    }
+
+    e.target.value = v;
+});
+</script>
+
+</body>
+</html>

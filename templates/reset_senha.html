@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova senha</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+    <h1>🔒 Nova senha</h1>
+
+    <form method="POST">
+        <input
+            type="password"
+            name="senha"
+            id="senha"
+            placeholder="Nova senha"
+            required
+        >
+
+        <div class="mostrar-senha">
+            <input type="checkbox" id="verSenha" onclick="mostrarSenha()">
+            <label for="verSenha">Mostrar senha</label>
+        </div>
+
+        <button class="btn" type="submit">Salvar senha</button>
+    </form>
+
+    {% if erro %}
+        <p>{{ erro }}</p>
+    {% endif %}
+</div>
+
+<script>
+function mostrarSenha() {
+    const campo = document.getElementById("senha");
+    campo.type = campo.type === "password" ? "text" : "password";
+}
+</script>
+
+</body>
+</html>

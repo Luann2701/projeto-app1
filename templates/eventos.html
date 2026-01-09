@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Eventos - Arena Corpo Ativo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card grande">
+    <h1>📸 Eventos da Arena</h1>
+
+    <div class="eventos-grid">
+        {% for img, link, data in eventos %}
+        <div class="evento-item">
+
+            <!-- IMAGEM -->
+            <img 
+                src="{{ url_for('static', filename='uploads/eventos/' ~ img) }}" 
+                alt="Evento da Arena">
+
+            <!-- ABRIR LINK (SÓ SE EXISTIR LINK) -->
+            {% if link %}
+                <a 
+                    href="{{ link }}" 
+                    target="_blank" 
+                    class="link-esqueci"
+                    style="display:block; margin:6px 0;"
+                >
+                    🔗 Abrir link
+                </a>
+            {% endif %}
+
+            <!-- DATA -->
+            <small style="display:block; margin:6px 0; color:#555;">
+                {{ data }}
+            </small>
+
+            <!-- BOTÃO EXCLUIR (SÓ DONO) -->
+            {% if session.get("tipo") == "dono" %}
+            <form 
+                method="POST" 
+                action="/eventos/excluir/{{ img }}"
+                onsubmit="return confirm('Tem certeza que deseja excluir este evento?')"
+            >
+                <button type="submit" class="btn pequeno secundario">
+                    ❌ Excluir
+                </button>
+            </form>
+            {% endif %}
+
+        </div>
+        {% else %}
+            <p>Nenhum evento publicado.</p>
+        {% endfor %}
+    </div>
+
+    <!-- BOTÃO VOLTAR -->
+    <a href="/" class="btn secundario" style="margin-top: 20px;">
+        ⬅ Voltar
+    </a>
+</div>
+
+</body>
+</html>

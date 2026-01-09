@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Recuperar senha</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+    <h1>🔑 Recuperar senha</h1>
+
+    <form method="POST">
+        <input
+            type="email"
+            name="email"
+            placeholder="Digite seu email"
+            required
+        >
+
+        <button class="btn" type="submit">
+            Enviar link de recuperação
+        </button>
+    </form>
+
+    {% if mensagem %}
+        <p style="margin-top:15px;">{{ mensagem }}</p>
+    {% endif %}
+
+    <a href="/login" class="btn secundario">Voltar</a>
+</div>
+
+</body>
+</html>

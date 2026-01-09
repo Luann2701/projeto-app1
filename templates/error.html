@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Erro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card erro">
+    <h1>❌ Erro</h1>
+    <p>{{ mensagem }}</p>
+
+    <a href="javascript:history.back()" class="btn secundario">Voltar</a>
+</div>
+
+</body>
+</html>

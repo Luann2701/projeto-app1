@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Meus Horários</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+    <h1>Meus Horários</h1>
+
+    {% if reservas %}
+
+        {% for r in reservas %}
+            <div class="linha-horario amarelo">
+                <strong>{{ r[0] }}</strong> | Quadra {{ r[1] }}<br>
+                📅 {{ r[2] }} ⏰ {{ r[3] }}<br>
+
+                {% if r[4] %}
+                    <span class="status pago">Pago</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+    {% else %}
+        <p>Você ainda não tem horários reservados.</p>
+    {% endif %}
+
+    <a href="/esporte" class="btn secundario">Voltar</a>
+</div>
+
+</body>
+</html>

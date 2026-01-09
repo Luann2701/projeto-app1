@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerenciar Eventos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card grande">
+
+    <h1>📤 Gerenciar Eventos</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for categoria, mensagem in messages %}
+            <div class="alert {{ categoria }}">{{ mensagem }}</div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- FORM PUBLICAR -->
+    <form method="POST" enctype="multipart/form-data">
+        <input type="file" name="imagem" required>
+        <input type="text" name="link" placeholder="Link do evento (opcional)">
+        <button class="btn">Publicar</button>
+    </form>
+
+    <hr style="margin: 25px 0;">
+
+    <h2>📸 Eventos Publicados</h2>
+
+    <div class="eventos-grid">
+        {% for e in eventos %}
+        <div class="evento-item">
+
+            <img src="{{ url_for('static', filename='uploads/eventos/' ~ e[1]) }}">
+
+            <a href="{{ e[2] }}" target="_blank">Abrir link</a>
+
+            <form method="POST"
+                  action="/admin/eventos/excluir/{{ e[0] }}"
+                  onsubmit="return confirm('Excluir este evento?');">
+                <button class="btn pequeno danger">Excluir</button>
+            </form>
+
+        </div>
+        {% else %}
+            <p>Nenhum evento cadastrado.</p>
+        {% endfor %}
+    </div>
+
+    <a href="/painel_dono" class="btn secundario">Voltar</a>
+
+</div>
+
+</body>
+</html>

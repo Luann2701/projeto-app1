@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Quadras</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+    <h1>{{ esporte }}</h1>
+    <h2>Selecione a quadra</h2>
+
+    {% for q in quadras %}
+        <a href="/datas/{{ esporte }}/{{ q }}" class="btn">{{ q }}</a>
+    {% endfor %}
+
+    {% if session.get("tipo") == "dono" %}
+    <a href="/painel_dono" class="btn secundario">⬅ Voltar</a>
+    {% else %}
+    <a href="/esporte" class="btn secundario">⬅ Voltar</a>
+    {% endif %}
+
+
+</div>
+
+</body>
+</html>

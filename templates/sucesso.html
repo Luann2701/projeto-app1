@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Reserva Confirmada</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+
+    <h1>✅ Reserva feita!</h1>
+
+    <p><strong>Quadra:</strong> {{ quadra }}</p>
+    <p><strong>Data:</strong> {{ data }}</p>
+    <p><strong>Horário:</strong> {{ horario }}</p>
+
+    <p class="sucesso-msg">
+        Sua reserva foi confirmada com sucesso 🎉
+    </p>
+
+    <a href="/quadras/{{ esporte }}" class="btn">Reservar outra quadra</a>
+    <a href="/logout" class="btn secundario">Sair</a>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Horários</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+    <h1>⏰ Horários</h1>
+
+    {% for h in horarios %}
+        {% set tipo = tipos_horarios.get(h) %}
+
+        <div class="linha-horario">
+
+            <!-- CLIENTE -->
+            {% if tipo_usuario != "dono" %}
+
+                {% if h in ocupados %}
+                    <button class="btn bloqueado" disabled>{{ h }} (Ocupado)</button>
+
+                {% elif tipo == "fechada" %}
+                    <button class="btn bloqueado" disabled>{{ h }} (Arena fechada)</button>
+
+                {% elif tipo == "fixo" %}
+                    <button class="btn bloqueado" disabled>{{ h }} (Horário fixo)</button>
+
+                {% elif tipo == "day_use" %}
+                    <button class="btn bloqueado" disabled>{{ h }} (Day Use)</button>
+
+                {% else %}
+                    <form method="POST" action="/reservar">
+                        <input type="hidden" name="esporte" value="{{ esporte }}">
+                        <input type="hidden" name="quadra" value="{{ quadra }}">
+                        <input type="hidden" name="data" value="{{ data }}">
+                        <input type="hidden" name="horario" value="{{ h }}">
+                        <button type="submit" class="btn">{{ h }}</button>
+                    </form>
+                {% endif %}
+
+            {% else %}
+                <span class="horario-texto">{{ h }}</span>
+            {% endif %}
+
+            <!-- DONO -->
+            {% if tipo_usuario == "dono" %}
+                <form method="POST" action="/admin/definir_horario">
+                    <input type="hidden" name="data" value="{{ data }}">
+                    <input type="hidden" name="hora" value="{{ h }}">
+                    <input type="hidden" name="quadra" value="{{ quadra }}">
+
+                    <select name="tipo" onchange="this.form.submit()">
+
+                        <option value="ocupado"
+                            {% if h in ocupados %}selected{% endif %}>
+                            🔒 Ocupado
+                        </option>
+
+                        <option value="livre"
+                            {% if h not in ocupados and not tipo %}selected{% endif %}>
+                            Livre
+                        </option>
+
+                        <option value="day_use" {% if tipo == "day_use" %}selected{% endif %}>
+                            Day Use
+                        </option>
+
+                        <option value="fechada" {% if tipo == "fechada" %}selected{% endif %}>
+                            Arena Fechada
+                        </option>
+
+                        <option value="fixo" {% if tipo == "fixo" %}selected{% endif %}>
+                            Horário Fixo
+                        </option>
+
+                    </select>
+                </form>
+            {% endif %}
+
+        </div>
+    {% endfor %}
+
+    {% if session.get("tipo") == "dono" %}
+    <a href="/datas/{{ esporte }}/{{ quadra }}" class="btn secundario">⬅ Voltar</a>
+    {% else %}
+    <a href="/quadras/{{ esporte }}" class="btn secundario">⬅ Voltar</a>
+    {% endif %}
+
+</div>
+
+</body>
+</html>

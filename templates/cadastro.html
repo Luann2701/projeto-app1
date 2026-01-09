@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Novo usuário</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+    <h1>👤 Novo usuário</h1>
+
+    <form method="POST">
+        <!-- USUÁRIO AGORA É EMAIL -->
+        <input 
+            type="email" 
+            name="usuario" 
+            placeholder="Email"
+            required
+        >
+
+        <input 
+            type="password" 
+            name="senha" 
+            placeholder="Senha"
+            required
+        >
+
+        <label style="font-size: 14px;">
+            <input type="checkbox" onclick="mostrarSenha()"> Mostrar senha
+        </label>
+
+        <button class="btn" type="submit">Cadastrar</button>
+    </form>
+
+    <a href="/login" class="btn secundario">Voltar</a>
+</div>
+
+<script>
+function mostrarSenha() {
+    const senha = document.querySelector('input[name="senha"]');
+    senha.type = senha.type === "password" ? "text" : "password";
+}
+</script>
+
+</body>
+</html>
