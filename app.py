@@ -170,7 +170,9 @@ def criar_banco():
 criar_banco()
 
 def enviar_email_recuperacao(destino, token):
-    link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"
+    # Antes tinha localhost
+    link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"  # ⚠️ URL de produção
+
 
     msg = EmailMessage()
     msg["Subject"] = "Recuperação de senha - Arena Corpo Ativo"
