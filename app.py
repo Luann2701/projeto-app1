@@ -14,9 +14,6 @@ WHATSAPP_ARENA = "5535998775023"
 CHAVE_PIX = "59105896000116"
 VALOR_HORARIO = 65
 
-# 🔓 Libera OAuth sem HTTPS (SOMENTE LOCAL)
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
-
 from dotenv import load_dotenv
 from flask_dance.contrib.google import make_google_blueprint, google
 
@@ -173,7 +170,7 @@ def criar_banco():
 criar_banco()
 
 def enviar_email_recuperacao(destino, token):
-    link = f"http://127.0.0.1:5000/reset_senha/{token}"
+    link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"
 
     msg = EmailMessage()
     msg["Subject"] = "Recuperação de senha - Arena Corpo Ativo"
