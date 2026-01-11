@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, flash, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 import psycopg2
 from datetime import datetime, timedelta
 import os
@@ -21,7 +22,13 @@ from flask_dance.contrib.google import make_google_blueprint, google
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "arena_corpo_ativo"
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+app.config.update(
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=True
+)
+
+app.secret_key = os.getenv("SECRET_KEY")
 
 # ======================
 # CONFIGURAÇÃO DE UPLOAD DE EVENTOS  
