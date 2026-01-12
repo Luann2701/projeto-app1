@@ -189,24 +189,24 @@ Olá!
 
 Você solicitou a recuperação de senha.
 
-Clique no link abaixo para criar uma nova senha:
+Clique no link abaixo:
 {link}
 
 Este link expira em 15 minutos.
-
-Arena Corpo Ativo
 """)
 
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
-            smtp.starttls()  # 🔒 Ativa criptografia
+        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as smtp:
+            smtp.starttls()
             smtp.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
             smtp.send_message(msg)
 
-        print("✅ Email enviado com sucesso!")
+        return True
 
     except Exception as e:
         print("❌ Erro ao enviar email:", e)
+        return False
+
 
 # ======================
 # TELA INICIAL
@@ -1040,14 +1040,17 @@ def esqueci_senha():
         conn.commit()
         conn.close()
 
-        enviar_email_recuperacao(email, token)
+        sucesso = enviar_email_recuperacao(email, token)
 
-        return render_template(
-            "esqueci_senha.html",
-            mensagem="Verifique seu email para redefinir a senha."
-        )
+        if sucesso:
+            mensagem = "Verifique seu email para redefinir a senha."
+        else:
+            mensagem = "Erro ao enviar email. Tente novamente mais tarde."
+
+        return render_template("esqueci_senha.html", mensagem=mensagem)
 
     return render_template("esqueci_senha.html")
+
 
 # ======================
 # RESET MINHA SENHA
