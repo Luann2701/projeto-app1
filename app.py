@@ -198,14 +198,18 @@ Arena Corpo Ativo
 """)
 
     try:
-        with smtplib.SMTP("smtp-relay.brevo.com", 587) as smtp:
+        with smtplib.SMTP("smtp-relay.brevo.com", 587, timeout=10) as smtp:
             smtp.starttls()
             smtp.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
             smtp.send_message(msg)
+
+        print("EMAIL ENVIADO COM SUCESSO")
         return True
+
     except Exception as e:
         print("Erro ao enviar email:", e)
         return False
+
 
 # ======================
 # TELA INICIAL
