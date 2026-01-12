@@ -176,38 +176,45 @@ def criar_banco():
 # CRIA AS TABELAS AO INICIAR O APP
 criar_banco()
 
+import requests
+
 def enviar_email_recuperacao(destino, token):
     link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"
 
-    msg = EmailMessage()
-    msg["Subject"] = "Recuperação de senha - Arena Corpo Ativo"
-    msg["From"] = os.getenv("EMAIL_USER")
-    msg["To"] = destino
+    url = "https://api.brevo.com/v3/smtp/email"
 
-    msg.set_content(f"""
-Olá!
+    headers = {
+        "api-key": os.getenv("BREVO_API_KEY"),
+        "Content-Type": "application/json"
+    }
 
-Você solicitou a recuperação de senha.
-
-Clique no link abaixo para criar uma nova senha:
-{link}
-
-Este link expira em 15 minutos.
-
-Arena Corpo Ativo
-""")
+    data = {
+        "sender": {
+            "name": "Arena Corpo Ativo",
+            "email": "arenacorpoativo2026@gmail.com"
+        },
+        "to": [
+            {"email": destino}
+        ],
+        "subject": "Recuperação de senha - Arena Corpo Ativo",
+        "htmlContent": f"""
+        <p>Olá!</p>
+        <p>Você solicitou a recuperação de senha.</p>
+        <p>Clique no link abaixo para criar uma nova senha:</p>
+        <p><a href="{link}">{link}</a></p>
+        <p>Este link expira em 15 minutos.</p>
+        <br>
+        <strong>Arena Corpo Ativo</strong>
+        """
+    }
 
     try:
-        with smtplib.SMTP("smtp-relay.brevo.com", 587, timeout=10) as smtp:
-            smtp.starttls()
-            smtp.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
-            smtp.send_message(msg)
-
-        print("EMAIL ENVIADO COM SUCESSO")
-        return True
-
+        r = requests.post(url, json=data, headers=headers)
+        print("STATUS:", r.status_code)
+        print("RESPOSTA:", r.text)
+        return r.status_code == 201
     except Exception as e:
-        print("Erro ao enviar email:", e)
+        print("ERRO API:", e)
         return False
 
 
