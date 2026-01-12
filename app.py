@@ -176,22 +176,30 @@ def criar_banco():
 # CRIA AS TABELAS AO INICIAR O APP
 criar_banco()
 
+import os
 import requests
+from flask import Flask
+
+app = Flask(__name__)
 
 def enviar_email_recuperacao(destino, token):
+    # Link de recuperação de senha
     link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"
 
+    # Endpoint SMTP da Brevo
     url = "https://api.brevo.com/v3/smtp/email"
 
+    # Headers com API Key
     headers = {
         "api-key": os.getenv("BREVO_API_KEY"),
         "Content-Type": "application/json"
     }
 
+    # Payload do e-mail
     data = {
         "sender": {
             "name": "Arena Corpo Ativo",
-            "email": "arenacorpoativo2026@gmail.com"
+            "email": "arenacorpoativo2026@gmail.com"  # ideal: usar domínio próprio autenticado
         },
         "to": [
             {"email": destino}
@@ -209,15 +217,40 @@ def enviar_email_recuperacao(destino, token):
     }
 
     try:
+        # Envia requisição POST para a API
         r = requests.post(url, json=data, headers=headers)
-        print("STATUS:", r.status_code)
-        print("RESPOSTA:", r.text)
+
+        # Logs detalhados
+        app.logger.info("=== ENVIO DE EMAIL DE RECUPERAÇÃO ===")
+        app.logger.info(f"Destino: {destino}")
+        app.logger.info(f"Token: {token}")
+        app.logger.info(f"Status code: {r.status_code}")
+        app.logger.info(f"Resposta da API: {r.text}")
+        app.logger.info("===================================")
+
+        # Retorna True se sucesso (201 Created)
         return r.status_code == 201
+    except requests.exceptions.RequestException as e:
+        # Qualquer erro de requisição HTTP
+        app.logger.error("ERRO API SMTP Brevo: %s", e)
+        return False
     except Exception as e:
-        print("ERRO API:", e)
+        # Erros gerais
+        app.logger.error("ERRO GENÉRICO: %s", e)
         return False
 
-print("BREVO:", os.getenv("BREVO_API_KEY"))
+# Apenas para teste rápido
+if __name__ == "__main__":
+    token_teste = "teste123"
+    sucesso = enviar_email_recuperacao("seuemail@gmail.com", token_teste)
+    if sucesso:
+        print("Email enviado com sucesso!")
+    else:
+        print("Falha no envio do email.")
+
+# Confirma que a API Key está chegando
+app.logger.info("BREVO API KEY: %s", os.getenv("BREVO_API_KEY"))
+
 
 # ======================
 # TELA INICIAL
