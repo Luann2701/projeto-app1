@@ -189,23 +189,27 @@ Olá!
 
 Você solicitou a recuperação de senha.
 
-Clique no link abaixo:
+Clique no link abaixo para criar uma nova senha:
 {link}
 
 Este link expira em 15 minutos.
+
+Arena Corpo Ativo
 """)
 
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=10) as smtp:
+        with smtplib.SMTP("smtp-relay.brevo.com", 587) as smtp:
             smtp.starttls()
-            smtp.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
+            smtp.login("apikey", os.getenv("EMAIL_PASS"))
             smtp.send_message(msg)
 
+        print("✅ Email enviado com sucesso!")
         return True
 
     except Exception as e:
         print("❌ Erro ao enviar email:", e)
         return False
+
 
 
 # ======================
