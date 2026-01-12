@@ -217,6 +217,7 @@ def enviar_email_recuperacao(destino, token):
         print("ERRO API:", e)
         return False
 
+print("BREVO:", os.getenv("BREVO_API_KEY"))
 
 # ======================
 # TELA INICIAL
