@@ -177,9 +177,7 @@ def criar_banco():
 criar_banco()
 
 def enviar_email_recuperacao(destino, token):
-    # Antes tinha localhost
-    link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"  # ⚠️ URL de produção
-
+    link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"
 
     msg = EmailMessage()
     msg["Subject"] = "Recuperação de senha - Arena Corpo Ativo"
@@ -199,12 +197,16 @@ Este link expira em 15 minutos.
 Arena Corpo Ativo
 """)
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        print("EMAIL_USER:", os.getenv("EMAIL_USER"))
-        print("EMAIL_PASS:", os.getenv("EMAIL_PASS"))
-        smtp.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
-        smtp.send_message(msg)
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+            smtp.starttls()  # 🔒 Ativa criptografia
+            smtp.login(os.getenv("EMAIL_USER"), os.getenv("EMAIL_PASS"))
+            smtp.send_message(msg)
 
+        print("✅ Email enviado com sucesso!")
+
+    except Exception as e:
+        print("❌ Erro ao enviar email:", e)
 
 # ======================
 # TELA INICIAL
