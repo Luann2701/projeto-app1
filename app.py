@@ -10,6 +10,8 @@ from werkzeug.utils import secure_filename
 from flask import abort
 from urllib.parse import quote_plus
 from datetime import datetime
+import os
+import requests
 
 WHATSAPP_ARENA = "5535998775023"
 CHAVE_PIX = "59105896000116"
@@ -176,44 +178,45 @@ def criar_banco():
 # CRIA AS TABELAS AO INICIAR O APP
 criar_banco()
 
-import os
-import requests
 
 def enviar_email_recuperacao(destino, token):
-    link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"
+    try:
+        link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"
 
-    url = "https://api.brevo.com/v3/smtp/email"
+        url = "https://api.brevo.com/v3/smtp/email"
 
-    headers = {
-        "api-key": os.getenv("BREVO_API_KEY"),
-        "Content-Type": "application/json"
-    }
+        api_key = os.getenv("BREVO_API_KEY")
+        print("BREVO_API_KEY:", api_key)
 
-    data = {
-        "sender": {
-            "name": "Arena Corpo Ativo"
-        },
-        "to": [
-            {"email": destino}
-        ],
-        "subject": "Recuperação de senha - Arena Corpo Ativo",
-        "htmlContent": f"""
-        <p>Olá!</p>
-        <p>Você solicitou a recuperação de senha.</p>
-        <p>
-            <a href="{link}">Clique aqui para redefinir sua senha</a>
-        </p>
-        <p>Este link expira em 15 minutos.</p>
-        <br>
-        <small>Email automático — não responda.</small>
-        """
-    }
+        headers = {
+            "api-key": api_key,
+            "Content-Type": "application/json"
+        }
 
-    r = requests.post(url, json=data, headers=headers)
-    print("STATUS:", r.status_code)
-    print("RESPOSTA:", r.text)
+        data = {
+            "sender": {
+                "name": "Arena Corpo Ativo"
+            },
+            "to": [{"email": destino}],
+            "subject": "Recuperação de senha",
+            "htmlContent": f"""
+            <p>Olá!</p>
+            <p>Clique no link para redefinir sua senha:</p>
+            <a href="{link}">{link}</a>
+            """
+        }
 
-    return r.status_code == 201
+        r = requests.post(url, json=data, headers=headers)
+
+        print("STATUS:", r.status_code)
+        print("RESPOSTA:", r.text)
+
+        return r.status_code == 201
+
+    except Exception as e:
+        print("ERRO AO ENVIAR EMAIL:", e)
+        return False
+
 
 
 # ======================
