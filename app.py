@@ -195,7 +195,7 @@ def enviar_email_recuperacao(destino, token):
         data = {
             "sender": {
                 "name": "Arena Corpo Ativo",
-                "email": "noreply@brevo.com"
+                "email": "arenacorpoativo2026@gmail.com"
             },
             "to": [{"email": destino}],
             "subject": "Recuperação de senha",
