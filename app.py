@@ -176,6 +176,7 @@ def criar_banco():
 # CRIA AS TABELAS AO INICIAR O APP
 criar_banco()
 
+import os
 import requests
 
 def enviar_email_recuperacao(destino, token):
@@ -190,8 +191,7 @@ def enviar_email_recuperacao(destino, token):
 
     data = {
         "sender": {
-            "name": "Arena Corpo Ativo",
-            "email": "arenacorpoativo2026@gmail.com"
+            "name": "Arena Corpo Ativo"
         },
         "to": [
             {"email": destino}
@@ -200,22 +200,21 @@ def enviar_email_recuperacao(destino, token):
         "htmlContent": f"""
         <p>Olá!</p>
         <p>Você solicitou a recuperação de senha.</p>
-        <p>Clique no link abaixo para criar uma nova senha:</p>
-        <p><a href="{link}">{link}</a></p>
+        <p>
+            <a href="{link}">Clique aqui para redefinir sua senha</a>
+        </p>
         <p>Este link expira em 15 minutos.</p>
         <br>
-        <strong>Arena Corpo Ativo</strong>
+        <small>Email automático — não responda.</small>
         """
     }
 
-    try:
-        r = requests.post(url, json=data, headers=headers)
-        print("STATUS:", r.status_code)
-        print("RESPOSTA:", r.text)
-        return r.status_code == 201
-    except Exception as e:
-        print("ERRO API:", e)
-        return False
+    r = requests.post(url, json=data, headers=headers)
+    print("STATUS:", r.status_code)
+    print("RESPOSTA:", r.text)
+
+    return r.status_code == 201
+
 
 # ======================
 # TELA INICIAL
