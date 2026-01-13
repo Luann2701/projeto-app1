@@ -178,7 +178,6 @@ def criar_banco():
 # CRIA AS TABELAS AO INICIAR O APP
 criar_banco()
 
-
 def enviar_email_recuperacao(destino, token):
     try:
         link = f"https://arenacorpoativo.onrender.com/reset_senha/{token}"
@@ -195,7 +194,8 @@ def enviar_email_recuperacao(destino, token):
 
         data = {
             "sender": {
-                "name": "Arena Corpo Ativo"
+                "name": "Arena Corpo Ativo",
+                "email": "noreply@brevo.com"
             },
             "to": [{"email": destino}],
             "subject": "Recuperação de senha",
@@ -216,7 +216,6 @@ def enviar_email_recuperacao(destino, token):
     except Exception as e:
         print("ERRO AO ENVIAR EMAIL:", e)
         return False
-
 
 
 # ======================
