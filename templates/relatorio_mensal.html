@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Mensal</title>
+    <link rel="stylesheet" href="/static/css/painel.css">
+    <style>
+        .relatorio-container {
+            max-width: 900px;
+            margin: 30px auto;
+            background: #fff;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        .relatorio-titulo {
+            text-align: center;
+            color: #ff7a00;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .tabela-relatorio {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+
+        .tabela-relatorio th {
+            background: #ff7a00;
+            color: white;
+            padding: 12px;
+            font-size: 16px;
+        }
+
+        .tabela-relatorio td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            font-weight: 500;
+        }
+
+        .tabela-relatorio tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .btn-voltar {
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .btn-voltar:hover {
+            background: #222;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="relatorio-container">
+
+    <div class="relatorio-titulo">
+        📊 Relatório Mensal de Uso
+    </div>
+
+    <table class="tabela-relatorio">
+        <tr>
+            <th>Mês</th>
+            <th>Horários Usados</th>
+            <th>Day Uses</th>
+        </tr>
+
+        {% for mes, horarios, dayuses in dados %}
+        <tr>
+            <td>{{ mes }}</td>
+            <td>{{ horarios }}</td>
+            <td>{{ dayuses }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a href="/painel_dono">
+        <button class="btn-voltar">⬅ Voltar ao Painel</button>
+    </a>
+
+</div>
+
+</body>
+</html>
