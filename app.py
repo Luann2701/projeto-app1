@@ -884,6 +884,35 @@ def definir_horario():
 
     return redirect(request.referrer)
 
+# ==================================================================
+# GERENCIAMENTO MENSAL (RELATÓRIO)
+# ==================================================================
+
+@app.route("/admin/relatorio_mensal")
+def relatorio_mensal():
+
+    if "tipo" not in session or session["tipo"] != "dono":
+        return redirect("/")
+
+    conn = conectar()
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT 
+            TO_CHAR(data, 'MM/YYYY') AS mes,
+            COUNT(*) FILTER (WHERE tipo = 'ocupado' OR tipo = 'fixo') AS horarios,
+            COUNT(*) FILTER (WHERE tipo = 'dayuse') AS dayuses
+        FROM horarios
+        WHERE data IS NOT NULL
+        GROUP BY mes
+        ORDER BY mes;
+    """)
+
+    dados = c.fetchall()
+    conn.close()
+
+    return render_template("relatorio_mensal.html", dados=dados)
+
 
 # ==================================================================
 # ROTA PARA IR PARA TELA QUADRAS APÓS CLICAR EM GERENCIAR HORARIOS
