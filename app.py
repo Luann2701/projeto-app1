@@ -667,6 +667,12 @@ def confirmar_pagamento():
           AND horario = %s
     """, (usuario, esporte, quadra, data, horario))
 
+    # 📊 Registra como "ocupado" no relatório mensal
+    c.execute("""
+        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+        VALUES (%s, %s, %s, 'ocupado', FALSE)
+    """, (data, horario, quadra))
+
     conn.commit()
     conn.close()
 
@@ -685,6 +691,7 @@ def confirmar_pagamento():
     link_whatsapp = f"https://wa.me/{whatsapp_arena}?text={quote_plus(mensagem)}"
 
     return redirect(link_whatsapp)
+
 
 # ======================
 # EVENTOS DO DONO
