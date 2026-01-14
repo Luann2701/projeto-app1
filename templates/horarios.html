@@ -41,12 +41,12 @@
                     </form>
                 {% endif %}
 
-            {% else %}
-                <span class="horario-texto">{{ h }}</span>
             {% endif %}
 
-            <!-- DONO -->
+            <!-- DONO (SEMPRE EDITÁVEL) -->
             {% if tipo_usuario == "dono" %}
+                <span class="horario-texto">{{ h }}</span>
+
                 <form method="POST" action="/admin/definir_horario">
                     <input type="hidden" name="data" value="{{ data }}">
                     <input type="hidden" name="hora" value="{{ h }}">
@@ -54,14 +54,12 @@
 
                     <select name="tipo" onchange="this.form.submit()">
 
-                        <option value="ocupado"
-                            {% if h in ocupados %}selected{% endif %}>
-                            🔒 Ocupado
+                        <option value="livre" {% if not tipo %}selected{% endif %}>
+                            Livre
                         </option>
 
-                        <option value="livre"
-                            {% if h not in ocupados and not tipo %}selected{% endif %}>
-                            Livre
+                        <option value="ocupado" {% if tipo == "ocupado" %}selected{% endif %}>
+                            🔒 Ocupado
                         </option>
 
                         <option value="dayuse" {% if tipo == "dayuse" %}selected{% endif %}>
