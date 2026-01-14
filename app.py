@@ -837,7 +837,7 @@ def definir_horario():
 
     tipo = request.form.get("tipo")
     if tipo:
-        tipo = tipo.lower().replace(" ", "")  # "Day Use" -> "dayuse"
+        tipo = tipo.lower().replace(" ", "").replace("_", "")
 
     conn = conectar()
     c = conn.cursor()
@@ -856,7 +856,7 @@ def definir_horario():
             WHERE data = %s AND horario = %s AND quadra = %s
         """, (data, hora, quadra))
 
-    # OCUPADO, FIXO, DAYUSE
+    # OCUPADO / FIXO / DAYUSE
     else:
 
         c.execute("""
@@ -868,7 +868,6 @@ def definir_horario():
     conn.close()
 
     return redirect(request.referrer)
-
 
 
 # ==================================================================
