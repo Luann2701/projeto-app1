@@ -28,7 +28,7 @@
                 {% elif tipo == "fixo" %}
                     <button class="btn bloqueado" disabled>{{ h }} (Horário fixo)</button>
 
-                {% elif tipo == "day_use" %}
+                {% elif tipo == "dayuse" %}
                     <button class="btn bloqueado" disabled>{{ h }} (Day Use)</button>
 
                 {% else %}
@@ -64,7 +64,7 @@
                             Livre
                         </option>
 
-                        <option value="day_use" {% if tipo == "day_use" %}selected{% endif %}>
+                        <option value="dayuse" {% if tipo == "dayuse" %}selected{% endif %}>
                             Day Use
                         </option>
 
@@ -84,9 +84,9 @@
     {% endfor %}
 
     {% if session.get("tipo") == "dono" %}
-    <a href="/datas/{{ esporte }}/{{ quadra }}" class="btn secundario">⬅ Voltar</a>
+        <a href="/datas/{{ esporte }}/{{ quadra }}" class="btn secundario">⬅ Voltar</a>
     {% else %}
-    <a href="/quadras/{{ esporte }}" class="btn secundario">⬅ Voltar</a>
+        <a href="/quadras/{{ esporte }}" class="btn secundario">⬅ Voltar</a>
     {% endif %}
 
 </div>

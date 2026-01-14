@@ -478,10 +478,13 @@ def horarios(esporte, quadra, data):
     ocupados_dono = []
 
     for hora, tipo in dia:
-        hora_str = hora.strftime("%H:%M")
-        tipos_horarios[hora_str] = tipo
-        if tipo == "ocupado":
-            ocupados_dono.append(hora_str)
+     hora_str = hora.strftime("%H:%M")
+    tipos_horarios[hora_str] = tipo
+
+    # Bloqueia para cliente, mas mantém o tipo real
+    if tipo in ["ocupado", "dayuse", "fixo"]:
+        ocupados_dono.append(hora_str)
+
 
     # ======================
     # HORÁRIOS FIXOS
