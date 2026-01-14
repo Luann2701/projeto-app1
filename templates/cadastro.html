@@ -11,8 +11,23 @@
 <div class="card">
     <h1>👤 Novo usuário</h1>
 
+    <!-- 🔔 MENSAGENS -->
+    {% if sucesso %}
+        <div class="mensagem sucesso">
+            <p>{{ sucesso }}</p>
+            <a href="/login" class="btn secundario">Voltar para login</a>
+        </div>
+    {% endif %}
+
+    {% if erro %}
+        <div class="mensagem erro">
+            <p>{{ erro }}</p>
+            <a href="/login" class="btn secundario">Voltar</a>
+        </div>
+    {% endif %}
+
+    <!-- 📝 FORMULÁRIO -->
     <form method="POST">
-        <!-- USUÁRIO AGORA É EMAIL -->
         <input 
             type="email" 
             name="usuario" 

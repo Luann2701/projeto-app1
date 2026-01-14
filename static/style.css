@@ -414,3 +414,22 @@ input::placeholder {
     cursor: pointer;
     font-size: 18px;
 }
+
+.mensagem {
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.mensagem.sucesso {
+    background: #e6fffa;
+    border: 1px solid #2ecc71;
+    color: #065f46;
+}
+
+.mensagem.erro {
+    background: #ffe6e6;
+    border: 1px solid #e74c3c;
+    color: #7f1d1d;
+}

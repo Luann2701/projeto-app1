@@ -298,11 +298,20 @@ def cadastro():
             )
             conn.commit()
             conn.close()
-            return redirect("/login")
+
+            return render_template(
+                "cadastro.html",
+                sucesso="✅ Usuário cadastrado com sucesso!"
+            )
+
         except:
-            return render_template("error.html", mensagem="Usuário já existe")
+            return render_template(
+                "cadastro.html",
+                erro="⚠️ Este usuário já existe."
+            )
 
     return render_template("cadastro.html")
+
 
 # ======================
 # TELEFONE
