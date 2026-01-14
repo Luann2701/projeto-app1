@@ -859,17 +859,18 @@ def definir_horario():
     # ==========================
     # FIXO → PERMANENTE
     # ==========================
-    elif tipo == "fixo":
+    elif tipo == "fixo" or tipo == "dayuse":
 
-        c.execute("""
-            DELETE FROM horarios
-            WHERE hora = %s AND quadra = %s
-        """, (hora, quadra))
+     c.execute("""
+        DELETE FROM horarios
+        WHERE hora = %s AND quadra = %s AND data = %s
+    """, (hora, quadra, data))
 
-        c.execute("""
-            INSERT INTO horarios (hora, quadra, tipo, permanente)
-            VALUES (%s, %s, %s, TRUE)
-        """, (hora, quadra, tipo))
+     c.execute("""
+        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+        VALUES (%s, %s, %s, %s, FALSE)
+    """, (data, hora, quadra, tipo))
+
 
     # ==========================
     # OUTROS → COM DATA
