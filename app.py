@@ -834,7 +834,11 @@ def definir_horario():
     data = request.form.get("data")
     hora = request.form.get("hora")
     quadra = request.form.get("quadra")
+
+    # 🔥 PADRONIZA O TIPO
     tipo = request.form.get("tipo")
+    if tipo:
+        tipo = tipo.lower().replace(" ", "")  # "Day Use" -> "dayuse"
 
     conn = conectar()
     c = conn.cursor()
@@ -844,37 +848,33 @@ def definir_horario():
     # ==========================
     if tipo == "livre" or not tipo:
 
-        # Remove qualquer regra do dono (com ou sem data)
         c.execute("""
             DELETE FROM horarios
             WHERE hora = %s AND quadra = %s
         """, (hora, quadra))
 
-        # REMOVE RESERVA DO CLIENTE (ESSENCIAL)
         c.execute("""
             DELETE FROM reservas
             WHERE data = %s AND horario = %s AND quadra = %s
         """, (data, hora, quadra))
 
     # ==========================
-    # FIXO → PERMANENTE
+    # FIXO ou DAY USE
     # ==========================
     elif tipo in ["fixo", "dayuse"]:
 
-     c.execute("""
-        DELETE FROM horarios
-        WHERE hora = %s AND quadra = %s AND data = %s
-    """, (hora, quadra, data))
+        c.execute("""
+            DELETE FROM horarios
+            WHERE hora = %s AND quadra = %s AND data = %s
+        """, (hora, quadra, data))
 
-     c.execute("""
-        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-        VALUES (%s, %s, %s, %s, FALSE)
-    """, (data, hora, quadra, tipo))
-
-
+        c.execute("""
+            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+            VALUES (%s, %s, %s, %s, FALSE)
+        """, (data, hora, quadra, tipo))
 
     # ==========================
-    # OUTROS → COM DATA
+    # OUTROS TIPOS
     # ==========================
     else:
 
@@ -892,6 +892,7 @@ def definir_horario():
     conn.close()
 
     return redirect(request.referrer)
+
 
 # ==================================================================
 # GERENCIAMENTO MENSAL (RELATÓRIO)
