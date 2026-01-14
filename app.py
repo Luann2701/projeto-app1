@@ -859,7 +859,7 @@ def definir_horario():
     # ==========================
     # FIXO → PERMANENTE
     # ==========================
-    elif tipo == "fixo" or tipo == "dayuse":
+    elif tipo in ["fixo", "dayuse"]:
 
      c.execute("""
         DELETE FROM horarios
@@ -870,6 +870,7 @@ def definir_horario():
         INSERT INTO horarios (data, hora, quadra, tipo, permanente)
         VALUES (%s, %s, %s, %s, FALSE)
     """, (data, hora, quadra, tipo))
+
 
 
     # ==========================
