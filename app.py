@@ -12,6 +12,8 @@ from urllib.parse import quote_plus
 from datetime import datetime
 import os
 import requests
+import pytz
+
 
 WHATSAPP_ARENA = "5535998775023"
 CHAVE_PIX = "59105896000116"
@@ -216,6 +218,15 @@ def enviar_email_recuperacao(destino, token):
     except Exception as e:
         print("ERRO AO ENVIAR EMAIL:", e)
         return False
+
+
+# ======================
+# HORÁRIO DE BRASILIA
+# ======================
+
+def agora_brasilia():
+    tz = pytz.timezone("America/Sao_Paulo")
+    return datetime.now(tz)
 
 
 # ======================
@@ -424,7 +435,7 @@ def horarios(esporte, quadra, data):
     if "usuario" not in session:
         return redirect("/")
 
-    agora = datetime.now()
+    agora = agora_brasilia()
     hoje = agora.date()
     data_escolhida = datetime.strptime(data, "%Y-%m-%d").date()
 
@@ -436,7 +447,7 @@ def horarios(esporte, quadra, data):
         return redirect(f"/datas/{esporte}/{quadra}")
 
 
-    lista_horarios = [f"{h:02d}:00" for h in range(8, 22)]
+    lista_horarios = [f"{h:02d}:00" for h in range(6, 22)]
 
     if data_escolhida == hoje:
         hora_atual = agora.strftime("%H:%M")
@@ -517,12 +528,13 @@ def meus_horarios():
     conn = conectar()
     c = conn.cursor()
 
-    # 🧹 Remove reservas antigas
+    # 🧹 Remove reservas com mais de 2 dias de atraso
     c.execute("""
-        DELETE FROM reservas
-        WHERE data < CURRENT_DATE
-    """)
+    DELETE FROM reservas
+    WHERE data < CURRENT_DATE - INTERVAL '2 days'
+             """)
     conn.commit()
+
 
     # ✅ BUSCA SOMENTE RESERVAS PAGAS
     c.execute("""
