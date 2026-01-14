@@ -443,9 +443,8 @@ def horarios(esporte, quadra, data):
     # 🔒 CLIENTE: HOJE + 6 DIAS
     # ==================================================
     if session.get("tipo") != "dono":
-     if data_escolhida < hoje or data_escolhida > hoje + timedelta(days=6):
-        return redirect(f"/datas/{esporte}/{quadra}")
-
+        if data_escolhida < hoje or data_escolhida > hoje + timedelta(days=6):
+            return redirect(f"/datas/{esporte}/{quadra}")
 
     lista_horarios = [f"{h:02d}:00" for h in range(6, 22)]
 
@@ -466,7 +465,7 @@ def horarios(esporte, quadra, data):
     ocupados_reserva = [h[0] for h in c.fetchall()]
 
     # ======================
-    # HORÁRIOS DEFINIDOS PELO DONO
+    # HORÁRIOS DO DONO (DATA ESPECÍFICA)
     # ======================
     c.execute("""
         SELECT hora, tipo FROM horarios
@@ -478,13 +477,17 @@ def horarios(esporte, quadra, data):
     ocupados_dono = []
 
     for hora, tipo in dia:
-     hora_str = hora.strftime("%H:%M")
-    tipos_horarios[hora_str] = tipo
+        hora_str = hora.strftime("%H:%M")
 
-    # Bloqueia para cliente, mas mantém o tipo real
-    if tipo in ["ocupado", "dayuse", "fixo"]:
-        ocupados_dono.append(hora_str)
+        # Normaliza o tipo
+        if tipo:
+            tipo = tipo.lower().replace(" ", "").replace("_", "_")
 
+        tipos_horarios[hora_str] = tipo
+
+        # Bloqueia para cliente, mas mantém o tipo real
+        if tipo in ["ocupado", "day_use", "fixo", "fechada"]:
+            ocupados_dono.append(hora_str)
 
     # ======================
     # HORÁRIOS FIXOS
@@ -496,7 +499,11 @@ def horarios(esporte, quadra, data):
     fixos = c.fetchall()
 
     for hora, tipo in fixos:
-        tipos_horarios[hora.strftime("%H:%M")] = tipo
+        hora_str = hora.strftime("%H:%M")
+        tipos_horarios[hora_str] = tipo
+
+        if tipo in ["ocupado", "day_use", "fixo", "fechada"]:
+            ocupados_dono.append(hora_str)
 
     conn.close()
 
