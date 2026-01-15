@@ -872,15 +872,21 @@ def definir_horario():
 
         # 👇 PASSO 3 — DESATIVA HISTÓRICO
         c.execute("""
-            UPDATE historico_horarios
-            SET ativo = FALSE
-            WHERE data = %s
-              AND hora = %s
-              AND quadra = %s
-              AND ativo = TRUE
-            ORDER BY criado_em DESC
-            LIMIT 1
-        """, (data, hora, quadra))
+    UPDATE historico_horarios
+    SET ativo = FALSE
+    WHERE id = (
+        SELECT id
+        FROM historico_horarios
+        WHERE data = %s
+          AND hora = %s
+          AND quadra = %s
+          AND ativo = TRUE
+        ORDER BY criado_em DESC
+        LIMIT 1
+    )
+    AND ativo = TRUE
+""", (data, hora, quadra))
+
 
     # ======================
     # OCUPADO / FIXO / DAY USE → SOMA NO RELATÓRIO
