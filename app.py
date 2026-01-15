@@ -1066,7 +1066,7 @@ def cancelar_reserva():
           AND horario = %s
     """, (usuario, esporte, quadra, data, horario))
 
-    # 2️⃣ Libera o horário (remove o OCUPADO do dono)
+    # 2️⃣ Libera o horário (remove o OCUPADO)
     c.execute("""
         DELETE FROM horarios
         WHERE quadra = %s
@@ -1075,10 +1075,26 @@ def cancelar_reserva():
           AND tipo = 'ocupado'
     """, (quadra, data, horario))
 
+    # 3️⃣ 🔥 SUBTRAI DO RELATÓRIO (desativa histórico)
+    c.execute("""
+        UPDATE historico_horarios
+        SET ativo = FALSE
+        WHERE id = (
+            SELECT id
+            FROM historico_horarios
+            WHERE data = %s
+              AND hora = %s
+              AND quadra = %s
+              AND ativo = TRUE
+            ORDER BY criado_em DESC
+            LIMIT 1
+        )
+    """, (data, horario, quadra))
+
     conn.commit()
     conn.close()
 
-    flash("Reserva cancelada e horário liberado com sucesso!", "sucesso")
+    flash("Reserva cancelada, horário liberado e relatório ajustado!", "sucesso")
     return redirect("/painel_dono")
 
 
