@@ -911,7 +911,7 @@ def relatorio_mensal():
         FROM reservas r
         FULL JOIN horarios h 
             ON h.data = r.data 
-            AND h.hora = r.horario
+            AND h.hora = r.horario::time
             AND h.quadra = r.quadra
 
         GROUP BY 1
