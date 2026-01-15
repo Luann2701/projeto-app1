@@ -853,21 +853,26 @@ def definir_horario():
     conn = conectar()
     c = conn.cursor()
 
-    # Remove regra anterior
+    # 🔥 Remove qualquer regra anterior do dono
     c.execute("""
         DELETE FROM horarios
         WHERE data = %s AND hora = %s AND quadra = %s
     """, (data, hora, quadra))
 
-    # LIVRE
+    # ======================
+    # LIVRE → LIBERA TOTAL
+    # ======================
     if tipo == "livre" or not tipo:
 
+        # Remove reservas (se existirem)
         c.execute("""
             DELETE FROM reservas
             WHERE data = %s AND horario = %s AND quadra = %s
         """, (data, hora, quadra))
 
-    # OCUPADO / FIXO / DAYUSE
+    # ======================
+    # OCUPADO / FIXO / DAY USE
+    # ======================
     else:
 
         c.execute("""
@@ -896,15 +901,22 @@ def relatorio_mensal():
 
     c.execute("""
         SELECT 
-            TO_CHAR(r.data, 'MM/YYYY') AS mes,
-            COUNT(*) FILTER (WHERE r.pago = TRUE) 
-            + COUNT(*) FILTER (WHERE h.tipo IN ('ocupado','fixo')) AS horarios,
-            COUNT(*) FILTER (WHERE h.tipo = 'dayuse') AS dayuses
-        FROM reservas r
-        FULL JOIN horarios h ON h.data = r.data
-        WHERE (r.data IS NOT NULL OR h.data IS NOT NULL)
+         TO_CHAR(COALESCE(r.data, h.data), 'MM/YYYY') AS mes,
+
+         COUNT(DISTINCT r.id) 
+         + COUNT(*) FILTER (WHERE h.tipo IN ('ocupado','fixo')) AS horarios,
+
+         COUNT(*) FILTER (WHERE h.tipo = 'dayuse') AS dayuses
+
+         FROM reservas r
+         FULL JOIN horarios h 
+         ON h.data = r.data 
+         AND h.hora = r.horario
+        AND h.quadra = r.quadra
+ 
         GROUP BY mes
         ORDER BY mes;
+
     """)
 
     dados = c.fetchall()
