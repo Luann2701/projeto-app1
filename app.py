@@ -874,11 +874,17 @@ def definir_horario():
     # OCUPADO / FIXO / DAY USE
     # ======================
     else:
+     c.execute("""
+        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+        VALUES (%s, %s, %s, %s, FALSE)
+    """, (data, hora, quadra, tipo))
 
-        c.execute("""
-            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-            VALUES (%s, %s, %s, %s, FALSE)
-        """, (data, hora, quadra, tipo))
+    # 👇 NOVO (histórico)
+     c.execute("""
+        INSERT INTO historico_horarios (data, hora, quadra, origem)
+        VALUES (%s, %s, %s, %s)
+    """, (data, hora, quadra, tipo))
+
 
     conn.commit()
     conn.close()
