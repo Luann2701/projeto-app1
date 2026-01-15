@@ -853,14 +853,14 @@ def definir_horario():
     conn = conectar()
     c = conn.cursor()
 
-    # 🔥 Remove qualquer regra anterior do dono
+    # 🔥 Remove qualquer regra anterior do dono (agenda)
     c.execute("""
         DELETE FROM horarios
         WHERE data = %s AND hora = %s AND quadra = %s
     """, (data, hora, quadra))
 
     # ======================
-    # LIVRE → LIBERA TOTAL
+    # LIVRE → SUBTRAI DO RELATÓRIO
     # ======================
     if tipo == "livre" or not tipo:
 
@@ -870,21 +870,32 @@ def definir_horario():
             WHERE data = %s AND horario = %s AND quadra = %s
         """, (data, hora, quadra))
 
+        # 👇 PASSO 3 — DESATIVA HISTÓRICO
+        c.execute("""
+            UPDATE historico_horarios
+            SET ativo = FALSE
+            WHERE data = %s
+              AND hora = %s
+              AND quadra = %s
+              AND ativo = TRUE
+            ORDER BY criado_em DESC
+            LIMIT 1
+        """, (data, hora, quadra))
+
     # ======================
-    # OCUPADO / FIXO / DAY USE
+    # OCUPADO / FIXO / DAY USE → SOMA NO RELATÓRIO
     # ======================
     else:
-     c.execute("""
-        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-        VALUES (%s, %s, %s, %s, FALSE)
-    """, (data, hora, quadra, tipo))
+        c.execute("""
+            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+            VALUES (%s, %s, %s, %s, FALSE)
+        """, (data, hora, quadra, tipo))
 
-    # 👇 NOVO (histórico)
-     c.execute("""
-        INSERT INTO historico_horarios (data, hora, quadra, origem)
-        VALUES (%s, %s, %s, %s)
-    """, (data, hora, quadra, tipo))
-
+        # 👇 PASSO 2 — REGISTRA HISTÓRICO
+        c.execute("""
+            INSERT INTO historico_horarios (data, hora, quadra, origem)
+            VALUES (%s, %s, %s, %s)
+        """, (data, hora, quadra, tipo))
 
     conn.commit()
     conn.close()
