@@ -1044,6 +1044,7 @@ def cancelar_reserva():
     conn = conectar()
     c = conn.cursor()
 
+    # 1️⃣ Remove a reserva
     c.execute("""
         DELETE FROM reservas
         WHERE usuario = %s
@@ -1053,12 +1054,21 @@ def cancelar_reserva():
           AND horario = %s
     """, (usuario, esporte, quadra, data, horario))
 
+    # 2️⃣ Libera o horário (remove o OCUPADO do dono)
+    c.execute("""
+        DELETE FROM horarios
+        WHERE quadra = %s
+          AND data = %s
+          AND hora = %s
+          AND tipo = 'ocupado'
+    """, (quadra, data, horario))
+
     conn.commit()
     conn.close()
 
-    flash("Reserva cancelada com sucesso!", "sucesso")
-
+    flash("Reserva cancelada e horário liberado com sucesso!", "sucesso")
     return redirect("/painel_dono")
+
 
 # ======================
 # LOGIN GOOGLE
