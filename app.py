@@ -901,22 +901,21 @@ def relatorio_mensal():
 
     c.execute("""
         SELECT 
-         TO_CHAR(COALESCE(r.data, h.data), 'MM/YYYY') AS mes,
+            TO_CHAR(COALESCE(r.data, h.data), 'MM/YYYY') AS mes,
 
-         COUNT(DISTINCT r.id) 
-         + COUNT(*) FILTER (WHERE h.tipo IN ('ocupado','fixo')) AS horarios,
+            COUNT(DISTINCT r.usuario || r.data || r.horario || r.quadra)
+            + COUNT(*) FILTER (WHERE h.tipo IN ('ocupado','fixo')) AS horarios,
 
-         COUNT(*) FILTER (WHERE h.tipo = 'dayuse') AS dayuses
+            COUNT(*) FILTER (WHERE h.tipo = 'dayuse') AS dayuses
 
-         FROM reservas r
-         FULL JOIN horarios h 
-         ON h.data = r.data 
-         AND h.hora = r.horario
-        AND h.quadra = r.quadra
- 
-        GROUP BY mes
-        ORDER BY mes;
+        FROM reservas r
+        FULL JOIN horarios h 
+            ON h.data = r.data 
+            AND h.hora = r.horario
+            AND h.quadra = r.quadra
 
+        GROUP BY 1
+        ORDER BY 1;
     """)
 
     dados = c.fetchall()
