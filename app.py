@@ -661,13 +661,13 @@ def confirmar_pagamento():
 
     resultado = c.fetchone()
 
-    if resultado and resultado[0] == True:
+    if resultado and resultado[0] is True:
         conn.close()
         return redirect("/meus_horarios")
 
     # ✅ Marca como pago
     c.execute("""
-        UPDATE reservas 
+        UPDATE reservas
         SET pago = TRUE
         WHERE usuario = %s
           AND esporte = %s
@@ -676,20 +676,30 @@ def confirmar_pagamento():
           AND horario = %s
     """, (usuario, esporte, quadra, data, horario))
 
-    # 🔒 Bloqueia para o dono
+    # 🔒 Remove horário livre (se existir)
     c.execute("""
         DELETE FROM horarios
-        WHERE data = %s AND hora = %s AND quadra = %s
+        WHERE data = %s
+          AND hora = %s
+          AND quadra = %s
     """, (data, horario, quadra))
 
+    # 🔐 Insere como OCUPADO
     c.execute("""
         INSERT INTO horarios (data, hora, quadra, tipo, permanente)
         VALUES (%s, %s, %s, 'ocupado', FALSE)
     """, (data, horario, quadra))
 
+    # 📊 REGISTRA NO HISTÓRICO (para relatório mensal)
+    c.execute("""
+        INSERT INTO historico_horarios (data, hora, quadra, origem)
+        VALUES (%s, %s, %s, 'ocupado')
+    """, (data, horario, quadra))
+
     conn.commit()
     conn.close()
 
+    # 📲 Mensagem WhatsApp
     mensagem = (
         f"✅ PAGAMENTO CONFIRMADO!\n\n"
         f"Reserva confirmada:\n"
