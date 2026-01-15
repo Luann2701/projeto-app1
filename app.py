@@ -677,12 +677,6 @@ def confirmar_pagamento():
           AND horario = %s
     """, (usuario, esporte, quadra, data, horario))
 
-    # 📊 Registra como "ocupado" no relatório mensal
-    c.execute("""
-        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-        VALUES (%s, %s, %s, 'ocupado', FALSE)
-    """, (data, horario, quadra))
-
     conn.commit()
     conn.close()
 
@@ -895,11 +889,13 @@ def relatorio_mensal():
 
     c.execute("""
         SELECT 
-            TO_CHAR(data, 'MM/YYYY') AS mes,
-            COUNT(*) FILTER (WHERE tipo = 'ocupado' OR tipo = 'fixo') AS horarios,
-            COUNT(*) FILTER (WHERE tipo = 'dayuse') AS dayuses
-        FROM horarios
-        WHERE data IS NOT NULL
+            TO_CHAR(r.data, 'MM/YYYY') AS mes,
+            COUNT(*) FILTER (WHERE r.pago = TRUE) 
+            + COUNT(*) FILTER (WHERE h.tipo IN ('ocupado','fixo')) AS horarios,
+            COUNT(*) FILTER (WHERE h.tipo = 'dayuse') AS dayuses
+        FROM reservas r
+        FULL JOIN horarios h ON h.data = r.data
+        WHERE (r.data IS NOT NULL OR h.data IS NOT NULL)
         GROUP BY mes
         ORDER BY mes;
     """)
