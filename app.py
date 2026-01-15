@@ -923,38 +923,26 @@ def relatorio_mensal():
     c = conn.cursor()
 
     c.execute("""
-        
-SELECT 
-    mes,
-    SUM(horarios) AS horarios,
-    SUM(dayuses) AS dayuses
-FROM (
+        SELECT
+            TO_CHAR(data, 'MM/YYYY') AS mes,
 
-    -- 1️⃣ Horários usados (fixo, ocupado manual ou reservado)
-    SELECT 
-        TO_CHAR(h.data, 'MM/YYYY') AS mes,
-        COUNT(*) AS horarios,
-        0 AS dayuses
-    FROM horarios h
-    WHERE h.tipo IN ('fixo', 'ocupado', 'reservado')
-    GROUP BY mes
+            SUM(
+                CASE
+                    WHEN origem IN ('ocupado', 'fixo') AND ativo = TRUE THEN 1
+                    ELSE 0
+                END
+            ) AS horarios,
 
-    UNION ALL
+            SUM(
+                CASE
+                    WHEN origem = 'dayuse' AND ativo = TRUE THEN 1
+                    ELSE 0
+                END
+            ) AS dayuses
 
-    -- 2️⃣ Day Use
-    SELECT 
-        TO_CHAR(data, 'MM/YYYY') AS mes,
-        0 AS horarios,
-        COUNT(*) AS dayuses
-    FROM horarios
-    WHERE tipo = 'dayuse'
-    GROUP BY mes
-
-) AS resumo
-GROUP BY mes
-ORDER BY mes;
-
-
+        FROM historico_horarios
+        GROUP BY mes
+        ORDER BY mes;
     """)
 
     dados = c.fetchall()
