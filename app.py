@@ -661,7 +661,6 @@ def confirmar_pagamento():
 
     resultado = c.fetchone()
 
-    # Se já estiver pago, não faz nada
     if resultado and resultado[0] == True:
         conn.close()
         return redirect("/meus_horarios")
@@ -677,11 +676,19 @@ def confirmar_pagamento():
           AND horario = %s
     """, (usuario, esporte, quadra, data, horario))
 
+    # 🔒 Bloqueia para o dono
+    c.execute("""
+        DELETE FROM horarios
+        WHERE data = %s AND hora = %s AND quadra = %s
+    """, (data, horario, quadra))
+
+    c.execute("""
+        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+        VALUES (%s, %s, %s, 'ocupado', FALSE)
+    """, (data, horario, quadra))
+
     conn.commit()
     conn.close()
-
-    # 📲 WhatsApp
-    whatsapp_arena = WHATSAPP_ARENA
 
     mensagem = (
         f"✅ PAGAMENTO CONFIRMADO!\n\n"
@@ -692,7 +699,7 @@ def confirmar_pagamento():
         f"Obrigado! Nos vemos na arena 💪🔥"
     )
 
-    link_whatsapp = f"https://wa.me/{whatsapp_arena}?text={quote_plus(mensagem)}"
+    link_whatsapp = f"https://wa.me/{WHATSAPP_ARENA}?text={quote_plus(mensagem)}"
 
     return redirect(link_whatsapp)
 
