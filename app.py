@@ -538,14 +538,6 @@ def meus_horarios():
     conn = conectar()
     c = conn.cursor()
 
-    # 🧹 Remove reservas com mais de 2 dias de atraso
-    c.execute("""
-    DELETE FROM reservas
-    WHERE data < CURRENT_DATE - INTERVAL '2 days'
-             """)
-    conn.commit()
-
-
     # ✅ BUSCA SOMENTE RESERVAS PAGAS
     c.execute("""
         SELECT esporte, quadra, data, horario, pago
@@ -561,6 +553,7 @@ def meus_horarios():
         "meus_horarios.html",
         reservas=reservas
     )
+
 
 # ======================
 # RESERVA / PAGAMENTO
