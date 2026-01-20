@@ -1109,8 +1109,6 @@ def cancelar_reserva():
     if "tipo" not in session or session["tipo"] != "dono":
         return redirect("/")
 
-    usuario = request.form.get("usuario")
-    esporte = request.form.get("esporte")
     quadra = request.form.get("quadra")
     data = request.form.get("data")
     horario = request.form.get("horario")
@@ -1121,14 +1119,12 @@ def cancelar_reserva():
     # 1️⃣ Remove a reserva
     c.execute("""
         DELETE FROM reservas
-        WHERE usuario = %s
-          AND esporte = %s
-          AND quadra = %s
+        WHERE quadra = %s
           AND data = %s
           AND horario = %s
-    """, (usuario, esporte, quadra, data, horario))
+    """, (quadra, data, horario))
 
-    # 2️⃣ Libera o horário (remove o OCUPADO)
+    # 2️⃣ Libera o horário
     c.execute("""
         DELETE FROM horarios
         WHERE quadra = %s
@@ -1137,7 +1133,7 @@ def cancelar_reserva():
           AND tipo = 'ocupado'
     """, (quadra, data, horario))
 
-    # 3️⃣ 🔥 SUBTRAI DO RELATÓRIO (desativa histórico)
+    # 3️⃣ Ajusta relatório
     c.execute("""
         UPDATE historico_horarios
         SET ativo = FALSE

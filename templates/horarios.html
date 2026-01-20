@@ -33,7 +33,7 @@
 
                 {% else %}
                     <form method="POST" action="/reservar">
-                        <select name="esporte" required style="width:100%; margin-bottom:10px;">
+                        <select name="esporte" required>
                             <option value="">Selecione o esporte</option>
                             <option value="Beach Tennis">Beach Tennis</option>
                             <option value="Futevôlei">Futevôlei</option>
@@ -42,6 +42,7 @@
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="data" value="{{ data }}">
                         <input type="hidden" name="horario" value="{{ h }}">
+
                         <button type="submit" class="btn">{{ h }}</button>
                     </form>
                 {% endif %}
@@ -88,39 +89,40 @@
 </div>
 
 <!-- ================= MODAL RESERVA MANUAL ================= -->
-<div id="modalReserva" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9999;">
-  <form method="POST" action="/admin/reserva_manual"
-        style="background:#fff; max-width:400px; margin:10% auto; padding:20px; border-radius:10px;">
+<div id="modalReserva" class="modal-overlay">
+    <form method="POST" action="/admin/reserva_manual" class="modal-box">
 
-    <h3>Reserva Manual</h3>
+        <h3>Reserva Manual</h3>
 
-    <input name="nome" placeholder="Nome" required style="width:100%; margin-bottom:10px;">
-    <input name="telefone" placeholder="Telefone" required style="width:100%; margin-bottom:10px;">
-    <input name="email" placeholder="Email (opcional)" style="width:100%; margin-bottom:10px;">
+        <input name="nome" placeholder="Nome" required>
+        <input name="telefone" placeholder="Telefone" required>
+        <input name="email" placeholder="Email (opcional)">
 
-    <select name="esporte" required style="width:100%; margin-bottom:10px;">
-        <option value="">Selecione o esporte</option>
-        <option value="Beach Tennis">Beach Tennis</option>
-        <option value="Futevôlei">Futevôlei</option>
-    </select>
+        <select name="esporte" required>
+            <option value="">Selecione o esporte</option>
+            <option value="Beach Tennis">Beach Tennis</option>
+            <option value="Futevôlei">Futevôlei</option>
+        </select>
 
-    <label>
-      <input type="checkbox" name="pago" value="true"> Pago
-    </label>
+        <label>
+            <input type="checkbox" name="pago" value="true"> Pago
+        </label>
 
-    <input type="hidden" name="quadra" value="{{ quadra }}">
-    <input type="hidden" name="data" value="{{ data }}">
-    <input type="hidden" name="horario" id="rm_horario">
+        <input type="hidden" name="quadra" value="{{ quadra }}">
+        <input type="hidden" name="data" value="{{ data }}">
+        <input type="hidden" name="horario" id="rm_horario">
 
-    <br><br>
+        <div class="modal-actions">
+            <button type="button" class="cancelar" onclick="fecharModal()">Cancelar</button>
+            <button type="submit" class="salvar">Salvar</button>
+        </div>
 
-    <button type="button" onclick="fecharModal()">Cancelar</button>
-    <button type="submit">Salvar</button>
-  </form>
+    </form>
 </div>
 
 <script>
 function mudarTipoHorario(tipo, horario) {
+
     if (tipo === "ocupado") {
         document.getElementById("rm_horario").value = horario;
         document.getElementById("modalReserva").style.display = "block";
