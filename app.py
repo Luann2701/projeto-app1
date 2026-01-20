@@ -911,6 +911,69 @@ def definir_horario():
 
     return redirect(request.referrer)
 
+# ==================================================================
+# RESERVA MANUAL DO DONO
+# ==================================================================
+
+@app.route("/admin/reserva_manual", methods=["POST"])
+def reserva_manual():
+
+    # 🔐 somente dono
+    if "tipo" not in session or session.get("tipo") != "dono":
+        abort(403)
+
+    nome = request.form.get("nome")
+    telefone = request.form.get("telefone")
+    email = request.form.get("email")
+
+    quadra = request.form.get("quadra")
+    esporte = request.form.get("esporte")
+    data = request.form.get("data")
+    horario = request.form.get("horario")
+
+    pago = request.form.get("pago") == "true"
+
+    conn = conectar()
+    c = conn.cursor()
+
+    # 🔒 remove qualquer reserva anterior nesse horário
+    c.execute("""
+        DELETE FROM reservas
+        WHERE quadra = %s AND data = %s AND horario = %s
+    """, (quadra, data, horario))
+
+    # ✅ cria reserva manual
+    c.execute("""
+        INSERT INTO reservas
+        (nome, telefone, email, esporte, quadra, data, horario, pago, origem)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'dono')
+    """, (
+        nome,
+        telefone,
+        email,
+        esporte,
+        quadra,
+        data,
+        horario,
+        pago
+    ))
+
+    # 🔐 remove regra antiga do dono
+    c.execute("""
+        DELETE FROM horarios
+        WHERE quadra = %s AND data = %s AND hora = %s
+    """, (quadra, data, horario))
+
+    # 🔒 marca como ocupado
+    c.execute("""
+        INSERT INTO horarios (quadra, data, hora, tipo, permanente)
+        VALUES (%s,%s,%s,'ocupado',FALSE)
+    """, (quadra, data, horario))
+
+    conn.commit()
+    conn.close()
+
+    return {"success": True}
 
 # ==================================================================
 # GERENCIAMENTO MENSAL (RELATÓRIO)
