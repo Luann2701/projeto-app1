@@ -801,8 +801,8 @@ def painel_dono():
 
     query = """
         SELECT 
-            r.usuario,
-            u.telefone,
+            COALESCE(r.nome, r.usuario) AS cliente,
+            COALESCE(r.telefone, u.telefone) AS telefone,
             r.esporte,
             r.quadra,
             r.data,
