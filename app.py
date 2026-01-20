@@ -970,6 +970,12 @@ def reserva_manual():
         VALUES (%s,%s,%s,'ocupado',FALSE)
     """, (quadra, data, horario))
 
+# 📊 REGISTRA NO HISTÓRICO (entra no relatório mensal)
+    c.execute("""
+    INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
+    VALUES (%s, %s, %s, 'ocupado', TRUE)
+""", (data, horario, quadra))
+
     conn.commit()
     conn.close()
 

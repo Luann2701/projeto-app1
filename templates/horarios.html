@@ -33,7 +33,12 @@
 
                 {% else %}
                     <form method="POST" action="/reservar">
-                        <input type="hidden" name="esporte" value="{{ esporte }}">
+                        <select name="esporte" required style="width:100%; margin-bottom:10px;">
+                            <option value="">Selecione o esporte</option>
+                            <option value="Beach Tennis">Beach Tennis</option>
+                            <option value="Futevôlei">Futevôlei</option>
+                        </select>
+
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="data" value="{{ data }}">
                         <input type="hidden" name="horario" value="{{ h }}">
@@ -47,8 +52,7 @@
             {% if tipo_usuario == "dono" %}
                 <span class="horario-texto">{{ h }}</span>
 
-                <select
-                    onchange="mudarTipoHorario(this.value, '{{ h }}')">
+                <select onchange="mudarTipoHorario(this.value, '{{ h }}')">
 
                     <option value="livre" {% if not tipo %}selected{% endif %}>
                         Livre
@@ -84,7 +88,6 @@
 </div>
 
 <!-- ================= MODAL RESERVA MANUAL ================= -->
-<!-- ================= MODAL RESERVA MANUAL ================= -->
 <div id="modalReserva" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9999;">
   <form method="POST" action="/admin/reserva_manual"
         style="background:#fff; max-width:400px; margin:10% auto; padding:20px; border-radius:10px;">
@@ -95,12 +98,16 @@
     <input name="telefone" placeholder="Telefone" required style="width:100%; margin-bottom:10px;">
     <input name="email" placeholder="Email (opcional)" style="width:100%; margin-bottom:10px;">
 
+    <select name="esporte" required style="width:100%; margin-bottom:10px;">
+        <option value="">Selecione o esporte</option>
+        <option value="Beach Tennis">Beach Tennis</option>
+        <option value="Futevôlei">Futevôlei</option>
+    </select>
+
     <label>
       <input type="checkbox" name="pago" value="true"> Pago
     </label>
 
-    <!-- ocultos -->
-    <input type="hidden" name="esporte" value="{{ esporte }}">
     <input type="hidden" name="quadra" value="{{ quadra }}">
     <input type="hidden" name="data" value="{{ data }}">
     <input type="hidden" name="horario" id="rm_horario">
@@ -112,18 +119,14 @@
   </form>
 </div>
 
-
 <script>
 function mudarTipoHorario(tipo, horario) {
-
-    // se for ocupado → abre modal
     if (tipo === "ocupado") {
         document.getElementById("rm_horario").value = horario;
         document.getElementById("modalReserva").style.display = "block";
         return;
     }
 
-    // outros tipos continuam como antes
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "/admin/definir_horario";
