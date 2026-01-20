@@ -84,30 +84,34 @@
 </div>
 
 <!-- ================= MODAL RESERVA MANUAL ================= -->
+<!-- ================= MODAL RESERVA MANUAL ================= -->
 <div id="modalReserva" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:9999;">
-    <div style="background:#fff; max-width:400px; margin:10% auto; padding:20px; border-radius:10px;">
-        <h3>Reserva Manual</h3>
+  <form method="POST" action="/admin/reserva_manual"
+        style="background:#fff; max-width:400px; margin:10% auto; padding:20px; border-radius:10px;">
 
-        <input id="rm_nome" placeholder="Nome" style="width:100%; margin-bottom:10px;">
-        <input id="rm_telefone" placeholder="Telefone" style="width:100%; margin-bottom:10px;">
-        <input id="rm_email" placeholder="Email (opcional)" style="width:100%; margin-bottom:10px;">
+    <h3>Reserva Manual</h3>
 
-        <label>
-            <input type="checkbox" id="rm_pago"> Pago
-        </label>
+    <input name="nome" placeholder="Nome" required style="width:100%; margin-bottom:10px;">
+    <input name="telefone" placeholder="Telefone" required style="width:100%; margin-bottom:10px;">
+    <input name="email" placeholder="Email (opcional)" style="width:100%; margin-bottom:10px;">
 
-        <!-- ocultos -->
-        <input type="hidden" id="rm_esporte" value="{{ esporte }}">
-        <input type="hidden" id="rm_quadra" value="{{ quadra }}">
-        <input type="hidden" id="rm_data" value="{{ data }}">
-        <input type="hidden" id="rm_horario">
+    <label>
+      <input type="checkbox" name="pago" value="true"> Pago
+    </label>
 
-        <br><br>
+    <!-- ocultos -->
+    <input type="hidden" name="esporte" value="{{ esporte }}">
+    <input type="hidden" name="quadra" value="{{ quadra }}">
+    <input type="hidden" name="data" value="{{ data }}">
+    <input type="hidden" name="horario" id="rm_horario">
 
-        <button onclick="fecharModal()">Cancelar</button>
-        <button onclick="salvarReservaManual()">Salvar</button>
-    </div>
+    <br><br>
+
+    <button type="button" onclick="fecharModal()">Cancelar</button>
+    <button type="submit">Salvar</button>
+  </form>
 </div>
+
 
 <script>
 function mudarTipoHorario(tipo, horario) {

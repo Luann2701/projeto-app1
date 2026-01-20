@@ -973,7 +973,7 @@ def reserva_manual():
     conn.commit()
     conn.close()
 
-    return {"success": True}
+    return redirect(f"/horarios/{esporte}/{quadra}/{data}")
 
 # ==================================================================
 # GERENCIAMENTO MENSAL (RELATÓRIO)
