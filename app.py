@@ -13,6 +13,9 @@ from datetime import datetime
 import os
 import requests
 import pytz
+import mercadopago
+
+mp = mercadopago.SDK(os.getenv("MERCADOPAGO_ACCESS_TOKEN"))
 
 
 WHATSAPP_ARENA = "5535998775023"
@@ -232,6 +235,26 @@ def agora_brasilia():
 # ======================
 # TELA INICIAL
 # ======================
+
+@app.route("/teste_mp")
+def teste_mp():
+    preference_data = {
+        "items": [
+            {
+                "title": "Teste Reserva Arena",
+                "quantity": 1,
+                "unit_price": 1.00
+            }
+        ]
+    }
+
+    preference = mp.preference().create(preference_data)
+
+    return {
+        "status": preference["status"],
+        "init_point": preference["response"].get("init_point")
+    }
+
 
 @app.route("/")
 def inicio():
