@@ -1011,6 +1011,17 @@ def admin_horarios():
         quadras=quadras
     )
 
+# ==========================================
+# MERCADO PAGO RESPONDE PARA O SITE
+# ==========================================
+
+@app.route("/webhook/mercadopago", methods=["POST"])
+def webhook_mercadopago():
+    print("🔔 WEBHOOK RECEBIDO DO MERCADO PAGO")
+    print(request.json)
+
+    return "ok", 200
+
 # ======================
 # EVENTOS
 # ======================
