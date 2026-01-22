@@ -33,8 +33,12 @@
 
                 {% else %}
                     <form method="POST" action="/reservar">
-                        <!-- ESPORTE JÁ DEFINIDO -->
-                        <input type="hidden" name="esporte" value="{{ esporte }}">
+                        <select name="esporte" required>
+                            <option value="">Selecione o esporte</option>
+                            <option value="Beach Tennis">Beach Tennis</option>
+                            <option value="Futevôlei">Futevôlei</option>
+                        </select>
+
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="data" value="{{ data }}">
                         <input type="hidden" name="horario" value="{{ h }}">
@@ -84,7 +88,7 @@
     {% endif %}
 </div>
 
-<!-- ================= MODAL RESERVA MANUAL (DONO) ================= -->
+<!-- ================= MODAL RESERVA MANUAL ================= -->
 <div id="modalReserva" class="modal-overlay">
     <form method="POST" action="/admin/reserva_manual" class="modal-box">
 

@@ -633,24 +633,15 @@ def reservar():
 
     # 2️⃣ cria pagamento PIX no Mercado Pago
     payment_data = {
-    "transaction_amount": float(valor),
-    "description": f"Reserva Quadra {quadra} - {data} {horario}",
-    "payment_method_id": "pix",
-    "external_reference": str(reserva_id),
-
-    "notification_url": "https://arenacorpoativo.onrender.com/webhook/mercadopago",
-
-    "back_urls": {
-        "success": "https://arenacorpoativo.onrender.com/pagamento_sucesso",
-        "failure": "https://arenacorpoativo.onrender.com/pagamento_cancelado",
-        "pending": "https://arenacorpoativo.onrender.com/pagamento_pendente"
-    },
-
-    "payer": {
-        "email": email
+        "transaction_amount": float(valor),
+        "description": f"Reserva Quadra {quadra} - {data} {horario}",
+        "payment_method_id": "pix",
+        "external_reference": str(reserva_id),
+        "notification_url": "https://arenacorpoativo.onrender.com/webhook/mercadopago",
+        "payer": {
+            "email": email
+        }
     }
-}
-
 
     try:
         payment = mp.payment().create(payment_data)
@@ -1152,72 +1143,6 @@ def webhook_mercadopago():
 
     print(f"✅ Reserva {reserva_id} confirmada")
     return "ok", 200
-
-
-@app.route("/pagamento_cancelado")
-def pagamento_cancelado():
-    reserva_id = request.args.get("external_reference")
-
-    if not reserva_id:
-        return redirect("/")
-
-    conn = psycopg2.connect(DATABASE_URL)
-    c = conn.cursor()
-
-    c.execute("""
-        SELECT esporte, quadra, data
-        FROM reservas
-        WHERE id = %s
-    """, (reserva_id,))
-
-    reserva = c.fetchone()
-    conn.close()
-
-    if not reserva:
-        return redirect("/")
-
-    esporte, quadra, data = reserva
-
-    return redirect(
-        f"/horarios/{esporte}/{quadra}/{data}"
-    )
-
-@app.route("/pagamento_pendente")
-def pagamento_pendente():
-    reserva_id = request.args.get("external_reference")
-
-    if not reserva_id:
-        return redirect("/")
-
-    conn = conectar()
-    c = conn.cursor()
-
-    c.execute("""
-        SELECT esporte, quadra, data
-        FROM reservas
-        WHERE id = %s
-    """, (reserva_id,))
-
-    reserva = c.fetchone()
-    conn.close()
-
-    if not reserva:
-        return redirect("/")
-
-    esporte, quadra, data = reserva
-
-    return redirect(f"/horarios/{esporte}/{quadra}/{data}")
-
-@app.route("/pagamento_sucesso")
-def pagamento_sucesso():
-    reserva_id = request.args.get("external_reference")
-
-    if not reserva_id:
-        return redirect("/meus_horarios")
-
-    # opcional: pode buscar dados se quiser mostrar algo depois
-    return redirect("/meus_horarios")
-
 
 # ======================
 # EVENTOS
