@@ -579,8 +579,38 @@ def meus_horarios():
 
 
 # ======================
-# RESERVA / PAGAMENTO
+# CANCELAR / RESERVA / PAGAMENTO
 # ======================
+
+@app.route("/cancelar_pagamento/<int:reserva_id>", methods=["GET", "POST"])
+def cancelar_pagamento(reserva_id):
+    if "usuario" not in session:
+        return redirect("/")
+
+    conn = conectar()
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT esporte, quadra, data
+        FROM reservas
+        WHERE id = %s AND pago = FALSE
+    """, (reserva_id,))
+    reserva = c.fetchone()
+
+    if not reserva:
+        conn.close()
+        return redirect("/")
+
+    esporte, quadra, data = reserva
+
+    c.execute("DELETE FROM reservas WHERE id = %s", (reserva_id,))
+    conn.commit()
+    conn.close()
+
+    return redirect(
+        f"/horarios/{quote_plus(esporte)}/{quote_plus(quadra)}/{data}"
+    )
+
 
 @app.route("/reservar", methods=["POST"])
 def reservar():
