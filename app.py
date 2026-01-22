@@ -607,9 +607,13 @@ def cancelar_pagamento(reserva_id):
     conn.commit()
     conn.close()
 
-    return redirect(
-        f"/horarios/{quote_plus(esporte)}/{quote_plus(quadra)}/{data}"
-    )
+    return redirect(url_for(
+    "horarios",
+    esporte=esporte,
+    quadra=quadra,
+    data=data
+))
+
 
 
 @app.route("/reservar", methods=["POST"])
