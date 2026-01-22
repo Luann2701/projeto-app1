@@ -1048,8 +1048,6 @@ def admin_horarios():
         quadras=quadras
     )
 
-
-
 # ==========================================
 # MERCADO PAGO RESPONDE PARA O SITE
 # ==========================================
@@ -1071,23 +1069,14 @@ def status_reserva(reserva_id):
 
 @app.route("/webhook/mercadopago", methods=["POST"])
 def webhook_mercadopago():
-    # 1️⃣ pegar payment_id (query OU body)
-    payment_id = None
-
-    if request.args.get("data.id"):
-        payment_id = request.args.get("data.id")
-    elif request.args.get("id"):
-        payment_id = request.args.get("id")
-    else:
-        data = request.get_json(silent=True)
-        if data and "data" in data and "id" in data["data"]:
-            payment_id = data["data"]["id"]
+    # 1️⃣ pegar payment_id
+    payment_id = (
+        request.args.get("data.id")
+        or request.args.get("id")
+    )
 
     if not payment_id:
-        print("WEBHOOK MP: payment_id não encontrado")
         return "ok", 200
-
-    print("WEBHOOK MP: payment_id =", payment_id)
 
     # 2️⃣ buscar pagamento no Mercado Pago
     headers = {
@@ -1100,49 +1089,59 @@ def webhook_mercadopago():
     )
 
     if r.status_code != 200:
-        print("Erro ao buscar pagamento MP")
         return "ok", 200
 
     pagamento = r.json()
     status = pagamento.get("status")
-    external_reference = pagamento.get("external_reference")
+    reserva_id = pagamento.get("external_reference")
 
-    print("Status MP:", status, "Reserva:", external_reference)
-
-    if status != "approved" or not external_reference:
+    if status != "approved" or not reserva_id:
         return "ok", 200
 
     conn = conectar()
     c = conn.cursor()
 
-    # 3️⃣ confirmar reserva
+    # 3️⃣ buscar dados da reserva (TIPADOS)
+    c.execute("""
+        SELECT data, horario, quadra
+        FROM reservas
+        WHERE id = %s AND pago = FALSE
+    """, (reserva_id,))
+
+    reserva = c.fetchone()
+    if not reserva:
+        conn.close()
+        return "ok", 200
+
+    data_reserva, horario_reserva, quadra_reserva = reserva
+
+    # 4️⃣ confirmar reserva
     c.execute("""
         UPDATE reservas
         SET pago = TRUE,
             status = 'pago',
             payment_id = %s
         WHERE id = %s
-    """, (payment_id, external_reference))
+    """, (payment_id, reserva_id))
 
-    # 4️⃣ bloquear horário
+    # 5️⃣ remover horário livre (CAST CORRETO)
     c.execute("""
         DELETE FROM horarios
-        WHERE data = (SELECT data FROM reservas WHERE id = %s)
-          AND hora = (SELECT horario FROM reservas WHERE id = %s)
-          AND quadra = (SELECT quadra FROM reservas WHERE id = %s)
-    """, (external_reference, external_reference, external_reference))
+        WHERE data = %s
+          AND hora = %s::time
+          AND quadra = %s
+    """, (data_reserva, horario_reserva, quadra_reserva))
 
+    # 6️⃣ marcar como ocupado
     c.execute("""
         INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-        SELECT data, horario, quadra, 'ocupado', FALSE
-        FROM reservas
-        WHERE id = %s
-    """, (external_reference,))
+        VALUES (%s, %s::time, %s, 'ocupado', FALSE)
+    """, (data_reserva, horario_reserva, quadra_reserva))
 
     conn.commit()
     conn.close()
 
-    print("Reserva confirmada:", external_reference)
+    print(f"✅ Reserva {reserva_id} confirmada")
     return "ok", 200
 
 
