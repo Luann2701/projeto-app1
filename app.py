@@ -582,8 +582,6 @@ def meus_horarios():
 # RESERVA / PAGAMENTO
 # ======================
 
-
-
 @app.route("/reservar", methods=["POST"])
 def reservar():
     if "usuario" not in session:
@@ -618,14 +616,16 @@ def reservar():
 
     # 2️⃣ cria PIX no Mercado Pago
     payment_data = {
-        "transaction_amount": float(valor),
-        "description": f"Reserva Quadra {quadra} - {data} {horario}",
-        "payment_method_id": "pix",
-        "external_reference": str(reserva_id),
-        "payer": {
-            "email": session.get("email", "cliente@arenacorpoativo.com")
-        }
+    "transaction_amount": float(valor),
+    "description": f"Reserva Quadra {quadra} - {data} {horario}",
+    "payment_method_id": "pix",
+    "external_reference": str(reserva_id),
+    "notification_url": "https://arenacorpoativo.onrender.com/webhook/mercadopago",
+    "payer": {
+        "email": session.get("email", "cliente@arenacorpoativo.com")
     }
+}
+
 
     payment = mp.payment().create(payment_data)
     payment_id = payment["response"]["id"]
@@ -1019,45 +1019,64 @@ def admin_horarios():
 def webhook_mercadopago():
     data = request.json
 
-    if not data or "data" not in data:
+    if not data or "data" not in data or "id" not in data["data"]:
         return "ok", 200
 
-    payment_id = data["data"].get("id")
+    payment_id = data["data"]["id"]
 
-    if not payment_id:
-        return "ok", 200
-
-    # Consulta o pagamento no Mercado Pago
     headers = {
         "Authorization": f"Bearer {os.getenv('MERCADOPAGO_ACCESS_TOKEN')}"
     }
 
+    # 🔎 Busca o pagamento completo no Mercado Pago
     r = requests.get(
         f"https://api.mercadopago.com/v1/payments/{payment_id}",
         headers=headers
     )
 
     if r.status_code != 200:
-        return "ok", 200
+        return "erro", 200
 
     pagamento = r.json()
-    status = pagamento.get("status")
+
+    status_pagamento = pagamento.get("status")
     external_reference = pagamento.get("external_reference")
 
-    # Só confirma se estiver APROVADO
-    if status == "approved" and external_reference:
-        conn = psycopg2.connect(DATABASE_URL)
-        c = conn.cursor()
+    # ❌ Se não foi aprovado, não confirma
+    if status_pagamento != "approved" or not external_reference:
+        return "ok", 200
 
-        c.execute("""
-            UPDATE reservas
-            SET status = 'pago'
-            WHERE external_reference = %s
-        """, (external_reference,))
+    conn = conectar()
+    c = conn.cursor()
 
-        conn.commit()
-        c.close()
-        conn.close()
+    # ✅ Atualiza a reserva correta
+    c.execute("""
+        UPDATE reservas
+        SET
+            pago = TRUE,
+            status = 'pago',
+            payment_id = %s
+        WHERE id = %s
+    """, (payment_id, external_reference))
+
+    # 🔒 Remove horário livre
+    c.execute("""
+        DELETE FROM horarios
+        WHERE data = (SELECT data FROM reservas WHERE id = %s)
+          AND hora = (SELECT horario FROM reservas WHERE id = %s)
+          AND quadra = (SELECT quadra FROM reservas WHERE id = %s)
+    """, (external_reference, external_reference, external_reference))
+
+    # 🔐 Marca como ocupado
+    c.execute("""
+        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+        SELECT data, horario, quadra, 'ocupado', FALSE
+        FROM reservas
+        WHERE id = %s
+    """, (external_reference,))
+
+    conn.commit()
+    conn.close()
 
     return "ok", 200
 
