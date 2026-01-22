@@ -592,11 +592,12 @@ def reservar():
     quadra = request.form["quadra"]
     data = request.form["data"]
     horario = request.form["horario"]
+    valor = 65
 
     conn = conectar()
     c = conn.cursor()
 
-    # salva como PENDENTE
+    # 1️⃣ cria reserva PENDENTE
     c.execute("""
         INSERT INTO reservas (usuario, esporte, quadra, data, horario, pago, status, criado_em)
         VALUES (%s, %s, %s, %s, %s, FALSE, 'pendente', %s)
@@ -611,124 +612,47 @@ def reservar():
     ))
 
     reserva_id = c.fetchone()[0]
-
     conn.commit()
-    conn.close()
 
-    # 📲 dados da arena (POR ENQUANTO FIXOS)
-    whatsapp_arena = WHATSAPP_ARENA  # seu WhatsApp com DDI
-    chave_pix = CHAVE_PIX
+    # 2️⃣ cria PIX no Mercado Pago
+    payment_data = {
+        "transaction_amount": float(valor),
+        "description": f"Reserva Quadra {quadra} - {data} {horario}",
+        "payment_method_id": "pix",
+        "external_reference": str(reserva_id),
+        "payer": {
+            "email": session.get("email", "cliente@arenacorpoativo.com")
+        }
+    }
 
-    mensagem = (
-        f"*ARENA CORPO ATIVO!* \n\n"
-        f"Olá! 👋\n\n"
-        f"Você solicitou a reserva:\n"
-        f"🏟 Quadra: {quadra}\n"
-        f"📅 Data: {data}\n"
-        f"⏰ Horário: {horario}\n\n"
-        f"💰 Valor: R$ 65,00\n"
-        f"🔑 Pix: {chave_pix}\n\n"
-        f"⏳ Você tem até *10 minutos* para realizar o pagamento.\n"
-        f"Após o pagamento por favor *envie* o comprovante logo abaixo."
-        f"Após o envio do comprovante, volte ao app e clique em *Já paguei* será direcionado novamente para o whatsapp e será confirmado seu horário."
-    )
+    payment = mp.payment().create(payment_data)
+    payment_id = payment["response"]["id"]
 
-    link_whatsapp = f"https://wa.me/{whatsapp_arena}?text={quote_plus(mensagem)}"
+    qr_code_base64 = payment["response"]["point_of_interaction"]["transaction_data"]["qr_code_base64"]
+    qr_code_copia_cola = payment["response"]["point_of_interaction"]["transaction_data"]["qr_code"]
 
-    return render_template(
-        "pagamento.html",
-        esporte=esporte,
-        quadra=quadra,
-        data=data,
-        horario=horario,
-        valor=65,
-        whatsapp_link=link_whatsapp,
-        reserva_id=reserva_id
-    )
-
-
-# ======================
-# CONFIRMAR PAGAMENTO
-# ======================
-
-@app.route("/confirmar_pagamento", methods=["POST"])
-def confirmar_pagamento():
-    if "usuario" not in session:
-        return redirect("/")
-
-    usuario = session["usuario"]
-    esporte = request.form["esporte"]
-    quadra = request.form["quadra"]
-    data = request.form["data"]
-    horario = request.form["horario"]
-
-    conn = conectar()
-    c = conn.cursor()
-
-    # 🔎 Verifica se já está pago
-    c.execute("""
-        SELECT pago FROM reservas
-        WHERE usuario = %s
-          AND esporte = %s
-          AND quadra = %s
-          AND data = %s
-          AND horario = %s
-    """, (usuario, esporte, quadra, data, horario))
-
-    resultado = c.fetchone()
-
-    if resultado and resultado[0] is True:
-        conn.close()
-        return redirect("/meus_horarios")
-
-    # ✅ Marca como pago
+    # 3️⃣ salva vínculo pagamento ↔ reserva
     c.execute("""
         UPDATE reservas
-        SET pago = TRUE
-        WHERE usuario = %s
-          AND esporte = %s
-          AND quadra = %s
-          AND data = %s
-          AND horario = %s
-    """, (usuario, esporte, quadra, data, horario))
-
-    # 🔒 Remove horário livre (se existir)
-    c.execute("""
-        DELETE FROM horarios
-        WHERE data = %s
-          AND hora = %s
-          AND quadra = %s
-    """, (data, horario, quadra))
-
-    # 🔐 Insere como OCUPADO
-    c.execute("""
-        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-        VALUES (%s, %s, %s, 'ocupado', FALSE)
-    """, (data, horario, quadra))
-
-    # 📊 REGISTRA NO HISTÓRICO (para relatório mensal)
-    c.execute("""
-        INSERT INTO historico_horarios (data, hora, quadra, origem)
-        VALUES (%s, %s, %s, 'ocupado')
-    """, (data, horario, quadra))
+        SET payment_id = %s, external_reference = %s
+        WHERE id = %s
+    """, (
+        str(payment_id),
+        str(reserva_id),
+        reserva_id
+    ))
 
     conn.commit()
     conn.close()
 
-    # 📲 Mensagem WhatsApp
-    mensagem = (
-        f"✅ PAGAMENTO CONFIRMADO!\n\n"
-        f"Reserva confirmada:\n"
-        f"🏟 Quadra: {quadra}\n"
-        f"📅 Data: {data}\n"
-        f"⏰ Horário: {horario}\n\n"
-        f"Obrigado! Nos vemos na arena 💪🔥"
+    # 4️⃣ envia para tela de pagamento
+    return render_template(
+        "pagamento.html",
+        reserva_id=reserva_id,
+        valor=valor,
+        qr_code_base64=qr_code_base64,
+        qr_code_copia_cola=qr_code_copia_cola
     )
-
-    link_whatsapp = f"https://wa.me/{WHATSAPP_ARENA}?text={quote_plus(mensagem)}"
-
-    return redirect(link_whatsapp)
-
 
 # ======================
 # EVENTOS DO DONO

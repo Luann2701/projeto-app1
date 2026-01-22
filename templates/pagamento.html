@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Pagamento</title>
+    <title>Pagamento Pix</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
@@ -10,89 +10,67 @@
 
 <div class="card">
 
-    <h1>💳 Pagamento</h1>
-
-    <p><strong>Esporte:</strong> {{ esporte }}</p>
-    <p><strong>Quadra:</strong> {{ quadra }}</p>
-    <p><strong>Data:</strong> {{ data }}</p>
-    <p><strong>Horário:</strong> {{ horario }}</p>
+    <h1>💳 Pagamento via Pix</h1>
 
     <h2>Valor: R$ {{ valor }},00</h2>
 
-    <!-- TIMER -->
-    <div id="timer" class="timer">
-        ⏳ Tempo restante: <span id="tempo">10:00</span>
-    </div>
+    <p>
+        Pague o Pix usando <strong>qualquer banco</strong>.<br>
+        Assim que o pagamento for identificado, sua reserva será confirmada automaticamente.
+    </p>
 
-    <!-- PIX -->
+    <!-- QR CODE DINÂMICO -->
     <div class="pix-box">
-        <img src="{{ url_for('static', filename='qr_pix.png') }}" alt="QR Code Pix">
+        <img
+            src="data:image/png;base64,{{ qr_code_base64 }}"
+            alt="QR Code Pix Mercado Pago"
+            style="max-width: 250px;"
+        >
 
         <p class="pix-chave">
-            CHAVE PIX: <span id="chavePix">59105896000116</span>
+            Pix Copia e Cola
             <span class="icone" onclick="copiarPix()">📋</span>
         </p>
 
-        <p class="pix-destinatario">
-            DESTINATÁRIO: Arena Corpo Ativo Ltda
-            <span class="icone"></span>
-        </p>
+        <textarea id="pixCopiaCola" readonly style="width:100%;height:90px;">
+{{ qr_code_copia_cola }}
+        </textarea>
     </div>
 
-    <!-- CONFIRMAR PAGAMENTO -->
-    <form method="POST" action="/confirmar_pagamento">
-        <input type="hidden" name="esporte" value="{{ esporte }}">
-        <input type="hidden" name="quadra" value="{{ quadra }}">
-        <input type="hidden" name="data" value="{{ data }}">
-        <input type="hidden" name="horario" value="{{ horario }}">
-
-        <a href="{{ whatsapp_link }}" target="_blank" class="btn">
-            📲 Enviar mensagem no WhatsApp
-        </a>
-
-        <button type="submit" class="btn">Já paguei</button>
-    </form>
+    <!-- STATUS -->
+    <p id="status" style="margin-top:15px;">
+        ⏳ Aguardando pagamento...
+    </p>
 
     <!-- CANCELAR -->
-    <a href="/horarios/{{ esporte }}/{{ quadra }}/{{ data }}" class="btn secundario">
+    <a href="/quadras" class="btn secundario">
         Cancelar
     </a>
 
 </div>
 
-<!-- SCRIPT DO TIMER -->
 <script>
-    let tempo = 600; // 10 minutos
-
-    function atualizarTimer() {
-        let minutos = Math.floor(tempo / 60);
-        let segundos = tempo % 60;
-
-        minutos = minutos < 10 ? "0" + minutos : minutos;
-        segundos = segundos < 10 ? "0" + segundos : segundos;
-
-        document.getElementById("tempo").innerText = minutos + ":" + segundos;
-
-        if (tempo <= 0) {
-            alert("⏰ Tempo esgotado! A reserva foi cancelada.");
-            window.location.href = "/quadras/{{ esporte }}";
-        }
-
-        tempo--;
-    }
-
-    setInterval(atualizarTimer, 1000);
-
-    // COPIAR CHAVE PIX
     function copiarPix() {
-        const texto = document.getElementById("chavePix").innerText;
+        const texto = document.getElementById("pixCopiaCola").value;
 
         navigator.clipboard.writeText(texto).then(() => {
-            alert("✅ Chave Pix copiada!");
-        }).catch(() => {
-            alert("❌ Não foi possível copiar a chave.");
+            alert("✅ Pix copiado com sucesso!");
         });
     }
+
+    // (opcional) atualização automática simples
+    setInterval(() => {
+        fetch("/status_reserva/{{ reserva_id }}")
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "confirmado") {
+                    document.getElementById("status").innerText = "✅ Pagamento confirmado!";
+                    setTimeout(() => {
+                        window.location.href = "/meus_horarios";
+                    }, 2000);
+                }
+            });
+    }, 5000);
 </script>
 
 </body>
