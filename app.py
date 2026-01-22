@@ -1017,19 +1017,17 @@ def admin_horarios():
 
 @app.route("/webhook/mercadopago", methods=["POST"])
 def webhook_mercadopago():
-    data = request.get_json(silent=True)
+    data = request.json
 
-    # Mercado Pago às vezes manda só querystring
-    payment_id = None
+    if not data or "data" not in data:
+        return "ok", 200
 
-    if data and "data" in data and "id" in data["data"]:
-        payment_id = data["data"]["id"]
-    else:
-        payment_id = request.args.get("data.id")
+    payment_id = data["data"].get("id")
 
     if not payment_id:
         return "ok", 200
 
+    # Consulta o pagamento no Mercado Pago
     headers = {
         "Authorization": f"Bearer {os.getenv('MERCADOPAGO_ACCESS_TOKEN')}"
     }
@@ -1040,63 +1038,26 @@ def webhook_mercadopago():
     )
 
     if r.status_code != 200:
-        return "erro", 200
+        return "ok", 200
 
     pagamento = r.json()
-
-    if pagamento.get("status") != "approved":
-        return "ok", 200
-
+    status = pagamento.get("status")
     external_reference = pagamento.get("external_reference")
 
-    if not external_reference:
-        return "ok", 200
+    # Só confirma se estiver APROVADO
+    if status == "approved" and external_reference:
+        conn = psycopg2.connect(DATABASE_URL)
+        c = conn.cursor()
 
-    conn = conectar()
-    c = conn.cursor()
-
-    # Atualiza reserva
-    c.execute("""
-        UPDATE reservas
-        SET pago = TRUE,
-            status = 'confirmado',
-            payment_id = %s
-        WHERE external_reference = %s
-          AND pago = FALSE
-    """, (payment_id, external_reference))
-
-    # Busca dados para travar horário
-    c.execute("""
-        SELECT data, horario, quadra
-        FROM reservas
-        WHERE external_reference = %s
-    """, (external_reference,))
-
-    reserva = c.fetchone()
-
-    if reserva:
-        data_reserva, horario, quadra = reserva
-
-        # Remove horário livre
         c.execute("""
-            DELETE FROM horarios
-            WHERE data = %s AND hora = %s AND quadra = %s
-        """, (data_reserva, horario, quadra))
+            UPDATE reservas
+            SET status = 'pago'
+            WHERE external_reference = %s
+        """, (external_reference,))
 
-        # Insere como ocupado
-        c.execute("""
-            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-            VALUES (%s, %s, %s, 'ocupado', FALSE)
-        """, (data_reserva, horario, quadra))
-
-        # Histórico
-        c.execute("""
-            INSERT INTO historico_horarios (data, hora, quadra, origem)
-            VALUES (%s, %s, %s, 'pagamento')
-        """, (data_reserva, horario, quadra))
-
-    conn.commit()
-    conn.close()
+        conn.commit()
+        c.close()
+        conn.close()
 
     return "ok", 200
 
