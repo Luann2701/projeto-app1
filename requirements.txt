@@ -18,3 +18,4 @@ URLObject==3.0.0
 Werkzeug==3.1.4
 psycopg2-binary==2.9.9
 pytz==2025.2
+mercadopago==2.3.0
