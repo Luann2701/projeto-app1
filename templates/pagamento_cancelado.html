@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Pagamento cancelado</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="fundo-logo">
+
+<div class="card">
+    <h2>❌ Pagamento cancelado</h2>
+    <p>O pagamento não foi concluído.</p>
+
+    {% if reserva_id %}
+        <a href="/status_reserva/{{ reserva_id }}" class="btn">Ver reserva</a>
+    {% endif %}
+
+    <a href="/" class="btn secundario">Voltar ao início</a>
+</div>
+
+</body>
+</html>
