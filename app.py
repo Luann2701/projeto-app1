@@ -582,6 +582,8 @@ def meus_horarios():
 # RESERVA / PAGAMENTO
 # ======================
 
+
+
 @app.route("/reservar", methods=["POST"])
 def reservar():
     if "usuario" not in session:
@@ -592,7 +594,7 @@ def reservar():
     quadra = request.form["quadra"]
     data = request.form["data"]
     horario = request.form["horario"]
-    valor = 65
+    valor = 1
 
     conn = conectar()
     c = conn.cursor()
