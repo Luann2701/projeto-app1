@@ -588,55 +588,91 @@ def reservar():
         return redirect("/")
 
     usuario = session["usuario"]
+    email = session.get("email", "cliente@arenacorpoativo.com")
+
     esporte = request.form["esporte"]
     quadra = request.form["quadra"]
     data = request.form["data"]
     horario = request.form["horario"]
-    valor = 1
+
+    valor = 1  # teste (troque depois)
 
     conn = conectar()
     c = conn.cursor()
 
-    # 1️⃣ cria reserva PENDENTE
+    # 🔒 0️⃣ garante que o horário não foi ocupado
     c.execute("""
-        INSERT INTO reservas (usuario, esporte, quadra, data, horario, pago, status, criado_em)
-        VALUES (%s, %s, %s, %s, %s, FALSE, 'pendente', %s)
+        SELECT 1 FROM horarios
+        WHERE data = %s AND hora = %s AND quadra = %s AND tipo = 'ocupado'
+    """, (data, horario, quadra))
+
+    if c.fetchone():
+        conn.close()
+        flash("Horário já ocupado.", "erro")
+        return redirect("/quadras")
+
+    # 1️⃣ cria reserva pendente
+    c.execute("""
+        INSERT INTO reservas (
+            usuario, esporte, quadra, data, horario,
+            pago, status, criado_em
+        )
+        VALUES (%s, %s, %s, %s, %s, FALSE, 'pendente', NOW())
         RETURNING id
     """, (
         usuario,
         esporte,
         quadra,
         data,
-        horario,
-        datetime.now()
+        horario
     ))
 
     reserva_id = c.fetchone()[0]
     conn.commit()
+    conn.close()  # ⛔ fecha antes de chamar API externa
 
-    # 2️⃣ cria PIX no Mercado Pago
+    # 2️⃣ cria pagamento PIX no Mercado Pago
     payment_data = {
-    "transaction_amount": float(valor),
-    "description": f"Reserva Quadra {quadra} - {data} {horario}",
-    "payment_method_id": "pix",
-    "external_reference": str(reserva_id),
-    "notification_url": "https://arenacorpoativo.onrender.com/webhook/mercadopago",
-    "payer": {
-        "email": session.get("email", "cliente@arenacorpoativo.com")
+        "transaction_amount": float(valor),
+        "description": f"Reserva Quadra {quadra} - {data} {horario}",
+        "payment_method_id": "pix",
+        "external_reference": str(reserva_id),
+        "notification_url": "https://arenacorpoativo.onrender.com/webhook/mercadopago",
+        "payer": {
+            "email": email
+        }
     }
-}
 
+    try:
+        payment = mp.payment().create(payment_data)
+        response = payment["response"]
 
-    payment = mp.payment().create(payment_data)
-    payment_id = payment["response"]["id"]
+        payment_id = response["id"]
+        pix_data = response["point_of_interaction"]["transaction_data"]
 
-    qr_code_base64 = payment["response"]["point_of_interaction"]["transaction_data"]["qr_code_base64"]
-    qr_code_copia_cola = payment["response"]["point_of_interaction"]["transaction_data"]["qr_code"]
+        qr_code_base64 = pix_data["qr_code_base64"]
+        qr_code_copia_cola = pix_data["qr_code"]
+
+    except Exception as e:
+        # ❌ se falhar, cancela a reserva
+        conn = conectar()
+        c = conn.cursor()
+        c.execute("DELETE FROM reservas WHERE id = %s", (reserva_id,))
+        conn.commit()
+        conn.close()
+
+        print("ERRO MERCADO PAGO:", e)
+        flash("Erro ao gerar pagamento. Tente novamente.", "erro")
+        return redirect("/quadras")
 
     # 3️⃣ salva vínculo pagamento ↔ reserva
+    conn = conectar()
+    c = conn.cursor()
+
     c.execute("""
         UPDATE reservas
-        SET payment_id = %s, external_reference = %s
+        SET payment_id = %s,
+            external_reference = %s
         WHERE id = %s
     """, (
         str(payment_id),
@@ -655,6 +691,7 @@ def reservar():
         qr_code_base64=qr_code_base64,
         qr_code_copia_cola=qr_code_copia_cola
     )
+
 
 # ======================
 # EVENTOS DO DONO
@@ -1011,36 +1048,49 @@ def admin_horarios():
         quadras=quadras
     )
 
+
+
 # ==========================================
 # MERCADO PAGO RESPONDE PARA O SITE
 # ==========================================
 
+@app.route("/status_reserva/<int:reserva_id>")
+def status_reserva(reserva_id):
+    conn = conectar()
+    c = conn.cursor()
+
+    c.execute("""
+        SELECT status FROM reservas WHERE id = %s
+    """, (reserva_id,))
+
+    r = c.fetchone()
+    conn.close()
+
+    if not r:
+        return {"status": "inexistente"}
+
+    if r[0] == "pago":
+        return {"status": "confirmado"}
+
+    return {"status": "pendente"}
+
+
+
 @app.route("/webhook/mercadopago", methods=["POST"])
 def webhook_mercadopago():
     try:
-        # ==================================================
-        # 1️⃣ PEGA payment_id (JSON OU QUERYSTRING)
-        # ==================================================
         data = request.get_json(silent=True) or {}
         payment_id = None
 
-        # JSON padrão
         if "data" in data and "id" in data["data"]:
             payment_id = data["data"]["id"]
 
-        # Fallback: querystring (?data.id=123)
         if not payment_id:
             payment_id = request.args.get("data.id")
 
         if not payment_id:
-            print("⚠️ Webhook recebido sem payment_id")
             return "ok", 200
 
-        print(f"🔔 Webhook recebido | payment_id={payment_id}")
-
-        # ==================================================
-        # 2️⃣ BUSCA PAGAMENTO COMPLETO NO MERCADO PAGO
-        # ==================================================
         headers = {
             "Authorization": f"Bearer {os.getenv('MERCADOPAGO_ACCESS_TOKEN')}"
         }
@@ -1052,27 +1102,58 @@ def webhook_mercadopago():
         )
 
         if r.status_code != 200:
-            print("❌ Erro ao buscar pagamento:", r.text)
             return "ok", 200
 
         pagamento = r.json()
 
-        status_pagamento = pagamento.get("status")
-        external_reference = pagamento.get("external_reference")
-
-        print("📌 Status:", status_pagamento)
-        print("📌 External Reference:", external_reference)
-
-        # ==================================================
-        # 3️⃣ SÓ CONFIRMA SE REALMENTE APROVADO
-        # ==================================================
-        if status_pagamento != "approved":
-            print("⏳ Pagamento ainda não aprovado")
+        if pagamento.get("status") != "approved":
             return "ok", 200
 
-        if not external_reference:
-            print("❌ Pagamento aprovado sem external_reference")
+        reserva_id = pagamento.get("external_reference")
+
+        if not reserva_id:
             return "ok", 200
+
+        conn = conectar()
+        c = conn.cursor()
+
+        c.execute("SELECT pago FROM reservas WHERE id = %s", (reserva_id,))
+        rsv = c.fetchone()
+
+        if not rsv or rsv[0]:
+            conn.close()
+            return "ok", 200
+
+        c.execute("""
+            UPDATE reservas
+            SET pago = TRUE,
+                status = 'pago',
+                payment_id = %s
+            WHERE id = %s
+        """, (str(payment_id), reserva_id))
+
+        c.execute("""
+            DELETE FROM horarios
+            WHERE data = (SELECT data FROM reservas WHERE id = %s)
+              AND hora = (SELECT horario FROM reservas WHERE id = %s)
+              AND quadra = (SELECT quadra FROM reservas WHERE id = %s)
+        """, (reserva_id, reserva_id, reserva_id))
+
+        c.execute("""
+            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+            SELECT data, horario, quadra, 'ocupado', FALSE
+            FROM reservas
+            WHERE id = %s
+        """, (reserva_id,))
+
+        conn.commit()
+        conn.close()
+
+        return "ok", 200
+
+    except Exception as e:
+        print("ERRO WEBHOOK:", e)
+        return "ok", 200
 
         # ==================================================
         # 4️⃣ ATUALIZA RESERVA NO BANCO
