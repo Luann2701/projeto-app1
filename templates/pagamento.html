@@ -43,9 +43,11 @@
     </p>
 
     <!-- CANCELAR -->
-    <a href="/quadras" class="btn secundario">
+    <form method="POST" action="/cancelar_pagamento/{{ reserva_id }}">
+    <button type="submit" class="btn secundario">
         Cancelar
-    </a>
+    </button>
+</form>
 
 </div>
 
