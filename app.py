@@ -1059,161 +1059,91 @@ def status_reserva(reserva_id):
     conn = conectar()
     c = conn.cursor()
 
-    c.execute("""
-        SELECT status FROM reservas WHERE id = %s
-    """, (reserva_id,))
-
+    c.execute("SELECT pago FROM reservas WHERE id = %s", (reserva_id,))
     r = c.fetchone()
+
     conn.close()
 
-    if not r:
-        return {"status": "inexistente"}
-
-    if r[0] == "pago":
+    if r and r[0]:
         return {"status": "confirmado"}
-
     return {"status": "pendente"}
-
 
 
 @app.route("/webhook/mercadopago", methods=["POST"])
 def webhook_mercadopago():
-    try:
-        data = request.get_json(silent=True) or {}
-        payment_id = None
+    # 1️⃣ pegar payment_id (query OU body)
+    payment_id = None
 
-        if "data" in data and "id" in data["data"]:
+    if request.args.get("data.id"):
+        payment_id = request.args.get("data.id")
+    elif request.args.get("id"):
+        payment_id = request.args.get("id")
+    else:
+        data = request.get_json(silent=True)
+        if data and "data" in data and "id" in data["data"]:
             payment_id = data["data"]["id"]
 
-        if not payment_id:
-            payment_id = request.args.get("data.id")
-
-        if not payment_id:
-            return "ok", 200
-
-        headers = {
-            "Authorization": f"Bearer {os.getenv('MERCADOPAGO_ACCESS_TOKEN')}"
-        }
-
-        r = requests.get(
-            f"https://api.mercadopago.com/v1/payments/{payment_id}",
-            headers=headers,
-            timeout=10
-        )
-
-        if r.status_code != 200:
-            return "ok", 200
-
-        pagamento = r.json()
-
-        if pagamento.get("status") != "approved":
-            return "ok", 200
-
-        reserva_id = pagamento.get("external_reference")
-
-        if not reserva_id:
-            return "ok", 200
-
-        conn = conectar()
-        c = conn.cursor()
-
-        c.execute("SELECT pago FROM reservas WHERE id = %s", (reserva_id,))
-        rsv = c.fetchone()
-
-        if not rsv or rsv[0]:
-            conn.close()
-            return "ok", 200
-
-        c.execute("""
-            UPDATE reservas
-            SET pago = TRUE,
-                status = 'pago',
-                payment_id = %s
-            WHERE id = %s
-        """, (str(payment_id), reserva_id))
-
-        c.execute("""
-            DELETE FROM horarios
-            WHERE data = (SELECT data FROM reservas WHERE id = %s)
-              AND hora = (SELECT horario FROM reservas WHERE id = %s)
-              AND quadra = (SELECT quadra FROM reservas WHERE id = %s)
-        """, (reserva_id, reserva_id, reserva_id))
-
-        c.execute("""
-            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-            SELECT data, horario, quadra, 'ocupado', FALSE
-            FROM reservas
-            WHERE id = %s
-        """, (reserva_id,))
-
-        conn.commit()
-        conn.close()
-
+    if not payment_id:
+        print("WEBHOOK MP: payment_id não encontrado")
         return "ok", 200
 
-    except Exception as e:
-        print("ERRO WEBHOOK:", e)
+    print("WEBHOOK MP: payment_id =", payment_id)
+
+    # 2️⃣ buscar pagamento no Mercado Pago
+    headers = {
+        "Authorization": f"Bearer {os.getenv('MERCADOPAGO_ACCESS_TOKEN')}"
+    }
+
+    r = requests.get(
+        f"https://api.mercadopago.com/v1/payments/{payment_id}",
+        headers=headers
+    )
+
+    if r.status_code != 200:
+        print("Erro ao buscar pagamento MP")
         return "ok", 200
 
-        # ==================================================
-        # 4️⃣ ATUALIZA RESERVA NO BANCO
-        # ==================================================
-        conn = conectar()
-        c = conn.cursor()
+    pagamento = r.json()
+    status = pagamento.get("status")
+    external_reference = pagamento.get("external_reference")
 
-        # Evita duplicar processamento
-        c.execute("""
-            SELECT pago FROM reservas WHERE id = %s
-        """, (external_reference,))
-        reserva = c.fetchone()
+    print("Status MP:", status, "Reserva:", external_reference)
 
-        if not reserva:
-            print("❌ Reserva não encontrada:", external_reference)
-            conn.close()
-            return "ok", 200
-
-        if reserva[0] is True:
-            print("⚠️ Reserva já estava paga")
-            conn.close()
-            return "ok", 200
-
-        # Marca como paga
-        c.execute("""
-            UPDATE reservas
-            SET pago = TRUE,
-                status = 'pago',
-                payment_id = %s
-            WHERE id = %s
-        """, (str(payment_id), external_reference))
-
-        # ==================================================
-        # 5️⃣ OCUPA O HORÁRIO
-        # ==================================================
-        # Remove qualquer regra anterior
-        c.execute("""
-            DELETE FROM horarios
-            WHERE data = (SELECT data FROM reservas WHERE id = %s)
-              AND hora = (SELECT horario FROM reservas WHERE id = %s)
-              AND quadra = (SELECT quadra FROM reservas WHERE id = %s)
-        """, (external_reference, external_reference, external_reference))
-
-        # Marca como ocupado
-        c.execute("""
-            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-            SELECT data, horario, quadra, 'ocupado', FALSE
-            FROM reservas
-            WHERE id = %s
-        """, (external_reference,))
-
-        conn.commit()
-        conn.close()
-
-        print("✅ Reserva confirmada e horário ocupado com sucesso")
+    if status != "approved" or not external_reference:
         return "ok", 200
 
-    except Exception as e:
-        print("🔥 ERRO NO WEBHOOK:", e)
-        return "ok", 200
+    conn = conectar()
+    c = conn.cursor()
+
+    # 3️⃣ confirmar reserva
+    c.execute("""
+        UPDATE reservas
+        SET pago = TRUE,
+            status = 'pago',
+            payment_id = %s
+        WHERE id = %s
+    """, (payment_id, external_reference))
+
+    # 4️⃣ bloquear horário
+    c.execute("""
+        DELETE FROM horarios
+        WHERE data = (SELECT data FROM reservas WHERE id = %s)
+          AND hora = (SELECT horario FROM reservas WHERE id = %s)
+          AND quadra = (SELECT quadra FROM reservas WHERE id = %s)
+    """, (external_reference, external_reference, external_reference))
+
+    c.execute("""
+        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+        SELECT data, horario, quadra, 'ocupado', FALSE
+        FROM reservas
+        WHERE id = %s
+    """, (external_reference,))
+
+    conn.commit()
+    conn.close()
+
+    print("Reserva confirmada:", external_reference)
+    return "ok", 200
 
 
 # ======================
