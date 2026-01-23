@@ -675,15 +675,24 @@ def reservar():
           AND horario = %s
           AND (
               pago = TRUE OR
-              criado_em > NOW() - INTERVAL '10 minutes'
+              criado_em >= NOW() - INTERVAL '10 minutes'
           )
         LIMIT 1
     """, (quadra, data, horario))
 
     if c.fetchone():
         conn.close()
-        flash("⏳ Horário já está reservado ou ocupado.", "erro")
-        return redirect("/quadras")
+        flash(
+            "⏳ Outro cliente já reservou este horário. "
+            "Aguarde alguns minutos para ver se o pagamento será concluído.",
+            "warning"
+        )
+        return redirect(url_for(
+            "horarios",
+            esporte=esporte,
+            quadra=quadra,
+            data=data
+        ))
 
     # 🟡 2️⃣ CRIA RESERVA PENDENTE IMEDIATA
     c.execute("""
@@ -737,7 +746,12 @@ def reservar():
 
         print("ERRO MERCADO PAGO:", e)
         flash("Erro ao gerar pagamento.", "erro")
-        return redirect("/quadras")
+        return redirect(url_for(
+            "horarios",
+            esporte=esporte,
+            quadra=quadra,
+            data=data
+        ))
 
     # 🔗 4️⃣ LINKA PAGAMENTO ↔ RESERVA
     conn = conectar()

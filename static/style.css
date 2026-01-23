@@ -586,3 +586,17 @@ input::placeholder {
     font-size: 11px;
     margin-top: 4px;
 }
+
+.alert {
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.alert.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+}
