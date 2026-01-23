@@ -1171,7 +1171,13 @@ def webhook_mercadopago():
         INSERT INTO horarios (data, hora, quadra, tipo, permanente)
         VALUES (%s, %s::time, %s, 'ocupado', FALSE)
     """, (data_reserva, horario_reserva, quadra_reserva))
-
+   
+    # 📊 REGISTRA NO HISTÓRICO (entra no relatório mensal)
+    c.execute("""
+    INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
+    VALUES (%s, %s::time, %s, 'ocupado', TRUE)
+    """, (data_reserva, horario_reserva, quadra_reserva))
+    
     conn.commit()
     conn.close()
 
