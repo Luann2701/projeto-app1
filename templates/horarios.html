@@ -19,10 +19,10 @@
             <!-- ================= CLIENTE ================= -->
             {% if tipo_usuario != "dono" %}
 
-                {% if h in pendentes %}
+                {% if h in pendentes.keys() %}
                     <button class="btn pendente" disabled>
                         {{ h }}<br>
-                        <small>⏳ Reservado temporariamente</small>
+                        <small>⏳ Reservado até {{ pendentes[h] }}</small>
                     </button>
 
                 {% elif h in ocupados %}
@@ -148,7 +148,7 @@ function fecharModal() {
 <script>
     setTimeout(function () {
         location.reload();
-    }, 15000); // 15 segundos
+    }, 15000);
 </script>
 {% endif %}
 
