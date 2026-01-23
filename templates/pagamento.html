@@ -6,11 +6,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
     <style>
+        /* TIMER */
         .timer {
             font-size: 18px;
             font-weight: bold;
             color: #b30000;
             margin-top: 10px;
+            text-align: center;
         }
 
         .ampulheta {
@@ -23,10 +25,12 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* PIX */
         .pix-chave {
             margin-top: 15px;
             font-weight: bold;
             cursor: pointer;
+            text-align: center;
         }
 
         .icone {
@@ -37,6 +41,46 @@
 
         .icone:hover {
             text-decoration: underline;
+        }
+
+        /* STATUS */
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            justify-content: center;
+        }
+
+        .status-icon {
+            font-size: 28px;
+        }
+
+        .status.aguardando {
+            background: #fff3cd;
+            color: #856404;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status.confirmado {
+            background: #d4edda;
+            color: #155724;
+            animation: sucesso 0.6s ease-out;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes sucesso {
+            0% { transform: scale(0.9); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -78,10 +122,11 @@
         </textarea>
     </div>
 
-    <!-- STATUS -->
-    <p id="status" style="margin-top:15px;">
-        ⏳ Aguardando pagamento...
-    </p>
+    <!-- STATUS VISUAL -->
+    <div id="status" class="status aguardando">
+        <span class="status-icon">⌛</span>
+        <span class="status-text">Aguardando pagamento...</span>
+    </div>
 
     <!-- CANCELAR -->
     <form method="POST" action="/cancelar_pagamento/{{ reserva_id }}">
@@ -128,8 +173,13 @@
             .then(res => res.json())
             .then(data => {
                 if (data.status === "confirmado") {
-                    document.getElementById("status").innerText =
-                        "✅ Pagamento confirmado!";
+                    const statusEl = document.getElementById("status");
+                    statusEl.className = "status confirmado";
+                    statusEl.innerHTML = `
+                        <span class="status-icon">✅</span>
+                        <span class="status-text">Pagamento confirmado!</span>
+                    `;
+
                     setTimeout(() => {
                         window.location.href = "/meus_horarios";
                     }, 2000);
