@@ -19,27 +19,43 @@
             <!-- ================= CLIENTE ================= -->
             {% if tipo_usuario != "dono" %}
 
-                {% if h in ocupados %}
-                    <button class="btn bloqueado" disabled>{{ h }} (Ocupado)</button>
+                {% if h in pendentes %}
+                    <!-- 🟡 RESERVADO TEMPORARIAMENTE -->
+                    <button class="btn reservado" disabled>
+                        {{ h }}<br>
+                        <small>⏳ Reservado até {{ reservas_expira_em[h] }}</small>
+                    </button>
+
+                {% elif h in ocupados %}
+                    <button class="btn bloqueado" disabled>
+                        {{ h }} (Ocupado)
+                    </button>
 
                 {% elif tipo == "fechada" %}
-                    <button class="btn bloqueado" disabled>{{ h }} (Arena fechada)</button>
+                    <button class="btn bloqueado" disabled>
+                        {{ h }} (Arena fechada)
+                    </button>
 
                 {% elif tipo == "fixo" %}
-                    <button class="btn bloqueado" disabled>{{ h }} (Horário fixo)</button>
+                    <button class="btn bloqueado" disabled>
+                        {{ h }} (Horário fixo)
+                    </button>
 
                 {% elif tipo == "dayuse" %}
-                    <button class="btn bloqueado" disabled>{{ h }} (Day Use)</button>
+                    <button class="btn bloqueado" disabled>
+                        {{ h }} (Day Use)
+                    </button>
 
                 {% else %}
                     <form method="POST" action="/reservar">
-                        <!-- ESPORTE JÁ DEFINIDO -->
                         <input type="hidden" name="esporte" value="{{ esporte }}">
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="data" value="{{ data }}">
                         <input type="hidden" name="horario" value="{{ h }}">
 
-                        <button type="submit" class="btn">{{ h }}</button>
+                        <button type="submit" class="btn">
+                            {{ h }}
+                        </button>
                     </form>
                 {% endif %}
 
