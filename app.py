@@ -670,7 +670,7 @@ def reservar():
     if c.fetchone():
         conn.close()
         flash("❌ Horário já reservado ou ocupado.", "erro")
-        return redirect("/quadras")
+        return redirect(f"/horarios/{esporte}/{quadra}/{data}")
 
     # 🔒 2️⃣ cria BLOQUEIO TEMPORÁRIO (10 min)
     c.execute("""
@@ -727,7 +727,8 @@ def reservar():
 
         print("ERRO MERCADO PAGO:", e)
         flash("Erro ao gerar pagamento.", "erro")
-        return redirect("/quadras")
+        return redirect(f"/horarios/{esporte}/{quadra}/{data}")
+
 
     # 5️⃣ envia para pagamento
     return render_template(
