@@ -636,9 +636,13 @@ def reservar():
 
     # 🔒 0️⃣ garante que o horário não foi ocupado
     c.execute("""
-        SELECT 1 FROM horarios
-        WHERE data = %s AND hora = %s AND quadra = %s AND tipo = 'ocupado'
-    """, (data, horario, quadra))
+    SELECT 1 FROM horarios
+    WHERE data = %s
+      AND hora = %s::time
+      AND quadra = %s
+      AND tipo IN ('ocupado', 'reservado')
+""", (data, horario, quadra))
+
 
     if c.fetchone():
         conn.close()
@@ -692,6 +696,13 @@ def reservar():
         conn = conectar()
         c = conn.cursor()
         c.execute("DELETE FROM reservas WHERE id = %s", (reserva_id,))
+        c.execute("""
+    DELETE FROM horarios
+    WHERE data = %s
+      AND quadra = %s
+      AND tipo = 'reservado'
+""", (data, quadra))
+
         conn.commit()
         conn.close()
 
@@ -1129,6 +1140,7 @@ def webhook_mercadopago():
     status = pagamento.get("status")
     reserva_id = pagamento.get("external_reference")
 
+    # só processa se realmente aprovado
     if status != "approved" or not reserva_id:
         return "ok", 200
 
@@ -1158,21 +1170,23 @@ def webhook_mercadopago():
         WHERE id = %s
     """, (payment_id, reserva_id))
 
-    # 5️⃣ remove qualquer regra antiga desse horário
+    # 5️⃣ converte horário reservado → ocupado (SEM duplicar)
     c.execute("""
-        DELETE FROM horarios
+        UPDATE horarios
+        SET tipo = 'ocupado'
         WHERE data = %s
           AND hora = %s::time
           AND quadra = %s
+          AND tipo = 'reservado'
     """, (data_reserva, horario_reserva, quadra_reserva))
 
-    # 6️⃣ marca horário como ocupado
-    c.execute("""
-        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-        VALUES (%s, %s::time, %s, 'ocupado', FALSE)
-    """, (data_reserva, horario_reserva, quadra_reserva))
+    # se nada foi atualizado, não continua (webhook duplicado, por ex.)
+    if c.rowcount == 0:
+        conn.commit()
+        conn.close()
+        return "ok", 200
 
-    # 🔒 7️⃣ DESATIVA qualquer histórico ativo (EVITA DUPLICIDADE)
+    # 🔒 6️⃣ desativa qualquer histórico ativo anterior (EVITA DUPLICIDADE)
     c.execute("""
         UPDATE historico_horarios
         SET ativo = FALSE
@@ -1182,7 +1196,7 @@ def webhook_mercadopago():
           AND ativo = TRUE
     """, (data_reserva, horario_reserva, quadra_reserva))
 
-    # 📊 8️⃣ registra UM único histórico válido
+    # 📊 7️⃣ registra UM único histórico válido (entra no relatório mensal)
     c.execute("""
         INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
         VALUES (%s, %s::time, %s, 'ocupado', TRUE)
@@ -1191,8 +1205,9 @@ def webhook_mercadopago():
     conn.commit()
     conn.close()
 
-    print(f"✅ Reserva {reserva_id} confirmada e registrada no relatório")
+    print(f"✅ Reserva {reserva_id} confirmada com sucesso")
     return "ok", 200
+
 
 
 # ======================
