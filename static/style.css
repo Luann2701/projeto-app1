@@ -535,45 +535,39 @@ input::placeholder {
     animation: girar 1.2s linear infinite;
 }
 
-<style>
-.status {
-    margin-top: 20px;
-    padding: 15px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 18px;
-    font-weight: bold;
-    justify-content: center;
+.horario {
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 6px;
+    text-align: center;
+    cursor: pointer;
 }
 
-.status-icon {
-    font-size: 28px;
+.horario.ocupado {
+    background: #e74c3c;
+    color: #fff;
+    cursor: not-allowed;
 }
 
-/* AGUARDANDO */
-.status.aguardando {
-    background: #fff3cd;
-    color: #856404;
-    animation: pulse 1.5s infinite;
+.horario.reservado {
+    background: #f1c40f;
+    color: #000;
+    cursor: not-allowed;
 }
 
-/* CONFIRMADO */
-.status.confirmado {
-    background: #d4edda;
-    color: #155724;
-    animation: sucesso 0.6s ease-out;
+.horario.livre {
+    background: #2ecc71;
+    color: #fff;
 }
 
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.6; }
-    100% { opacity: 1; }
+.horario small {
+    display: block;
+    font-size: 12px;
+    margin-top: 4px;
+    opacity: 0.8;
 }
-
-@keyframes sucesso {
-    0% { transform: scale(0.9); }
-    100% { transform: scale(1); }
+.btn.reservado {
+    background-color: #f1c40f;
+    color: #000;
+    cursor: not-allowed;
 }
-</style>

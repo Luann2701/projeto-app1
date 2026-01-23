@@ -479,6 +479,16 @@ def horarios(esporte, quadra, data):
     c = conn.cursor()
 
     # ======================
+    # 🔥 LIMPA RESERVAS EXPIRADAS (10 min)
+    # ======================
+    c.execute("""
+        DELETE FROM reservas
+        WHERE pago = FALSE
+          AND criado_em < NOW() - INTERVAL '10 minutes'
+    """)
+    conn.commit()
+
+    # ======================
     # RESERVAS PAGAS
     # ======================
     c.execute("""
@@ -486,6 +496,18 @@ def horarios(esporte, quadra, data):
         WHERE quadra = %s AND data = %s AND pago = TRUE
     """, (quadra, data))
     ocupados_reserva = [h[0] for h in c.fetchall()]
+
+    # ======================
+    # ⏳ RESERVAS PENDENTES (ATÉ 10 MIN)
+    # ======================
+    c.execute("""
+        SELECT horario FROM reservas
+        WHERE quadra = %s
+          AND data = %s
+          AND pago = FALSE
+          AND criado_em >= NOW() - INTERVAL '10 minutes'
+    """, (quadra, data))
+    pendentes = [h[0] for h in c.fetchall()]
 
     # ======================
     # HORÁRIOS DO DONO (DATA ESPECÍFICA)
@@ -502,13 +524,11 @@ def horarios(esporte, quadra, data):
     for hora, tipo in dia:
         hora_str = hora.strftime("%H:%M")
 
-        # Normaliza o tipo
         if tipo:
             tipo = tipo.lower().replace(" ", "").replace("_", "_")
 
         tipos_horarios[hora_str] = tipo
 
-        # Bloqueia para cliente, mas mantém o tipo real
         if tipo in ["ocupado", "day_use", "fixo", "fechada"]:
             ocupados_dono.append(hora_str)
 
@@ -531,9 +551,13 @@ def horarios(esporte, quadra, data):
     conn.close()
 
     # ======================
-    # OCUPADOS = RESERVA OU DONO
+    # 🚫 OCUPADOS = PAGOS + PENDENTES + DONO
     # ======================
-    ocupados = list(set(ocupados_reserva + ocupados_dono))
+    ocupados = list(set(
+        ocupados_reserva +
+        ocupados_dono +
+        pendentes
+    ))
 
     return render_template(
         "horarios.html",
@@ -542,6 +566,7 @@ def horarios(esporte, quadra, data):
         data=data,
         horarios=lista_horarios,
         ocupados=ocupados,
+        pendentes=pendentes,   # 👈 para o visual
         tipos_horarios=tipos_horarios,
         tipo_usuario=session.get("tipo")
     )
@@ -615,7 +640,6 @@ def cancelar_pagamento(reserva_id):
 ))
 
 
-
 @app.route("/reservar", methods=["POST"])
 def reservar():
     if "usuario" not in session:
@@ -629,27 +653,30 @@ def reservar():
     data = request.form["data"]
     horario = request.form["horario"]
 
-    valor = 1  # teste (troque depois)
+    valor = 1  # teste
 
     conn = conectar()
     c = conn.cursor()
 
-    # 🔒 0️⃣ garante que o horário não foi ocupado
+    # 🔒 1️⃣ TRAVA REAL: impede reserva duplicada (paga OU pendente)
     c.execute("""
-    SELECT 1 FROM horarios
-    WHERE data = %s
-      AND hora = %s::time
-      AND quadra = %s
-      AND tipo IN ('ocupado', 'reservado')
-""", (data, horario, quadra))
-
+        SELECT 1 FROM reservas
+        WHERE quadra = %s
+          AND data = %s
+          AND horario = %s
+          AND (
+              pago = TRUE OR
+              criado_em > NOW() - INTERVAL '10 minutes'
+          )
+        LIMIT 1
+    """, (quadra, data, horario))
 
     if c.fetchone():
         conn.close()
-        flash("Horário já ocupado.", "erro")
+        flash("⏳ Horário já está reservado ou ocupado.", "erro")
         return redirect("/quadras")
 
-    # 1️⃣ cria reserva pendente
+    # 🟡 2️⃣ CRIA RESERVA PENDENTE IMEDIATA
     c.execute("""
         INSERT INTO reservas (
             usuario, esporte, quadra, data, horario,
@@ -667,9 +694,9 @@ def reservar():
 
     reserva_id = c.fetchone()[0]
     conn.commit()
-    conn.close()  # ⛔ fecha antes de chamar API externa
+    conn.close()  # ⛔ fecha ANTES do Mercado Pago
 
-    # 2️⃣ cria pagamento PIX no Mercado Pago
+    # 💳 3️⃣ CRIA PAGAMENTO PIX
     payment_data = {
         "transaction_amount": float(valor),
         "description": f"Reserva Quadra {quadra} - {data} {horario}",
@@ -692,25 +719,18 @@ def reservar():
         qr_code_copia_cola = pix_data["qr_code"]
 
     except Exception as e:
-        # ❌ se falhar, cancela a reserva
+        # ❌ cancelamento limpo se falhar
         conn = conectar()
         c = conn.cursor()
         c.execute("DELETE FROM reservas WHERE id = %s", (reserva_id,))
-        c.execute("""
-    DELETE FROM horarios
-    WHERE data = %s
-      AND quadra = %s
-      AND tipo = 'reservado'
-""", (data, quadra))
-
         conn.commit()
         conn.close()
 
         print("ERRO MERCADO PAGO:", e)
-        flash("Erro ao gerar pagamento. Tente novamente.", "erro")
+        flash("Erro ao gerar pagamento.", "erro")
         return redirect("/quadras")
 
-    # 3️⃣ salva vínculo pagamento ↔ reserva
+    # 🔗 4️⃣ LINKA PAGAMENTO ↔ RESERVA
     conn = conectar()
     c = conn.cursor()
 
@@ -728,7 +748,7 @@ def reservar():
     conn.commit()
     conn.close()
 
-    # 4️⃣ envia para tela de pagamento
+    # 🚀 5️⃣ TELA DE PAGAMENTO
     return render_template(
         "pagamento.html",
         reserva_id=reserva_id,
@@ -1207,8 +1227,6 @@ def webhook_mercadopago():
 
     print(f"✅ Reserva {reserva_id} confirmada com sucesso")
     return "ok", 200
-
-
 
 # ======================
 # EVENTOS
