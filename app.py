@@ -558,12 +558,12 @@ def horarios(esporte, quadra, data):
     conn.close()
 
     # ======================
-    # 🚫 OCUPADOS = PAGOS + PENDENTES + DONO
+    # 🚫 OCUPADOS = PAGOS + DONO
+    # ⚠️ PENDENTES NÃO ENTRAM AQUI
     # ======================
     ocupados = list(set(
         ocupados_reserva +
-        ocupados_dono +
-        pendentes
+        ocupados_dono
     ))
 
     return render_template(
@@ -573,8 +573,8 @@ def horarios(esporte, quadra, data):
         data=data,
         horarios=lista_horarios,
         ocupados=ocupados,
-        pendentes=pendentes,     # 🟡 visual amarelo
-        expiracao=expiracao,     # ⏳ hora limite
+        pendentes=pendentes,
+        expiracao=expiracao,
         tipos_horarios=tipos_horarios,
         tipo_usuario=session.get("tipo")
     )
