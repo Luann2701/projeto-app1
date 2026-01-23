@@ -658,43 +658,56 @@ def reservar():
     conn = conectar()
     c = conn.cursor()
 
-    # 🔒 1️⃣ trava o horário se já estiver ocupado OU reservado
-    c.execute("""
-        SELECT 1 FROM horarios
-        WHERE data = %s
-          AND hora = %s::time
-          AND quadra = %s
-          AND tipo IN ('ocupado', 'reservado')
-    """, (data, horario, quadra))
+    try:
+        # 🔒 abre transação segura
+        c.execute("BEGIN")
 
-    if c.fetchone():
+        # 🔒 trava se já estiver ocupado ou reservado
+        c.execute("""
+            SELECT 1 FROM horarios
+            WHERE data = %s
+              AND hora = %s::time
+              AND quadra = %s
+              AND tipo IN ('ocupado', 'reservado')
+            FOR UPDATE
+        """, (data, horario, quadra))
+
+        if c.fetchone():
+            conn.rollback()
+            flash("❌ Horário já reservado.", "erro")
+            return redirect(f"/horarios/{esporte}/{quadra}/{data}")
+
+        # 🔒 cria bloqueio temporário
+        c.execute("""
+            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+            VALUES (%s, %s::time, %s, 'reservado', FALSE)
+        """, (data, horario, quadra))
+
+        # 3️⃣ cria reserva pendente
+        c.execute("""
+            INSERT INTO reservas (
+                usuario, esporte, quadra, data, horario, pago, status, criado_em
+            )
+            VALUES (%s, %s, %s, %s, %s, FALSE, 'pendente', NOW())
+            RETURNING id
+        """, (
+            usuario,
+            esporte,
+            quadra,
+            data,
+            horario
+        ))
+
+        reserva_id = c.fetchone()[0]
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
         conn.close()
-        flash("❌ Horário já reservado ou ocupado.", "erro")
+        print("ERRO RESERVA:", e)
+        flash("Erro ao reservar horário.", "erro")
         return redirect(f"/horarios/{esporte}/{quadra}/{data}")
 
-    # 🔒 2️⃣ cria BLOQUEIO TEMPORÁRIO (10 min)
-    c.execute("""
-        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-        VALUES (%s, %s::time, %s, 'reservado', FALSE)
-    """, (data, horario, quadra))
-
-    # 3️⃣ cria reserva pendente
-    c.execute("""
-        INSERT INTO reservas (
-            usuario, esporte, quadra, data, horario, pago
-        )
-        VALUES (%s, %s, %s, %s, %s, FALSE)
-        RETURNING id
-    """, (
-        usuario,
-        esporte,
-        quadra,
-        data,
-        horario
-    ))
-
-    reserva_id = c.fetchone()[0]
-    conn.commit()
     conn.close()
 
     # 4️⃣ cria pagamento PIX
@@ -709,19 +722,20 @@ def reservar():
         })
 
         pix = payment["response"]["point_of_interaction"]["transaction_data"]
-
         qr_code_base64 = pix["qr_code_base64"]
         qr_code_copia_cola = pix["qr_code"]
 
     except Exception as e:
-        # ❌ desfaz reserva e trava se falhar
+        # ❌ desfaz tudo se falhar PIX
         conn = conectar()
         c = conn.cursor()
-        c.execute("DELETE FROM reservas WHERE id = %s", (reserva_id,))
+
+        c.execute("DELETE FROM reservas WHERE id=%s", (reserva_id,))
         c.execute("""
             DELETE FROM horarios
             WHERE data=%s AND hora=%s::time AND quadra=%s AND tipo='reservado'
         """, (data, horario, quadra))
+
         conn.commit()
         conn.close()
 
@@ -729,8 +743,7 @@ def reservar():
         flash("Erro ao gerar pagamento.", "erro")
         return redirect(f"/horarios/{esporte}/{quadra}/{data}")
 
-
-    # 5️⃣ envia para pagamento
+    # 5️⃣ tela de pagamento
     return render_template(
         "pagamento.html",
         reserva_id=reserva_id,
@@ -738,6 +751,7 @@ def reservar():
         qr_code_base64=qr_code_base64,
         qr_code_copia_cola=qr_code_copia_cola
     )
+
 
 # ======================
 # EVENTOS DO DONO
