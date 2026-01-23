@@ -658,31 +658,32 @@ def reservar():
     conn = conectar()
     c = conn.cursor()
 
-    # 🔒 1️⃣ TRAVA REAL: impede reserva duplicada (paga OU pendente)
+    # 🔒 1️⃣ trava o horário se já estiver ocupado OU reservado
     c.execute("""
-        SELECT 1 FROM reservas
-        WHERE quadra = %s
-          AND data = %s
-          AND horario = %s
-          AND (
-              pago = TRUE OR
-              criado_em > NOW() - INTERVAL '10 minutes'
-          )
-        LIMIT 1
-    """, (quadra, data, horario))
+        SELECT 1 FROM horarios
+        WHERE data = %s
+          AND hora = %s::time
+          AND quadra = %s
+          AND tipo IN ('ocupado', 'reservado')
+    """, (data, horario, quadra))
 
     if c.fetchone():
         conn.close()
-        flash("⏳ Horário já está reservado ou ocupado.", "erro")
+        flash("❌ Horário já reservado ou ocupado.", "erro")
         return redirect("/quadras")
 
-    # 🟡 2️⃣ CRIA RESERVA PENDENTE IMEDIATA
+    # 🔒 2️⃣ cria BLOQUEIO TEMPORÁRIO (10 min)
+    c.execute("""
+        INSERT INTO horarios (data, hora, quadra, tipo, permanente)
+        VALUES (%s, %s::time, %s, 'reservado', FALSE)
+    """, (data, horario, quadra))
+
+    # 3️⃣ cria reserva pendente
     c.execute("""
         INSERT INTO reservas (
-            usuario, esporte, quadra, data, horario,
-            pago, status, criado_em
+            usuario, esporte, quadra, data, horario, pago
         )
-        VALUES (%s, %s, %s, %s, %s, FALSE, 'pendente', NOW())
+        VALUES (%s, %s, %s, %s, %s, FALSE)
         RETURNING id
     """, (
         usuario,
@@ -694,35 +695,33 @@ def reservar():
 
     reserva_id = c.fetchone()[0]
     conn.commit()
-    conn.close()  # ⛔ fecha ANTES do Mercado Pago
+    conn.close()
 
-    # 💳 3️⃣ CRIA PAGAMENTO PIX
-    payment_data = {
-        "transaction_amount": float(valor),
-        "description": f"Reserva Quadra {quadra} - {data} {horario}",
-        "payment_method_id": "pix",
-        "external_reference": str(reserva_id),
-        "notification_url": "https://arenacorpoativo.onrender.com/webhook/mercadopago",
-        "payer": {
-            "email": email
-        }
-    }
-
+    # 4️⃣ cria pagamento PIX
     try:
-        payment = mp.payment().create(payment_data)
-        response = payment["response"]
+        payment = mp.payment().create({
+            "transaction_amount": float(valor),
+            "description": f"Reserva {quadra} - {data} {horario}",
+            "payment_method_id": "pix",
+            "external_reference": str(reserva_id),
+            "notification_url": "https://arenacorpoativo.onrender.com/webhook/mercadopago",
+            "payer": {"email": email}
+        })
 
-        payment_id = response["id"]
-        pix_data = response["point_of_interaction"]["transaction_data"]
+        pix = payment["response"]["point_of_interaction"]["transaction_data"]
 
-        qr_code_base64 = pix_data["qr_code_base64"]
-        qr_code_copia_cola = pix_data["qr_code"]
+        qr_code_base64 = pix["qr_code_base64"]
+        qr_code_copia_cola = pix["qr_code"]
 
     except Exception as e:
-        # ❌ cancelamento limpo se falhar
+        # ❌ desfaz reserva e trava se falhar
         conn = conectar()
         c = conn.cursor()
         c.execute("DELETE FROM reservas WHERE id = %s", (reserva_id,))
+        c.execute("""
+            DELETE FROM horarios
+            WHERE data=%s AND hora=%s::time AND quadra=%s AND tipo='reservado'
+        """, (data, horario, quadra))
         conn.commit()
         conn.close()
 
@@ -730,25 +729,7 @@ def reservar():
         flash("Erro ao gerar pagamento.", "erro")
         return redirect("/quadras")
 
-    # 🔗 4️⃣ LINKA PAGAMENTO ↔ RESERVA
-    conn = conectar()
-    c = conn.cursor()
-
-    c.execute("""
-        UPDATE reservas
-        SET payment_id = %s,
-            external_reference = %s
-        WHERE id = %s
-    """, (
-        str(payment_id),
-        str(reserva_id),
-        reserva_id
-    ))
-
-    conn.commit()
-    conn.close()
-
-    # 🚀 5️⃣ TELA DE PAGAMENTO
+    # 5️⃣ envia para pagamento
     return render_template(
         "pagamento.html",
         reserva_id=reserva_id,
@@ -756,7 +737,6 @@ def reservar():
         qr_code_base64=qr_code_base64,
         qr_code_copia_cola=qr_code_copia_cola
     )
-
 
 # ======================
 # EVENTOS DO DONO
