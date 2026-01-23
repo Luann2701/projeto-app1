@@ -19,7 +19,7 @@
             <!-- ================= CLIENTE ================= -->
             {% if tipo_usuario != "dono" %}
 
-                {% if h in pendentes.keys() %}
+                {% if pendentes is mapping and h in pendentes %}
                     <button class="btn pendente" disabled>
                         {{ h }}<br>
                         <small>⏳ Reservado até {{ pendentes[h] }}</small>
