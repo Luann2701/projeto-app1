@@ -4,6 +4,41 @@
     <meta charset="UTF-8">
     <title>Pagamento Pix</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .timer {
+            font-size: 18px;
+            font-weight: bold;
+            color: #b30000;
+            margin-top: 10px;
+        }
+
+        .ampulheta {
+            display: inline-block;
+            animation: girar 1.5s linear infinite;
+        }
+
+        @keyframes girar {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .pix-chave {
+            margin-top: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .icone {
+            margin-left: 8px;
+            color: #007bff;
+            cursor: pointer;
+        }
+
+        .icone:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 
 <body class="fundo-logo">
@@ -16,20 +51,26 @@
 
     <p>
         Pague o Pix usando <strong>qualquer banco</strong>.<br>
-        Assim que o pagamento for identificado, sua reserva será confirmada automaticamente.
+        Após o pagamento, sua reserva será confirmada automaticamente.
     </p>
 
-    <!-- QR CODE DINÂMICO -->
+    <!-- TIMER -->
+    <p class="timer">
+        <span class="ampulheta">⌛</span>
+        Tempo restante: <span id="tempo">10:00</span>
+    </p>
+
+    <!-- QR CODE -->
     <div class="pix-box">
         <img
             src="data:image/png;base64,{{ qr_code_base64 }}"
-            alt="QR Code Pix Mercado Pago"
+            alt="QR Code Pix"
             style="max-width: 250px;"
         >
 
-        <p class="pix-chave">
+        <p class="pix-chave" onclick="copiarPix()">
             Pix Copia e Cola
-            <span class="icone" onclick="copiarPix()">Copie aqui -> 📋</span>
+            <span class="icone">📋 Copiar</span>
         </p>
 
         <textarea id="pixCopiaCola" readonly style="width:100%;height:90px;">
@@ -44,29 +85,51 @@
 
     <!-- CANCELAR -->
     <form method="POST" action="/cancelar_pagamento/{{ reserva_id }}">
-    <button type="submit" class="btn secundario">
-        Cancelar
-    </button>
-</form>
+        <button type="submit" class="btn secundario">
+            Cancelar
+        </button>
+    </form>
 
 </div>
 
 <script>
+    // COPIAR PIX
     function copiarPix() {
         const texto = document.getElementById("pixCopiaCola").value;
-
         navigator.clipboard.writeText(texto).then(() => {
             alert("✅ Pix copiado com sucesso!");
         });
     }
 
-    // (opcional) atualização automática simples
+    // TIMER 10 MIN
+    let tempo = 600;
+    const tempoEl = document.getElementById("tempo");
+
+    const countdown = setInterval(() => {
+        let minutos = Math.floor(tempo / 60);
+        let segundos = tempo % 60;
+
+        tempoEl.textContent =
+            String(minutos).padStart(2, '0') + ":" +
+            String(segundos).padStart(2, '0');
+
+        if (tempo <= 0) {
+            clearInterval(countdown);
+            alert("⏰ Tempo esgotado! A reserva foi cancelada.");
+            window.location.href = "/cancelar_pagamento/{{ reserva_id }}";
+        }
+
+        tempo--;
+    }, 1000);
+
+    // STATUS PAGAMENTO
     setInterval(() => {
         fetch("/status_reserva/{{ reserva_id }}")
             .then(res => res.json())
             .then(data => {
                 if (data.status === "confirmado") {
-                    document.getElementById("status").innerText = "✅ Pagamento confirmado!";
+                    document.getElementById("status").innerText =
+                        "✅ Pagamento confirmado!";
                     setTimeout(() => {
                         window.location.href = "/meus_horarios";
                     }, 2000);

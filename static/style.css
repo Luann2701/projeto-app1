@@ -523,3 +523,14 @@ input::placeholder {
         opacity: 1;
     }
 }
+
+@keyframes girar {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+#timer::before {
+    content: "⌛ ";
+    display: inline-block;
+    animation: girar 1.2s linear infinite;
+}
