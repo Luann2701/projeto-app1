@@ -19,7 +19,8 @@
             <!-- ================= CLIENTE ================= -->
             {% if tipo_usuario != "dono" %}
 
-                {% if pendentes is mapping and h in pendentes %}
+                {# 🟡 PRIORIDADE TOTAL: RESERVA PENDENTE #}
+                {% if h in pendentes %}
                     <button class="btn pendente" disabled>
                         {{ h }}<br>
                         <small>⏳ Reservado até {{ pendentes[h] }}</small>
