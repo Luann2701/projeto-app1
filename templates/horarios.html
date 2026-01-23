@@ -23,7 +23,7 @@
                 {% if h in pendentes %}
                     <button class="btn pendente" disabled>
                         {{ h }}<br>
-                        <small>⏳ Reservado até {{ pendentes[h] }}</small>
+                        <small>⏳ Reservado até {{ expiracao[h] }}</small>
                     </button>
 
                 {% elif h in ocupados %}
