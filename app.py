@@ -489,7 +489,7 @@ def horarios(esporte, quadra, data):
     conn.commit()
 
     # ======================
-    # RESERVAS PAGAS
+    # ✅ RESERVAS PAGAS
     # ======================
     c.execute("""
         SELECT horario FROM reservas
@@ -501,7 +501,7 @@ def horarios(esporte, quadra, data):
     # ⏳ RESERVAS PENDENTES (ATÉ 10 MIN)
     # ======================
     c.execute("""
-        SELECT horario, criado_em FROM reservas
+        SELECT horario FROM reservas
         WHERE quadra = %s
           AND data = %s
           AND pago = FALSE
@@ -511,9 +511,11 @@ def horarios(esporte, quadra, data):
     pendentes = []
     expiracao = {}
 
-    for horario, criado_em in c.fetchall():
+    for (horario,) in c.fetchall():
         pendentes.append(horario)
-        expira_em = criado_em + timedelta(minutes=10)
+
+        # ⏱️ horário correto para o CLIENTE (Brasil)
+        expira_em = agora + timedelta(minutes=10)
         expiracao[horario] = expira_em.strftime("%H:%M")
 
     # ======================
@@ -559,7 +561,7 @@ def horarios(esporte, quadra, data):
 
     # ======================
     # 🚫 OCUPADOS = PAGOS + DONO
-    # ⚠️ PENDENTES NÃO ENTRAM AQUI
+    # ⚠️ PENDENTES NÃO entram aqui
     # ======================
     ocupados = list(set(
         ocupados_reserva +
@@ -578,6 +580,7 @@ def horarios(esporte, quadra, data):
         tipos_horarios=tipos_horarios,
         tipo_usuario=session.get("tipo")
     )
+
 
 
 # ======================
