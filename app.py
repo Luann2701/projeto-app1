@@ -501,13 +501,20 @@ def horarios(esporte, quadra, data):
     # ⏳ RESERVAS PENDENTES (ATÉ 10 MIN)
     # ======================
     c.execute("""
-        SELECT horario FROM reservas
+        SELECT horario, criado_em FROM reservas
         WHERE quadra = %s
           AND data = %s
           AND pago = FALSE
           AND criado_em >= NOW() - INTERVAL '10 minutes'
     """, (quadra, data))
-    pendentes = [h[0] for h in c.fetchall()]
+
+    pendentes = []
+    expiracao = {}
+
+    for horario, criado_em in c.fetchall():
+        pendentes.append(horario)
+        expira_em = criado_em + timedelta(minutes=10)
+        expiracao[horario] = expira_em.strftime("%H:%M")
 
     # ======================
     # HORÁRIOS DO DONO (DATA ESPECÍFICA)
@@ -529,7 +536,7 @@ def horarios(esporte, quadra, data):
 
         tipos_horarios[hora_str] = tipo
 
-        if tipo in ["ocupado", "day_use", "fixo", "fechada"]:
+        if tipo in ["ocupado", "dayuse", "fixo", "fechada"]:
             ocupados_dono.append(hora_str)
 
     # ======================
@@ -545,7 +552,7 @@ def horarios(esporte, quadra, data):
         hora_str = hora.strftime("%H:%M")
         tipos_horarios[hora_str] = tipo
 
-        if tipo in ["ocupado", "day_use", "fixo", "fechada"]:
+        if tipo in ["ocupado", "dayuse", "fixo", "fechada"]:
             ocupados_dono.append(hora_str)
 
     conn.close()
@@ -566,10 +573,12 @@ def horarios(esporte, quadra, data):
         data=data,
         horarios=lista_horarios,
         ocupados=ocupados,
-        pendentes=pendentes,   # 👈 para o visual
+        pendentes=pendentes,     # 🟡 visual amarelo
+        expiracao=expiracao,     # ⏳ hora limite
         tipos_horarios=tipos_horarios,
         tipo_usuario=session.get("tipo")
     )
+
 
 # ======================
 # MEUS HORÁRIOS

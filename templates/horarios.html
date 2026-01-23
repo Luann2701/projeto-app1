@@ -20,10 +20,10 @@
             {% if tipo_usuario != "dono" %}
 
                 {% if h in pendentes %}
-                    <!-- 🟡 RESERVADO TEMPORARIAMENTE -->
-                    <button class="btn reservado" disabled>
+                    <!-- 🟡 RESERVA TEMPORÁRIA -->
+                    <button class="btn pendente" disabled>
                         {{ h }}<br>
-                        <small>⏳ Reservado até {{ reservas_expira_em[h] }}</small>
+                        <small>⏳ Reservado até {{ expiracao[h] }}</small>
                     </button>
 
                 {% elif h in ocupados %}
