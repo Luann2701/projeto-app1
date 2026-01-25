@@ -31,9 +31,10 @@ load_dotenv()
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 app.config.update(
-    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SAMESITE="None",
     SESSION_COOKIE_SECURE=True
 )
+
 
 app.secret_key = os.getenv("SECRET_KEY")
 
@@ -580,8 +581,6 @@ def horarios(esporte, quadra, data):
         tipos_horarios=tipos_horarios,
         tipo_usuario=session.get("tipo")
     )
-
-
 
 # ======================
 # MEUS HORÁRIOS
