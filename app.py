@@ -232,6 +232,13 @@ def agora_brasilia():
     tz = pytz.timezone("America/Sao_Paulo")
     return datetime.now(tz)
 
+@app.route("/debug_sessao")
+def debug_sessao():
+    return {
+        "usuario": session.get("usuario"),
+        "tipo": session.get("tipo")
+    }
+
 
 # ======================
 # TELA INICIAL
