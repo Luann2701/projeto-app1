@@ -600,3 +600,24 @@ input::placeholder {
     color: #856404;
     border: 1px solid #ffeeba;
 }
+
+/* ===============================
+   BASE RESPONSIVA (NÃO ALTERA VISUAL)
+   =============================== */
+
+/* Evita estouro de tela no celular */
+* {
+    box-sizing: border-box;
+}
+
+/* Garante que a tela se ajuste ao dispositivo */
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* Imagens e elementos grandes não estouram */
+img, video, iframe {
+    max-width: 100%;
+    height: auto;
+}

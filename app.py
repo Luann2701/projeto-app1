@@ -487,7 +487,7 @@ def horarios(esporte, quadra, data):
     c = conn.cursor()
 
     # ======================
-    # 🔥 LIMPA RESERVAS EXPIRADAS (10 min)
+    # 🔥 LIMPA RESERVAS EXPIRADAS
     # ======================
     c.execute("""
         DELETE FROM reservas
@@ -506,7 +506,7 @@ def horarios(esporte, quadra, data):
     ocupados_reserva = [h[0] for h in c.fetchall()]
 
     # ======================
-    # ⏳ RESERVAS PENDENTES (ATÉ 10 MIN)
+    # ⏳ RESERVAS PENDENTES
     # ======================
     c.execute("""
         SELECT horario FROM reservas
@@ -521,59 +521,58 @@ def horarios(esporte, quadra, data):
 
     for (horario,) in c.fetchall():
         pendentes.append(horario)
-
-        # ⏱️ horário correto para o CLIENTE (Brasil)
         expira_em = agora + timedelta(minutes=10)
         expiracao[horario] = expira_em.strftime("%H:%M")
+
+    # ======================
+    # MAPAS
+    # ======================
+    tipos_horarios = {}
+    ocupados_dono = set()
+
+    # ======================
+    # 🔒 HORÁRIOS FIXOS (PRIORIDADE MÁXIMA)
+    # ======================
+    c.execute("""
+        SELECT hora, tipo FROM horarios
+        WHERE permanente = TRUE AND quadra = %s
+    """, (quadra,))
+
+    for hora, tipo in c.fetchall():
+        hora_str = hora.strftime("%H:%M")
+        tipo = tipo.lower().replace(" ", "").replace("_", "")
+        tipos_horarios[hora_str] = tipo
+        ocupados_dono.add(hora_str)
 
     # ======================
     # HORÁRIOS DO DONO (DATA ESPECÍFICA)
     # ======================
     c.execute("""
         SELECT hora, tipo FROM horarios
-        WHERE data = %s AND quadra = %s
+        WHERE data = %s AND quadra = %s AND (permanente IS NULL OR permanente = FALSE)
     """, (data, quadra))
-    dia = c.fetchall()
 
-    tipos_horarios = {}
-    ocupados_dono = []
-
-    for hora, tipo in dia:
+    for hora, tipo in c.fetchall():
         hora_str = hora.strftime("%H:%M")
 
-        if tipo:
-            tipo = tipo.lower().replace(" ", "").replace("_", "_")
+        # ⛔ NÃO sobrescreve horário fixo
+        if hora_str in tipos_horarios:
+            continue
 
+        tipo = tipo.lower().replace(" ", "").replace("_", "")
         tipos_horarios[hora_str] = tipo
 
-        if tipo in ["ocupado", "dayuse", "fixo", "fechada"]:
-            ocupados_dono.append(hora_str)
-
-    # ======================
-    # HORÁRIOS FIXOS
-    # ======================
-    c.execute("""
-        SELECT hora, tipo FROM horarios
-        WHERE permanente = TRUE AND quadra = %s
-    """, (quadra,))
-    fixos = c.fetchall()
-
-    for hora, tipo in fixos:
-        hora_str = hora.strftime("%H:%M")
-        tipos_horarios[hora_str] = tipo
-
-        if tipo in ["ocupado", "dayuse", "fixo", "fechada"]:
-            ocupados_dono.append(hora_str)
+        if tipo in ["ocupado", "dayuse", "fechada"]:
+            ocupados_dono.add(hora_str)
 
     conn.close()
 
     # ======================
     # 🚫 OCUPADOS = PAGOS + DONO
-    # ⚠️ PENDENTES NÃO entram aqui
     # ======================
     ocupados = list(set(
         ocupados_reserva +
-        ocupados_dono
+        list(ocupados_dono)
     ))
 
     return render_template(
@@ -588,6 +587,7 @@ def horarios(esporte, quadra, data):
         tipos_horarios=tipos_horarios,
         tipo_usuario=session.get("tipo")
     )
+
 
 # ======================
 # MEUS HORÁRIOS
@@ -956,34 +956,36 @@ def definir_horario():
             WHERE data = %s AND horario = %s AND quadra = %s
         """, (data, hora, quadra))
 
-        # 👇 PASSO 3 — DESATIVA HISTÓRICO
+        # DESATIVA HISTÓRICO ATIVO
         c.execute("""
-    UPDATE historico_horarios
-    SET ativo = FALSE
-    WHERE id = (
-        SELECT id
-        FROM historico_horarios
-        WHERE data = %s
-          AND hora = %s
-          AND quadra = %s
-          AND ativo = TRUE
-        ORDER BY criado_em DESC
-        LIMIT 1
-    )
-    AND ativo = TRUE
-""", (data, hora, quadra))
-
+            UPDATE historico_horarios
+            SET ativo = FALSE
+            WHERE id = (
+                SELECT id
+                FROM historico_horarios
+                WHERE data = %s
+                  AND hora = %s
+                  AND quadra = %s
+                  AND ativo = TRUE
+                ORDER BY criado_em DESC
+                LIMIT 1
+            )
+            AND ativo = TRUE
+        """, (data, hora, quadra))
 
     # ======================
     # OCUPADO / FIXO / DAY USE → SOMA NO RELATÓRIO
     # ======================
     else:
+        # 🔑 AQUI ESTÁ A ÚNICA REGRA NOVA
+        permanente = True if tipo == "fixo" else False
+
         c.execute("""
             INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-            VALUES (%s, %s, %s, %s, FALSE)
-        """, (data, hora, quadra, tipo))
+            VALUES (%s, %s, %s, %s, %s)
+        """, (data, hora, quadra, tipo, permanente))
 
-        # 👇 PASSO 2 — REGISTRA HISTÓRICO
+        # REGISTRA HISTÓRICO (continua igual)
         c.execute("""
             INSERT INTO historico_horarios (data, hora, quadra, origem)
             VALUES (%s, %s, %s, %s)
@@ -993,6 +995,7 @@ def definir_horario():
     conn.close()
 
     return redirect(request.referrer)
+
 
 # ==================================================================
 # RESERVA MANUAL DO DONO
