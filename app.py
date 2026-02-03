@@ -966,16 +966,25 @@ def definir_horario():
     conn = conectar()
     c = conn.cursor()
 
-    # 🔥 Remove qualquer regra anterior do dono (agenda)
+    # 🔥 Remove qualquer regra anterior do dono (agenda diária)
     c.execute("""
         DELETE FROM horarios
         WHERE data = %s AND hora = %s AND quadra = %s
     """, (data, hora, quadra))
 
     # ======================
-    # LIVRE → SUBTRAI DO RELATÓRIO
+    # LIVRE → REMOVE FIXO E SUBTRAI DO RELATÓRIO
     # ======================
     if tipo == "livre" or not tipo:
+
+        # 🔑 REMOVE HORÁRIO FIXO PERMANENTE (ESSA ERA A FALTA)
+        c.execute("""
+            DELETE FROM horarios
+            WHERE hora = %s
+              AND quadra = %s
+              AND tipo = 'fixo'
+              AND permanente = TRUE
+        """, (hora, quadra))
 
         # Remove reservas (se existirem)
         c.execute("""
@@ -1004,7 +1013,7 @@ def definir_horario():
     # OCUPADO / FIXO / DAY USE → SOMA NO RELATÓRIO
     # ======================
     else:
-        # 🔑 AQUI ESTÁ A ÚNICA REGRA NOVA
+        # 🔑 REGRA EXISTENTE (mantida)
         permanente = True if tipo == "fixo" else False
 
         c.execute("""
