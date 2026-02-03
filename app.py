@@ -914,7 +914,7 @@ def painel_dono():
     reservas = c.fetchall()
 
     # ==========================
-    # ⏰ HORÁRIOS FIXOS + DONO
+    # ⏰ HORÁRIOS FIXOS ATIVOS
     # ==========================
     c.execute("""
         SELECT 
@@ -926,7 +926,7 @@ def painel_dono():
         LEFT JOIN reservas r
             ON r.quadra = h.quadra
            AND r.horario = h.hora
-           AND r.origem = 'fixo'
+           AND r.origem = 'dono'
         WHERE h.tipo = 'fixo'
           AND h.permanente = TRUE
         ORDER BY h.quadra, h.hora
