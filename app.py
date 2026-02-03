@@ -1554,6 +1554,9 @@ def cancelar_fixo_dia():
     hora = request.form.get("hora")
     data = request.form.get("data")
 
+    if not data:
+        abort(400)  # não existe "cancelar no dia" sem data
+
     conn = conectar()
     c = conn.cursor()
 
@@ -1566,7 +1569,8 @@ def cancelar_fixo_dia():
     conn.commit()
     conn.close()
 
-    return redirect("/painel_dono")
+    return redirect("/painel_dono?data=" + data)
+
 
 # ======================
 # RESET MINHA SENHA

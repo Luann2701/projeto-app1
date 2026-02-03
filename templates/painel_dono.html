@@ -46,7 +46,7 @@
                     </small>
                 </div>
 
-                <!-- 📌 CANCELAR FIXO -->
+                <!-- ❌ CANCELAR FIXO DEFINITIVO -->
                 <form method="POST"
                       action="/admin/cancelar_fixo_definitivo"
                       onsubmit="return confirm('Cancelar este horário FIXO definitivamente?');">
@@ -61,8 +61,9 @@
 
             </li>
 
-            <!-- 📅 CANCELAR SÓ EM UM DIA -->
+            <!-- 📅 CANCELAR FIXO APENAS NO DIA FILTRADO -->
             <li style="margin-left:20px; margin-bottom:15px;">
+
                 <form method="POST"
                       action="/admin/cancelar_fixo_dia"
                       onsubmit="return confirm('Cancelar este horário apenas no dia selecionado?');"
@@ -70,15 +71,22 @@
 
                     <input type="hidden" name="quadra" value="{{ quadra }}">
                     <input type="hidden" name="hora" value="{{ hora }}">
+                    <input type="hidden" name="data" value="{{ data_filtro }}">
 
-                    <input type="date" name="data" required>
-
-                    <button type="submit" class="btn pequeno">
-                        ❌ Cancelar só neste dia
+                    <button type="submit"
+                            class="btn pequeno"
+                            {% if not data_filtro %}disabled{% endif %}>
+                        ❌ Cancelar no dia {{ data_filtro or '' }}
                     </button>
                 </form>
-            </li>
 
+                {% if not data_filtro %}
+                    <small style="color:#999;">
+                        Selecione uma data acima para cancelar apenas neste dia
+                    </small>
+                {% endif %}
+
+            </li>
             {% endfor %}
 
         </ul>
