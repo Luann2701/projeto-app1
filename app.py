@@ -1073,6 +1073,8 @@ def definir_horario():
 # RESERVA MANUAL DO DONO
 # ==================================================================
 
+from datetime import datetime
+
 @app.route("/admin/reserva_manual", methods=["POST"])
 def reserva_manual():
 
@@ -1091,10 +1093,13 @@ def reserva_manual():
     tipo = request.form.get("tipo", "ocupado").lower().strip()
     pago = request.form.get("pago") == "true"
 
+    # 🔥 ISSO AQUI É O QUE FALTAVA
+    dia_semana = datetime.strptime(data, "%Y-%m-%d").weekday()
+
     conn = conectar()
     c = conn.cursor()
 
-    # ================= REMOVE REGRA ANTIGA (CORRIGIDO) =================
+    # ================= REMOVE REGRA ANTIGA =================
     if tipo == "fixo":
         # remove SOMENTE fixo do horário
         c.execute("""
@@ -1117,11 +1122,12 @@ def reserva_manual():
 
         c.execute("""
             INSERT INTO horarios
-            (quadra, data, hora, tipo, permanente, cliente, telefone)
-            VALUES (%s, NULL, %s, 'fixo', TRUE, %s, %s)
+            (quadra, data, hora, tipo, permanente, dia_semana, cliente, telefone)
+            VALUES (%s, NULL, %s, 'fixo', TRUE, %s, %s, %s)
         """, (
             quadra,
             horario,
+            dia_semana,
             nome,
             telefone
         ))
@@ -1163,47 +1169,6 @@ def reserva_manual():
 
     return redirect(f"/horarios/{esporte}/{quadra}/{data}")
 
-
-# ==================================================================
-# GERENCIAMENTO MENSAL (RELATÓRIO)
-# ==================================================================
-
-@app.route("/admin/relatorio_mensal")
-def relatorio_mensal():
-
-    if "tipo" not in session or session["tipo"] != "dono":
-        return redirect("/")
-
-    conn = conectar()
-    c = conn.cursor()
-
-    c.execute("""
-        SELECT
-            TO_CHAR(data, 'MM/YYYY') AS mes,
-
-            SUM(
-                CASE
-                    WHEN origem IN ('ocupado', 'fixo') AND ativo = TRUE THEN 1
-                    ELSE 0
-                END
-            ) AS horarios,
-
-            SUM(
-                CASE
-                    WHEN origem = 'dayuse' AND ativo = TRUE THEN 1
-                    ELSE 0
-                END
-            ) AS dayuses
-
-        FROM historico_horarios
-        GROUP BY mes
-        ORDER BY mes;
-    """)
-
-    dados = c.fetchall()
-    conn.close()
-
-    return render_template("relatorio_mensal.html", dados=dados)
 
 
 # ==================================================================
