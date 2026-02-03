@@ -1017,16 +1017,17 @@ def reserva_manual():
     data = request.form.get("data")
     horario = request.form.get("horario")
 
-    # 🔥 PEGA O TIPO CORRETAMENTE
-    tipo = request.form.get("tipo", "ocupado")
-    tipo = tipo.lower().strip()
+    # 🔥 tipo vindo do HTML (ocupado ou fixo)
+    tipo = request.form.get("tipo", "ocupado").lower().strip()
 
     pago = request.form.get("pago") == "true"
 
     conn = conectar()
     c = conn.cursor()
 
-    # 🔒 remove qualquer reserva anterior nesse horário (somente se NÃO for fixo)
+    # =====================================================
+    # 🧹 LIMPA RESERVA EXISTENTE (somente se NÃO for fixo)
+    # =====================================================
     if tipo != "fixo":
         c.execute("""
             DELETE FROM reservas
@@ -1049,31 +1050,35 @@ def reserva_manual():
             pago
         ))
 
-    # 🔐 remove regra antiga do dono
+    # =====================================================
+    # 🧹 REMOVE REGRA ANTERIOR DO HORÁRIO
+    # =====================================================
     c.execute("""
         DELETE FROM horarios
         WHERE quadra = %s AND hora = %s
     """, (quadra, horario))
 
-    # 🔥 DEFINE REGRA CORRETA
+    # =====================================================
+    # 🔥 DEFINE O TIPO CORRETO
+    # =====================================================
     if tipo == "fixo":
-        # ⏰ HORÁRIO FIXO PERMANENTE
+        # ⏰ HORÁRIO FIXO — permanente (independente de data)
         c.execute("""
             INSERT INTO horarios (quadra, data, hora, tipo, permanente)
             VALUES (%s, NULL, %s, 'fixo', TRUE)
         """, (quadra, horario))
 
-        # 📊 histórico (opcional, mas mantém padrão)
+        # 📊 histórico (mantém padrão do sistema)
         c.execute("""
             INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
             VALUES (NULL, %s, %s, 'fixo', TRUE)
         """, (horario, quadra))
 
     else:
-        # 🔒 OCUPADO NORMAL (como sempre foi)
+        # 🔒 OCUPADO NORMAL — somente nesse dia
         c.execute("""
             INSERT INTO horarios (quadra, data, hora, tipo, permanente)
-            VALUES (%s,%s,%s,'ocupado',FALSE)
+            VALUES (%s, %s, %s, 'ocupado', FALSE)
         """, (quadra, data, horario))
 
         # 📊 histórico mensal

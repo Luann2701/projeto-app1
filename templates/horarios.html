@@ -51,9 +51,7 @@
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="data" value="{{ data }}">
                         <input type="hidden" name="horario" value="{{ h }}">
-                        <button type="submit" class="btn">
-                            {{ h }}
-                        </button>
+                        <button type="submit" class="btn">{{ h }}</button>
                     </form>
                 {% endif %}
 
@@ -121,12 +119,19 @@
 <!-- ================= JS ================= -->
 <script>
 let selectAtual = null;
+let valorAnterior = null;
 
 function mudarTipoHorario(select, horario) {
     const tipo = select.value;
-    selectAtual = select;
 
+    selectAtual = select;
+    valorAnterior = select.dataset.atual || "livre";
+
+    // 🔒 OCUPADO ou FIXO → abre modal
     if (tipo === "ocupado" || tipo === "fixo") {
+
+        // 🔙 mantém visual antigo até salvar
+        select.value = valorAnterior;
 
         document.getElementById("rm_horario").value = horario;
         document.getElementById("rm_tipo").value = tipo;
@@ -138,6 +143,7 @@ function mudarTipoHorario(select, horario) {
         return;
     }
 
+    // Outros tipos → salva direto
     enviarDireto(tipo, horario);
 }
 
@@ -160,7 +166,6 @@ function enviarDireto(tipo, horario) {
 function fecharModal() {
     document.getElementById("modalReserva").style.display = "none";
 }
-
 </script>
 
 {% if tipo_usuario != "dono" %}
