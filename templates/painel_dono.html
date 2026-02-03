@@ -12,7 +12,7 @@
 
     <h1>👑 Painel do Dono</h1>
 
-    <div style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: center;">
+    <div style="margin-bottom:20px; display:flex; gap:10px; justify-content:center;">
         <a href="/admin/eventos" class="btn">📤 Gerenciar Eventos</a>
         <a href="/admin/horarios" class="btn">🕒 Gerenciar Horários</a>
         <a href="/admin/relatorio_mensal" class="btn">📊 Relatório Mensal</a>
@@ -21,9 +21,7 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for categoria, mensagem in messages %}
-                <div class="alert {{ categoria }}">
-                    {{ mensagem }}
-                </div>
+                <div class="alert {{ categoria }}">{{ mensagem }}</div>
             {% endfor %}
         {% endif %}
     {% endwith %}
@@ -33,32 +31,57 @@
         <h2>⏰ Horários Fixos Ativos</h2>
 
         {% if horarios_fixos %}
-            <ul class="lista-fixos">
-                {% for quadra, hora, nome, telefone in horarios_fixos %}
-                    <li style="display:flex; justify-content:space-between; align-items:center; gap:15px;">
-                        <div>
-                            <strong>{{ quadra }}</strong> — {{ hora }}<br>
-                            <small>
-                                👤 {{ nome or 'Não informado' }}
-                                {% if telefone %}
-                                    | 📞 {{ telefone }}
-                                {% endif %}
-                            </small>
-                        </div>
+        <ul class="lista-fixos">
 
-                        <!-- 🔥 BOTÃO CANCELAR FIXO -->
-                        <form method="POST"
-                              action="/admin/cancelar_fixo"
-                              onsubmit="return confirm('Cancelar este horário fixo definitivamente?');">
-                            <input type="hidden" name="quadra" value="{{ quadra }}">
-                            <input type="hidden" name="hora" value="{{ hora }}">
-                            <button type="submit" class="btn pequeno secundario">
-                                ❌ Cancelar
-                            </button>
-                        </form>
-                    </li>
-                {% endfor %}
-            </ul>
+            {% for quadra, hora, nome, telefone in horarios_fixos %}
+            <li style="display:flex; justify-content:space-between; align-items:center; gap:15px;">
+
+                <div>
+                    <strong>{{ quadra }}</strong> — {{ hora }}<br>
+                    <small>
+                        👤 {{ nome or 'Não informado' }}
+                        {% if telefone and telefone != '—' %}
+                            | 📞 {{ telefone }}
+                        {% endif %}
+                    </small>
+                </div>
+
+                <!-- 📌 CANCELAR FIXO -->
+                <form method="POST"
+                      action="/admin/cancelar_fixo_definitivo"
+                      onsubmit="return confirm('Cancelar este horário FIXO definitivamente?');">
+
+                    <input type="hidden" name="quadra" value="{{ quadra }}">
+                    <input type="hidden" name="hora" value="{{ hora }}">
+
+                    <button type="submit" class="btn pequeno secundario">
+                        ❌ Cancelar
+                    </button>
+                </form>
+
+            </li>
+
+            <!-- 📅 CANCELAR SÓ EM UM DIA -->
+            <li style="margin-left:20px; margin-bottom:15px;">
+                <form method="POST"
+                      action="/admin/cancelar_fixo_dia"
+                      onsubmit="return confirm('Cancelar este horário apenas no dia selecionado?');"
+                      style="display:flex; gap:10px; align-items:center;">
+
+                    <input type="hidden" name="quadra" value="{{ quadra }}">
+                    <input type="hidden" name="hora" value="{{ hora }}">
+
+                    <input type="date" name="data" required>
+
+                    <button type="submit" class="btn pequeno">
+                        ❌ Cancelar só neste dia
+                    </button>
+                </form>
+            </li>
+
+            {% endfor %}
+
+        </ul>
         {% else %}
             <p>Nenhum horário fixo cadastrado.</p>
         {% endif %}
@@ -79,7 +102,7 @@
         <a href="/painel_dono" class="btn secundario pequeno">Limpar</a>
     </form>
 
-    <!-- ================= TABELA DE RESERVAS ================= -->
+    <!-- ================= RESERVAS ================= -->
     <div class="tabela-box">
         <table>
             <thead>
@@ -114,8 +137,9 @@
                     </td>
 
                     <td>
-                        <form method="POST" action="/cancelar_reserva"
-                              onsubmit="return confirm('Tem certeza que deseja cancelar esta reserva?');">
+                        <form method="POST"
+                              action="/cancelar_reserva"
+                              onsubmit="return confirm('Cancelar esta reserva?');">
 
                             <input type="hidden" name="usuario" value="{{ r[0] }}">
                             <input type="hidden" name="esporte" value="{{ r[2] }}">
