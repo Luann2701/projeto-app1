@@ -469,7 +469,7 @@ def horarios(esporte, quadra, data):
     agora = agora_brasilia()
     hoje = agora.date()
     data_escolhida = datetime.strptime(data, "%Y-%m-%d").date()
-    dia_semana = data_escolhida.weekday()  # 0=segunda
+    dia_semana = data_escolhida.weekday()  # 0 = segunda
 
     # ==================================================
     # 🔒 CLIENTE: HOJE + 6 DIAS
@@ -504,7 +504,8 @@ def horarios(esporte, quadra, data):
     # ✅ RESERVAS PAGAS
     # ==================================================
     c.execute("""
-        SELECT horario FROM reservas
+        SELECT horario
+        FROM reservas
         WHERE quadra = %s
           AND data = %s
           AND pago = TRUE
@@ -515,7 +516,8 @@ def horarios(esporte, quadra, data):
     # ⏳ RESERVAS PENDENTES
     # ==================================================
     c.execute("""
-        SELECT horario FROM reservas
+        SELECT horario
+        FROM reservas
         WHERE quadra = %s
           AND data = %s
           AND pago = FALSE
@@ -535,26 +537,26 @@ def horarios(esporte, quadra, data):
     tipos_horarios = {}   # {"08:00": "fixo", "09:00": "ocupado"}
     ocupados_dono = set()
 
-    # 🔒 HORÁRIOS FIXOS (PRIORIDADE MÁXIMA)
+    # ==================================================
+    # 🔒 HORÁRIOS FIXOS (PRIORIDADE ABSOLUTA)
+    # ==================================================
     c.execute("""
-    SELECT h.hora
-    FROM horarios h
-    WHERE h.permanente = TRUE
-      AND h.quadra = %s
-      AND (
-            h.dia_semana IS NULL
-            OR h.dia_semana = %s
+        SELECT h.hora
+        FROM horarios h
+        WHERE h.permanente = TRUE
+          AND h.quadra = %s
+          AND (
+                h.dia_semana IS NULL
+                OR h.dia_semana = %s
+              )
+          AND NOT EXISTS (
+              SELECT 1
+              FROM cancelamentos_fixos c
+              WHERE c.quadra = h.quadra
+                AND c.hora = h.hora
+                AND c.data = %s
           )
-      AND NOT EXISTS (
-          SELECT 1
-          FROM cancelamentos_fixos c
-          WHERE c.quadra = h.quadra
-            AND c.hora = h.hora
-            AND c.data = %s
-      )
-""", (quadra, dia_semana, data))
-
-
+    """, (quadra, dia_semana, data))
 
     for (hora,) in c.fetchall():
         hora_str = str(hora)[:5]
@@ -575,7 +577,7 @@ def horarios(esporte, quadra, data):
     for hora, tipo in c.fetchall():
         hora_str = str(hora)[:5]
 
-        # ⛔ NÃO sobrescreve fixo
+        # ⛔ FIXO NUNCA É SOBRESCRITO
         if hora_str in tipos_horarios:
             continue
 
