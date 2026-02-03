@@ -510,7 +510,7 @@ def horarios(esporte, quadra, data):
           AND data = %s
           AND pago = TRUE
     """, (quadra, data))
-    ocupados_reserva = [h[0] for h in c.fetchall()]
+    ocupados_reserva = [str(h[0])[:5] for h in c.fetchall()]
 
     # ==================================================
     # ⏳ RESERVAS PENDENTES
@@ -528,13 +528,14 @@ def horarios(esporte, quadra, data):
     expiracao = {}
 
     for (horario,) in c.fetchall():
-        pendentes.append(horario)
-        expiracao[horario] = (agora + timedelta(minutes=10)).strftime("%H:%M")
+        hora_str = str(horario)[:5]
+        pendentes.append(hora_str)
+        expiracao[hora_str] = (agora + timedelta(minutes=10)).strftime("%H:%M")
 
     # ==================================================
     # MAPAS
     # ==================================================
-    tipos_horarios = {}   # {"08:00": "fixo", "09:00": "ocupado"}
+    tipos_horarios = {}   # {"08:00": "fixo"}
     ocupados_dono = set()
 
     # ==================================================
@@ -590,7 +591,7 @@ def horarios(esporte, quadra, data):
     conn.close()
 
     # ==================================================
-    # 🚫 OCUPADOS = PAGOS + DONO
+    # 🚫 OCUPADOS = PAGOS + DONO (TUDO STRING)
     # ==================================================
     ocupados = list(set(ocupados_reserva) | ocupados_dono)
 
