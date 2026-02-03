@@ -534,9 +534,18 @@ def horarios(esporte, quadra, data):
     # 🔒 HORÁRIOS FIXOS (PRIORIDADE MÁXIMA)
     # ======================
     c.execute("""
-        SELECT hora, tipo FROM horarios
-        WHERE permanente = TRUE AND quadra = %s
-    """, (quadra,))
+    SELECT h.hora, h.tipo
+    FROM horarios h
+    WHERE h.permanente = TRUE
+      AND h.quadra = %s
+      AND NOT EXISTS (
+          SELECT 1
+          FROM cancelamentos_fixos c
+          WHERE c.quadra = h.quadra
+            AND c.hora = h.hora
+            AND c.data = %s
+      )
+       """, (quadra, data))
 
     for hora, tipo in c.fetchall():
         hora_str = hora.strftime("%H:%M")
@@ -1540,6 +1549,7 @@ def cancelar_fixo_definitivo():
 
     return redirect("/painel_dono")
 
+
 # ======================
 # CANCELA FIXO NO DIA
 # ======================
@@ -1555,7 +1565,7 @@ def cancelar_fixo_dia():
     data = request.form.get("data")
 
     if not data:
-        abort(400)  # não existe "cancelar no dia" sem data
+        abort(400)
 
     conn = conectar()
     c = conn.cursor()
