@@ -469,9 +469,7 @@ def horarios(esporte, quadra, data):
     agora = agora_brasilia()
     hoje = agora.date()
     data_escolhida = datetime.strptime(data, "%Y-%m-%d").date()
-
-    # 👉 NOVO (necessário para fixo semanal)
-    dia_semana = data_escolhida.weekday()
+    dia_semana = data_escolhida.weekday()  # 0=segunda
 
     # ==================================================
     # 🔒 CLIENTE: HOJE + 6 DIAS
@@ -480,6 +478,9 @@ def horarios(esporte, quadra, data):
         if data_escolhida < hoje or data_escolhida > hoje + timedelta(days=6):
             return redirect(f"/datas/{esporte}/{quadra}")
 
+    # ==================================================
+    # ⏰ LISTA BASE DE HORÁRIOS
+    # ==================================================
     lista_horarios = [f"{h:02d}:00" for h in range(6, 22)]
 
     if data_escolhida == hoje:
@@ -489,9 +490,9 @@ def horarios(esporte, quadra, data):
     conn = conectar()
     c = conn.cursor()
 
-    # ======================
+    # ==================================================
     # 🔥 LIMPA RESERVAS EXPIRADAS
-    # ======================
+    # ==================================================
     c.execute("""
         DELETE FROM reservas
         WHERE pago = FALSE
@@ -499,18 +500,20 @@ def horarios(esporte, quadra, data):
     """)
     conn.commit()
 
-    # ======================
+    # ==================================================
     # ✅ RESERVAS PAGAS
-    # ======================
+    # ==================================================
     c.execute("""
         SELECT horario FROM reservas
-        WHERE quadra = %s AND data = %s AND pago = TRUE
+        WHERE quadra = %s
+          AND data = %s
+          AND pago = TRUE
     """, (quadra, data))
     ocupados_reserva = [h[0] for h in c.fetchall()]
 
-    # ======================
+    # ==================================================
     # ⏳ RESERVAS PENDENTES
-    # ======================
+    # ==================================================
     c.execute("""
         SELECT horario FROM reservas
         WHERE quadra = %s
@@ -524,47 +527,46 @@ def horarios(esporte, quadra, data):
 
     for (horario,) in c.fetchall():
         pendentes.append(horario)
-        expira_em = agora + timedelta(minutes=10)
-        expiracao[horario] = expira_em.strftime("%H:%M")
+        expiracao[horario] = (agora + timedelta(minutes=10)).strftime("%H:%M")
 
-    # ======================
+    # ==================================================
     # MAPAS
-    # ======================
-    tipos_horarios = {}
+    # ==================================================
+    tipos_horarios = {}   # {"08:00": "fixo", "09:00": "ocupado"}
     ocupados_dono = set()
 
+    # ==================================================
     # 🔒 HORÁRIOS FIXOS (PRIORIDADE MÁXIMA)
+    # ==================================================
     c.execute("""
-    SELECT h.hora, h.tipo
-    FROM horarios h
-    WHERE h.permanente = TRUE
-      AND h.quadra = %s
-      AND (
-            h.dia_semana IS NULL
-            OR h.dia_semana = %s
-            OR h.dia_semana = %s + 1
+        SELECT h.hora
+        FROM horarios h
+        WHERE h.permanente = TRUE
+          AND h.quadra = %s
+          AND (
+                h.dia_semana IS NULL
+                OR h.dia_semana = %s
+              )
+          AND NOT EXISTS (
+              SELECT 1
+              FROM cancelamentos_fixos c
+              WHERE c.quadra = h.quadra
+                AND c.hora = h.hora
+                AND c.data = %s
           )
-      AND NOT EXISTS (
-          SELECT 1
-          FROM cancelamentos_fixos c
-          WHERE c.quadra = h.quadra
-            AND c.hora = h.hora
-            AND c.data = %s
-      )
-""", (quadra, dia_semana, dia_semana, data))
+    """, (quadra, dia_semana, data))
 
-
-    for hora, tipo in c.fetchall():
+    for (hora,) in c.fetchall():
         hora_str = str(hora)[:5]
-        tipo = tipo.lower().replace(" ", "").replace("_", "")
-        tipos_horarios[hora_str] = tipo
+        tipos_horarios[hora_str] = "fixo"
         ocupados_dono.add(hora_str)
 
-    # ======================
-    # HORÁRIOS DO DONO (DATA ESPECÍFICA)
-    # ======================
+    # ==================================================
+    # 🛠 HORÁRIOS DO DONO (DATA ESPECÍFICA)
+    # ==================================================
     c.execute("""
-        SELECT hora, tipo FROM horarios
+        SELECT hora, tipo
+        FROM horarios
         WHERE data = %s
           AND quadra = %s
           AND (permanente IS NULL OR permanente = FALSE)
@@ -573,25 +575,22 @@ def horarios(esporte, quadra, data):
     for hora, tipo in c.fetchall():
         hora_str = str(hora)[:5]
 
-        # ⛔ NÃO sobrescreve horário fixo
+        # ⛔ NÃO sobrescreve fixo
         if hora_str in tipos_horarios:
             continue
 
-        tipo = tipo.lower().replace(" ", "").replace("_", "")
-        tipos_horarios[hora_str] = tipo
+        tipo_normalizado = tipo.lower().replace(" ", "").replace("_", "")
+        tipos_horarios[hora_str] = tipo_normalizado
 
-        if tipo in ["ocupado", "dayuse", "fechada"]:
+        if tipo_normalizado in ["ocupado", "dayuse", "fechada"]:
             ocupados_dono.add(hora_str)
 
     conn.close()
 
-    # ======================
+    # ==================================================
     # 🚫 OCUPADOS = PAGOS + DONO
-    # ======================
-    ocupados = list(set(
-        ocupados_reserva +
-        list(ocupados_dono)
-    ))
+    # ==================================================
+    ocupados = list(set(ocupados_reserva) | ocupados_dono)
 
     return render_template(
         "horarios.html",
