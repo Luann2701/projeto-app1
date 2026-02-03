@@ -469,7 +469,9 @@ def horarios(esporte, quadra, data):
     agora = agora_brasilia()
     hoje = agora.date()
     data_escolhida = datetime.strptime(data, "%Y-%m-%d").date()
-    dia_semana = data_escolhida.weekday()  # 0 = segunda
+
+    # 🔧 CORREÇÃO OBRIGATÓRIA (Python ↔ Postgres)
+    dia_semana = (data_escolhida.weekday() + 1) % 7  # 0=domingo, 1=segunda...
 
     # ==================================================
     # 🔒 CLIENTE: HOJE + 6 DIAS
@@ -1091,7 +1093,8 @@ def reserva_manual():
     tipo = request.form.get("tipo", "ocupado").lower().strip()
     pago = request.form.get("pago") == "true"
 
-    dia_semana = datetime.strptime(data, "%Y-%m-%d").weekday()
+    # 🔧 CORREÇÃO OBRIGATÓRIA (Python ↔ Postgres)
+    dia_semana = (datetime.strptime(data, "%Y-%m-%d").weekday() + 1) % 7
 
     conn = conectar()
     c = conn.cursor()
@@ -1162,7 +1165,6 @@ def reserva_manual():
     conn.close()
 
     return redirect(f"/horarios/{esporte}/{quadra}/{data}")
-
 
 
 # ==================================================================
