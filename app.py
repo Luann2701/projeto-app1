@@ -883,7 +883,7 @@ def painel_dono():
     c = conn.cursor()
 
     # ==========================
-    # 📋 RESERVAS PAGAS (como já estava)
+    # 📋 RESERVAS PAGAS
     # ==========================
     query = """
         SELECT 
@@ -914,14 +914,22 @@ def painel_dono():
     reservas = c.fetchall()
 
     # ==========================
-    # ⏰ HORÁRIOS FIXOS ATIVOS
+    # ⏰ HORÁRIOS FIXOS + DONO
     # ==========================
     c.execute("""
-        SELECT quadra, hora
-        FROM horarios
-        WHERE tipo = 'fixo'
-          AND permanente = TRUE
-        ORDER BY quadra, hora
+        SELECT 
+            h.quadra,
+            h.hora,
+            r.nome,
+            r.telefone
+        FROM horarios h
+        LEFT JOIN reservas r
+            ON r.quadra = h.quadra
+           AND r.horario = h.hora
+           AND r.origem = 'fixo'
+        WHERE h.tipo = 'fixo'
+          AND h.permanente = TRUE
+        ORDER BY h.quadra, h.hora
     """)
     horarios_fixos = c.fetchall()
 
@@ -1022,7 +1030,6 @@ def definir_horario():
 @app.route("/admin/reserva_manual", methods=["POST"])
 def reserva_manual():
 
-    # 🔐 somente dono
     if "tipo" not in session or session.get("tipo") != "dono":
         abort(403)
 
@@ -1041,40 +1048,42 @@ def reserva_manual():
     conn = conectar()
     c = conn.cursor()
 
-    # ===============================
-    # 🔒 LIMPA REGRA ANTERIOR DO DONO
-    # ===============================
+    # 🔥 REMOVE REGRA ANTIGA
     c.execute("""
         DELETE FROM horarios
         WHERE quadra = %s AND hora = %s
     """, (quadra, horario))
 
-    # ===============================
-    # ⏰ HORÁRIO FIXO (PERMANENTE)
-    # ===============================
+    # ================= HORÁRIO FIXO =================
     if tipo == "fixo":
 
+        # ⏰ cria horário fixo permanente
         c.execute("""
             INSERT INTO horarios (quadra, data, hora, tipo, permanente)
-            VALUES (%s, %s, %s, 'fixo', TRUE)
-        """, (quadra, "1900-01-01", horario))
+            VALUES (%s, NULL, %s, 'fixo', TRUE)
+        """, (quadra, horario))
 
+        # 👤 cria reserva IDENTIFICADORA do fixo
         c.execute("""
-            INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
-            VALUES (%s, %s, %s, 'fixo', TRUE)
-        """, ("1900-01-01", horario, quadra))
+            INSERT INTO reservas
+            (nome, telefone, email, esporte, quadra, data, horario, pago, origem)
+            VALUES (%s,%s,%s,%s,%s,NULL,%s,FALSE,'fixo')
+        """, (
+            nome,
+            telefone,
+            email,
+            esporte,
+            quadra,
+            horario
+        ))
 
-    # ===============================
-    # 🔒 OCUPADO NORMAL (DATA ESPECÍFICA)
-    # ===============================
+    # ================= OCUPADO NORMAL =================
     else:
-        # remove reserva antiga
         c.execute("""
             DELETE FROM reservas
             WHERE quadra = %s AND data = %s AND horario = %s
         """, (quadra, data, horario))
 
-        # cria reserva manual
         c.execute("""
             INSERT INTO reservas
             (nome, telefone, email, esporte, quadra, data, horario, pago, origem)
@@ -1090,16 +1099,10 @@ def reserva_manual():
             pago
         ))
 
-        # grava ocupado
         c.execute("""
             INSERT INTO horarios (quadra, data, hora, tipo, permanente)
-            VALUES (%s, %s, %s, 'ocupado', FALSE)
+            VALUES (%s,%s,%s,'ocupado',FALSE)
         """, (quadra, data, horario))
-
-        c.execute("""
-            INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
-            VALUES (%s, %s, %s, 'ocupado', TRUE)
-        """, (data, horario, quadra))
 
     conn.commit()
     conn.close()

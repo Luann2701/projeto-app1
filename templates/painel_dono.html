@@ -34,9 +34,15 @@
 
         {% if horarios_fixos %}
             <ul class="lista-fixos">
-                {% for quadra, hora in horarios_fixos %}
+                {% for quadra, hora, nome, telefone in horarios_fixos %}
                     <li>
-                        <strong>{{ quadra }}</strong> — {{ hora }}
+                        <strong>{{ quadra }}</strong> — {{ hora }}<br>
+                        <small>
+                            👤 {{ nome or 'Não informado' }}
+                            {% if telefone %}
+                                | 📞 {{ telefone }}
+                            {% endif %}
+                        </small>
                     </li>
                 {% endfor %}
             </ul>
