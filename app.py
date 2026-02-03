@@ -926,7 +926,7 @@ def painel_dono():
         FROM horarios h
         LEFT JOIN reservas r
           ON r.quadra = h.quadra
-         AND r.horario = h.hora
+         AND r.horario = TO_CHAR(h.hora, 'HH24:MI')
          AND r.origem = 'fixo'
         WHERE h.tipo = 'fixo'
           AND h.permanente = TRUE
