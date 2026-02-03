@@ -873,6 +873,7 @@ def excluir_evento(id_evento):
 
 @app.route("/painel_dono")
 def painel_dono():
+    # 🔐 garante acesso só ao dono
     if "tipo" not in session or session["tipo"] != "dono":
         return redirect("/")
 
@@ -887,7 +888,7 @@ def painel_dono():
     # ==========================
     query = """
         SELECT 
-            COALESCE(r.nome, r.usuario) AS cliente,
+            COALESCE(r.nome, u.usuario) AS cliente,
             COALESCE(r.telefone, u.telefone) AS telefone,
             r.esporte,
             r.quadra,
@@ -914,18 +915,19 @@ def painel_dono():
     reservas = c.fetchall()
 
     # ==========================
-    # ⏰ HORÁRIOS FIXOS (SEM DEPENDER DE RESERVA)
+    # ⏰ HORÁRIOS FIXOS ATIVOS
     # ==========================
     c.execute("""
         SELECT 
             h.quadra,
             h.hora,
-            COALESCE(r.nome, '—'),
-            COALESCE(r.telefone, '—')
+            COALESCE(r.nome, '—') AS nome,
+            COALESCE(r.telefone, '—') AS telefone
         FROM horarios h
         LEFT JOIN reservas r
           ON r.quadra = h.quadra
          AND r.horario = h.hora
+         AND r.origem = 'fixo'
         WHERE h.tipo = 'fixo'
           AND h.permanente = TRUE
         ORDER BY h.quadra, h.hora
