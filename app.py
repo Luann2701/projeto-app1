@@ -510,13 +510,14 @@ def horarios(esporte, quadra, data):
           AND data = %s
           AND pago = TRUE
     """, (quadra, data))
+
     ocupados_reserva = [str(h[0])[:5] for h in c.fetchall()]
 
     # ==================================================
     # ⏳ RESERVAS PENDENTES
     # ==================================================
     c.execute("""
-        SELECT horario
+        SELECT horario, criado_em
         FROM reservas
         WHERE quadra = %s
           AND data = %s
@@ -527,15 +528,15 @@ def horarios(esporte, quadra, data):
     pendentes = []
     expiracao = {}
 
-    for (horario,) in c.fetchall():
+    for horario, criado_em in c.fetchall():
         hora_str = str(horario)[:5]
         pendentes.append(hora_str)
-        expiracao[hora_str] = (agora + timedelta(minutes=10)).strftime("%H:%M")
+        expiracao[hora_str] = (criado_em + timedelta(minutes=10)).strftime("%H:%M")
 
     # ==================================================
     # MAPAS
     # ==================================================
-    tipos_horarios = {}   # {"08:00": "fixo"}
+    tipos_horarios = {}
     ocupados_dono = set()
 
     # ==================================================
@@ -578,9 +579,8 @@ def horarios(esporte, quadra, data):
     for hora, tipo in c.fetchall():
         hora_str = str(hora)[:5]
 
-        # ⛔ FIXO NUNCA É SOBRESCRITO
         if hora_str in tipos_horarios:
-            continue
+            continue  # fixo nunca é sobrescrito
 
         tipo_normalizado = tipo.lower().replace(" ", "").replace("_", "")
         tipos_horarios[hora_str] = tipo_normalizado
@@ -591,7 +591,7 @@ def horarios(esporte, quadra, data):
     conn.close()
 
     # ==================================================
-    # 🚫 OCUPADOS = PAGOS + DONO (TUDO STRING)
+    # 🚫 OCUPADOS FINAIS
     # ==================================================
     ocupados = list(set(ocupados_reserva) | ocupados_dono)
 
@@ -1073,12 +1073,10 @@ def definir_horario():
 # RESERVA MANUAL DO DONO
 # ==================================================================
 
-from datetime import datetime
-
 @app.route("/admin/reserva_manual", methods=["POST"])
 def reserva_manual():
 
-    if "tipo" not in session or session.get("tipo") != "dono":
+    if session.get("tipo") != "dono":
         abort(403)
 
     nome = request.form.get("nome")
@@ -1093,15 +1091,13 @@ def reserva_manual():
     tipo = request.form.get("tipo", "ocupado").lower().strip()
     pago = request.form.get("pago") == "true"
 
-    # 🔥 ISSO AQUI É O QUE FALTAVA
     dia_semana = datetime.strptime(data, "%Y-%m-%d").weekday()
 
     conn = conectar()
     c = conn.cursor()
 
-    # ================= REMOVE REGRA ANTIGA =================
+    # ================= REMOVE CONFLITOS =================
     if tipo == "fixo":
-        # remove SOMENTE fixo do horário
         c.execute("""
             DELETE FROM horarios
             WHERE quadra = %s
@@ -1109,7 +1105,6 @@ def reserva_manual():
               AND permanente = TRUE
         """, (quadra, horario))
     else:
-        # remove horário comum
         c.execute("""
             DELETE FROM horarios
             WHERE quadra = %s
@@ -1137,32 +1132,31 @@ def reserva_manual():
         return redirect(request.referrer)
 
     # ================= OCUPADO NORMAL =================
-    else:
-        c.execute("""
-            DELETE FROM reservas
-            WHERE quadra = %s AND data = %s AND horario = %s
-        """, (quadra, data, horario))
+    c.execute("""
+        DELETE FROM reservas
+        WHERE quadra = %s AND data = %s AND horario = %s
+    """, (quadra, data, horario))
 
-        c.execute("""
-            INSERT INTO reservas
-            (nome, telefone, email, esporte, quadra, data, horario, pago, origem)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'dono')
-        """, (
-            nome,
-            telefone,
-            email,
-            esporte,
-            quadra,
-            data,
-            horario,
-            pago
-        ))
+    c.execute("""
+        INSERT INTO reservas
+        (nome, telefone, email, esporte, quadra, data, horario, pago, origem)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'dono')
+    """, (
+        nome,
+        telefone,
+        email,
+        esporte,
+        quadra,
+        data,
+        horario,
+        pago
+    ))
 
-        c.execute("""
-            INSERT INTO horarios
-            (quadra, data, hora, tipo, permanente)
-            VALUES (%s,%s,%s,'ocupado',FALSE)
-        """, (quadra, data, horario))
+    c.execute("""
+        INSERT INTO horarios
+        (quadra, data, hora, tipo, permanente)
+        VALUES (%s,%s,%s,'ocupado',FALSE)
+    """, (quadra, data, horario))
 
     conn.commit()
     conn.close()

@@ -26,7 +26,7 @@
                     </button>
 
                 {% elif tipo == "fixo" %}
-                    <button class="btn bloqueado" disabled>
+                    <button class="btn bloqueado fixo" disabled>
                         {{ h }} (Horário fixo)
                     </button>
 
@@ -63,7 +63,8 @@
 
                 <select
                     data-atual="{{ tipo or 'livre' }}"
-                    onchange="mudarTipoHorario(this, '{{ h }}')">
+                    onchange="mudarTipoHorario(this, '{{ h }}')"
+                    {% if tipo == "fixo" %}disabled{% endif %}>
 
                     <option value="livre" {% if not tipo %}selected{% endif %}>Livre</option>
                     <option value="ocupado" {% if tipo == "ocupado" %}selected{% endif %}>🔒 Ocupado</option>
