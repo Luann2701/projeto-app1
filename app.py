@@ -917,17 +917,39 @@ def painel_dono():
     # ==========================
     # ⏰ HORÁRIOS FIXOS ATIVOS
     # ==========================
-    c.execute("""
+    query_fixos = """
         SELECT
-            quadra,
-            hora,
-            cliente,
-            telefone
-        FROM horarios
-        WHERE tipo = 'fixo'
-          AND permanente = TRUE
-        ORDER BY quadra, hora
-    """)
+            h.quadra,
+            h.hora,
+            h.cliente,
+            h.telefone
+        FROM horarios h
+        WHERE h.tipo = 'fixo'
+          AND h.permanente = TRUE
+    """
+
+    params_fixos = []
+
+    # 🔥 se tiver data selecionada, exclui os cancelados nesse dia
+    if data_filtro:
+        query_fixos += """
+            AND NOT EXISTS (
+                SELECT 1
+                FROM cancelamentos_fixos c
+                WHERE c.quadra = h.quadra
+                  AND c.hora = h.hora
+                  AND c.data = %s
+            )
+        """
+        params_fixos.append(data_filtro)
+
+    if quadra_filtro:
+        query_fixos += " AND h.quadra = %s"
+        params_fixos.append(quadra_filtro)
+
+    query_fixos += " ORDER BY h.quadra, h.hora"
+
+    c.execute(query_fixos, params_fixos)
     horarios_fixos = c.fetchall()
 
     conn.close()
@@ -939,8 +961,6 @@ def painel_dono():
         data_filtro=data_filtro,
         quadra_filtro=quadra_filtro
     )
-
-
 # ======================
 # GERENCIAR HORÁRIOS (DONO)
 # ======================
