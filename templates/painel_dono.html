@@ -30,11 +30,17 @@
     <div class="box-fixos">
         <h2>⏰ Horários Fixos Ativos</h2>
 
+        <!-- 📅 DATA PARA CANCELAR NO DIA -->
+        <div style="margin-bottom:15px; text-align:center;">
+            <label><strong>Data para cancelar apenas neste dia:</strong></label><br>
+            <input type="date" id="data_cancelamento" style="padding:5px;">
+        </div>
+
         {% if horarios_fixos %}
         <ul class="lista-fixos">
 
             {% for quadra, hora, nome, telefone in horarios_fixos %}
-            <li style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px;">
+            <li style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
 
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
@@ -61,27 +67,19 @@
                     </form>
                 </div>
 
-                <!-- 📅 CANCELAR FIXO SOMENTE NO DIA FILTRADO -->
+                <!-- ❌ CANCELAR FIXO SOMENTE NO DIA -->
                 <form method="POST"
                       action="/admin/cancelar_fixo_dia"
-                      onsubmit="return confirm('Cancelar este horário apenas neste dia?');"
+                      onsubmit="return confirmarCancelamentoDia(this);"
                       style="display:flex; gap:10px; align-items:center;">
 
                     <input type="hidden" name="quadra" value="{{ quadra }}">
                     <input type="hidden" name="hora" value="{{ hora }}">
-                    <input type="hidden" name="data" value="{{ data_filtro }}">
+                    <input type="hidden" name="data">
 
-                    <button type="submit"
-                            class="btn pequeno"
-                            {% if not data_filtro %}disabled{% endif %}>
-                        ❌ Cancelar só no dia {{ data_filtro or '' }}
+                    <button type="submit" class="btn pequeno">
+                        ❌ Cancelar somente neste dia
                     </button>
-
-                    {% if not data_filtro %}
-                        <small style="color:#999;">
-                            Selecione uma data acima para usar esta opção
-                        </small>
-                    {% endif %}
                 </form>
 
             </li>
@@ -93,7 +91,7 @@
         {% endif %}
     </div>
 
-    <!-- ================= FILTROS ================= -->
+    <!-- ================= FILTROS DE RESERVAS ================= -->
     <form method="GET" class="filtros">
         <input type="date" name="data" value="{{ data_filtro or '' }}">
 
@@ -171,6 +169,21 @@
     <a href="/logout" class="btn secundario">Sair</a>
 
 </div>
+
+<!-- ✅ SCRIPT PARA PEGAR A DATA -->
+<script>
+function confirmarCancelamentoDia(form) {
+    const data = document.getElementById("data_cancelamento").value;
+
+    if (!data) {
+        alert("Selecione uma data para cancelar apenas neste dia.");
+        return false;
+    }
+
+    form.querySelector('input[name="data"]').value = data;
+    return confirm("Cancelar este horário APENAS no dia " + data + "?");
+}
+</script>
 
 </body>
 </html>
