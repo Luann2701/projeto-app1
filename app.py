@@ -535,26 +535,26 @@ def horarios(esporte, quadra, data):
     tipos_horarios = {}   # {"08:00": "fixo", "09:00": "ocupado"}
     ocupados_dono = set()
 
-    # ==================================================
     # 🔒 HORÁRIOS FIXOS (PRIORIDADE MÁXIMA)
-    # ==================================================
     c.execute("""
-        SELECT h.hora
-        FROM horarios h
-        WHERE h.permanente = TRUE
-          AND h.quadra = %s
-          AND (
-                h.dia_semana IS NULL
-                OR h.dia_semana = %s
-              )
-          AND NOT EXISTS (
-              SELECT 1
-              FROM cancelamentos_fixos c
-              WHERE c.quadra = h.quadra
-                AND c.hora = h.hora
-                AND c.data = %s
+    SELECT h.hora
+    FROM horarios h
+    WHERE h.permanente = TRUE
+      AND h.quadra = %s
+      AND (
+            h.dia_semana IS NULL
+            OR h.dia_semana = %s
           )
-    """, (quadra, dia_semana, data))
+      AND NOT EXISTS (
+          SELECT 1
+          FROM cancelamentos_fixos c
+          WHERE c.quadra = h.quadra
+            AND c.hora = h.hora
+            AND c.data = %s
+      )
+""", (quadra, dia_semana, data))
+
+
 
     for (hora,) in c.fetchall():
         hora_str = str(hora)[:5]
