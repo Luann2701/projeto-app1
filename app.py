@@ -1058,7 +1058,7 @@ def reserva_manual():
     conn = conectar()
     c = conn.cursor()
 
-    # 🔥 REMOVE REGRA ANTIGA
+    # ================= REMOVE REGRA ANTIGA =================
     c.execute("""
         DELETE FROM horarios
         WHERE quadra = %s AND hora = %s
@@ -1067,16 +1067,22 @@ def reserva_manual():
     # ================= HORÁRIO FIXO =================
     if tipo == "fixo":
 
-        # ⏰ cria horário fixo permanente (SEM DATA)
+        # cria horário fixo permanente COM cliente e telefone
         c.execute("""
-            INSERT INTO horarios (quadra, data, hora, tipo, permanente)
-            VALUES (%s, NULL, %s, 'fixo', TRUE)
-        """, (quadra, horario))
+            INSERT INTO horarios
+            (quadra, data, hora, tipo, permanente, cliente, telefone)
+            VALUES (%s, NULL, %s, 'fixo', TRUE, %s, %s)
+        """, (
+            quadra,
+            horario,
+            nome,
+            telefone
+        ))
 
         conn.commit()
         conn.close()
 
-        # 🔒 fixo não cria reserva
+        # fixo não cria reserva
         return redirect(request.referrer)
 
     # ================= OCUPADO NORMAL =================
@@ -1102,7 +1108,8 @@ def reserva_manual():
         ))
 
         c.execute("""
-            INSERT INTO horarios (quadra, data, hora, tipo, permanente)
+            INSERT INTO horarios
+            (quadra, data, hora, tipo, permanente)
             VALUES (%s,%s,%s,'ocupado',FALSE)
         """, (quadra, data, horario))
 

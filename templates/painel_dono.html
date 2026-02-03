@@ -35,14 +35,27 @@
         {% if horarios_fixos %}
             <ul class="lista-fixos">
                 {% for quadra, hora, nome, telefone in horarios_fixos %}
-                    <li>
-                        <strong>{{ quadra }}</strong> — {{ hora }}<br>
-                        <small>
-                            👤 {{ nome or 'Não informado' }}
-                            {% if telefone %}
-                                | 📞 {{ telefone }}
-                            {% endif %}
-                        </small>
+                    <li style="display:flex; justify-content:space-between; align-items:center; gap:15px;">
+                        <div>
+                            <strong>{{ quadra }}</strong> — {{ hora }}<br>
+                            <small>
+                                👤 {{ nome or 'Não informado' }}
+                                {% if telefone %}
+                                    | 📞 {{ telefone }}
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <!-- 🔥 BOTÃO CANCELAR FIXO -->
+                        <form method="POST"
+                              action="/admin/cancelar_fixo"
+                              onsubmit="return confirm('Cancelar este horário fixo definitivamente?');">
+                            <input type="hidden" name="quadra" value="{{ quadra }}">
+                            <input type="hidden" name="hora" value="{{ hora }}">
+                            <button type="submit" class="btn pequeno secundario">
+                                ❌ Cancelar
+                            </button>
+                        </form>
                     </li>
                 {% endfor %}
             </ul>
