@@ -128,7 +128,7 @@ function mudarTipoHorario(select, horario) {
     valorAnterior = select.dataset.atual || "livre";
 
     if (tipo === "ocupado" || tipo === "fixo") {
-        select.value = valorAnterior;
+        //select.value = valorAnterior;
 
         document.getElementById("rm_horario").value = horario;
         document.getElementById("rm_tipo").value = tipo;
