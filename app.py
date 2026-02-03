@@ -470,6 +470,9 @@ def horarios(esporte, quadra, data):
     hoje = agora.date()
     data_escolhida = datetime.strptime(data, "%Y-%m-%d").date()
 
+    # 👉 NOVO (necessário para fixo semanal)
+    dia_semana = data_escolhida.weekday()
+
     # ==================================================
     # 🔒 CLIENTE: HOJE + 6 DIAS
     # ==================================================
@@ -534,18 +537,22 @@ def horarios(esporte, quadra, data):
     # 🔒 HORÁRIOS FIXOS (PRIORIDADE MÁXIMA)
     # ======================
     c.execute("""
-    SELECT h.hora, h.tipo
-    FROM horarios h
-    WHERE h.permanente = TRUE
-      AND h.quadra = %s
-      AND NOT EXISTS (
-          SELECT 1
-          FROM cancelamentos_fixos c
-          WHERE c.quadra = h.quadra
-            AND c.hora = h.hora
-            AND c.data = %s
-      )
-       """, (quadra, data))
+        SELECT h.hora, h.tipo
+        FROM horarios h
+        WHERE h.permanente = TRUE
+          AND h.quadra = %s
+          AND (
+                h.dia_semana IS NULL
+                OR h.dia_semana = %s
+              )
+          AND NOT EXISTS (
+              SELECT 1
+              FROM cancelamentos_fixos c
+              WHERE c.quadra = h.quadra
+                AND c.hora = h.hora
+                AND c.data = %s
+          )
+    """, (quadra, dia_semana, data))
 
     for hora, tipo in c.fetchall():
         hora_str = hora.strftime("%H:%M")
@@ -558,7 +565,9 @@ def horarios(esporte, quadra, data):
     # ======================
     c.execute("""
         SELECT hora, tipo FROM horarios
-        WHERE data = %s AND quadra = %s AND (permanente IS NULL OR permanente = FALSE)
+        WHERE data = %s
+          AND quadra = %s
+          AND (permanente IS NULL OR permanente = FALSE)
     """, (data, quadra))
 
     for hora, tipo in c.fetchall():
