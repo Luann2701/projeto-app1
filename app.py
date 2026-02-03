@@ -1017,55 +1017,76 @@ def reserva_manual():
     data = request.form.get("data")
     horario = request.form.get("horario")
 
+    # 🔥 PEGA O TIPO CORRETAMENTE
+    tipo = request.form.get("tipo", "ocupado")
+    tipo = tipo.lower().strip()
+
     pago = request.form.get("pago") == "true"
 
     conn = conectar()
     c = conn.cursor()
 
-    # 🔒 remove qualquer reserva anterior nesse horário
-    c.execute("""
-        DELETE FROM reservas
-        WHERE quadra = %s AND data = %s AND horario = %s
-    """, (quadra, data, horario))
+    # 🔒 remove qualquer reserva anterior nesse horário (somente se NÃO for fixo)
+    if tipo != "fixo":
+        c.execute("""
+            DELETE FROM reservas
+            WHERE quadra = %s AND data = %s AND horario = %s
+        """, (quadra, data, horario))
 
-    # ✅ cria reserva manual
-    c.execute("""
-        INSERT INTO reservas
-        (nome, telefone, email, esporte, quadra, data, horario, pago, origem)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'dono')
-    """, (
-        nome,
-        telefone,
-        email,
-        esporte,
-        quadra,
-        data,
-        horario,
-        pago
-    ))
+        # ✅ cria reserva manual (ocupado)
+        c.execute("""
+            INSERT INTO reservas
+            (nome, telefone, email, esporte, quadra, data, horario, pago, origem)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,'dono')
+        """, (
+            nome,
+            telefone,
+            email,
+            esporte,
+            quadra,
+            data,
+            horario,
+            pago
+        ))
 
     # 🔐 remove regra antiga do dono
     c.execute("""
         DELETE FROM horarios
-        WHERE quadra = %s AND data = %s AND hora = %s
-    """, (quadra, data, horario))
+        WHERE quadra = %s AND hora = %s
+    """, (quadra, horario))
 
-    # 🔒 marca como ocupado
-    c.execute("""
-        INSERT INTO horarios (quadra, data, hora, tipo, permanente)
-        VALUES (%s,%s,%s,'ocupado',FALSE)
-    """, (quadra, data, horario))
+    # 🔥 DEFINE REGRA CORRETA
+    if tipo == "fixo":
+        # ⏰ HORÁRIO FIXO PERMANENTE
+        c.execute("""
+            INSERT INTO horarios (quadra, data, hora, tipo, permanente)
+            VALUES (%s, NULL, %s, 'fixo', TRUE)
+        """, (quadra, horario))
 
-# 📊 REGISTRA NO HISTÓRICO (entra no relatório mensal)
-    c.execute("""
-    INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
-    VALUES (%s, %s, %s, 'ocupado', TRUE)
-""", (data, horario, quadra))
+        # 📊 histórico (opcional, mas mantém padrão)
+        c.execute("""
+            INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
+            VALUES (NULL, %s, %s, 'fixo', TRUE)
+        """, (horario, quadra))
+
+    else:
+        # 🔒 OCUPADO NORMAL (como sempre foi)
+        c.execute("""
+            INSERT INTO horarios (quadra, data, hora, tipo, permanente)
+            VALUES (%s,%s,%s,'ocupado',FALSE)
+        """, (quadra, data, horario))
+
+        # 📊 histórico mensal
+        c.execute("""
+            INSERT INTO historico_horarios (data, hora, quadra, origem, ativo)
+            VALUES (%s, %s, %s, 'ocupado', TRUE)
+        """, (data, horario, quadra))
 
     conn.commit()
     conn.close()
 
     return redirect(f"/horarios/{esporte}/{quadra}/{data}")
+
 
 # ==================================================================
 # GERENCIAMENTO MENSAL (RELATÓRIO)
