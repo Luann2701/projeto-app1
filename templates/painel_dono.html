@@ -12,12 +12,14 @@
 
     <h1>👑 Painel do Dono</h1>
 
+    <!-- ===== BOTÕES SUPERIORES ===== -->
     <div style="margin-bottom:20px; display:flex; gap:10px; justify-content:center;">
         <a href="/admin/eventos" class="btn">📤 Gerenciar Eventos</a>
         <a href="/admin/horarios" class="btn">🕒 Gerenciar Horários</a>
         <a href="/admin/relatorio_mensal" class="btn">📊 Relatório Mensal</a>
     </div>
 
+    <!-- ===== FLASH MESSAGES ===== -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for categoria, mensagem in messages %}
@@ -27,10 +29,14 @@
     {% endwith %}
 
     <!-- ================= HORÁRIOS FIXOS ================= -->
-    <div class="box-fixos">
-        <h2>⏰ Horários Fixos Ativos</h2>
+    <div class="barra-fixos" onclick="toggleFixos()">
+        <span>⏰ Consultar Horários Fixos</span>
+        <span id="icone-fixos">▼</span>
+    </div>
 
-        <!-- 📅 DATA PARA CANCELAR NO DIA -->
+    <div class="box-fixos oculto" id="fixosBox">
+
+        <!-- DATA PARA CANCELAR APENAS NO DIA -->
         <div style="margin-bottom:15px; text-align:center;">
             <label><strong>Data para cancelar apenas neste dia:</strong></label><br>
             <input type="date" id="data_cancelamento" style="padding:5px;">
@@ -53,7 +59,7 @@
                         </small>
                     </div>
 
-                    <!-- ❌ CANCELAR FIXO DEFINITIVO -->
+                    <!-- CANCELAR DEFINITIVO -->
                     <form method="POST"
                           action="/admin/cancelar_fixo_definitivo"
                           onsubmit="return confirm('Cancelar este horário FIXO definitivamente?');">
@@ -67,7 +73,7 @@
                     </form>
                 </div>
 
-                <!-- ❌ CANCELAR FIXO SOMENTE NO DIA -->
+                <!-- CANCELAR SOMENTE NO DIA -->
                 <form method="POST"
                       action="/admin/cancelar_fixo_dia"
                       onsubmit="return confirmarCancelamentoDia(this);"
@@ -84,14 +90,13 @@
 
             </li>
             {% endfor %}
-
         </ul>
         {% else %}
             <p>Nenhum horário fixo cadastrado.</p>
         {% endif %}
     </div>
 
-    <!-- ================= FILTROS DE RESERVAS ================= -->
+    <!-- ================= FILTROS ================= -->
     <form method="GET" class="filtros">
         <input type="date" name="data" value="{{ data_filtro or '' }}">
 
@@ -170,8 +175,16 @@
 
 </div>
 
-<!-- ✅ SCRIPT PARA PEGAR A DATA -->
+<!-- ================= SCRIPTS ================= -->
 <script>
+function toggleFixos() {
+    const box = document.getElementById("fixosBox");
+    const icone = document.getElementById("icone-fixos");
+
+    box.classList.toggle("oculto");
+    icone.textContent = box.classList.contains("oculto") ? "▼" : "▲";
+}
+
 function confirmarCancelamentoDia(form) {
     const data = document.getElementById("data_cancelamento").value;
 

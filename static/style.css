@@ -621,3 +621,30 @@ img, video, iframe {
     max-width: 100%;
     height: auto;
 }
+
+.barra-fixos {
+    border: 2px dashed #ff7a00;
+    border-radius: 10px;
+    padding: 12px 18px;
+    margin: 25px 0 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ff7a00;
+    background: #fffaf5;
+}
+
+.barra-fixos:hover {
+    background: #fff2e8;
+}
+
+.box-fixos {
+    margin-top: 15px;
+    transition: all 0.3s ease;
+}
+
+.oculto {
+    display: none;
+}
