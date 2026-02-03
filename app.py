@@ -882,6 +882,9 @@ def painel_dono():
     conn = conectar()
     c = conn.cursor()
 
+    # ==========================
+    # 📋 RESERVAS PAGAS (como já estava)
+    # ==========================
     query = """
         SELECT 
             COALESCE(r.nome, r.usuario) AS cliente,
@@ -909,14 +912,29 @@ def painel_dono():
 
     c.execute(query, params)
     reservas = c.fetchall()
+
+    # ==========================
+    # ⏰ HORÁRIOS FIXOS ATIVOS
+    # ==========================
+    c.execute("""
+        SELECT quadra, hora
+        FROM horarios
+        WHERE tipo = 'fixo'
+          AND permanente = TRUE
+        ORDER BY quadra, hora
+    """)
+    horarios_fixos = c.fetchall()
+
     conn.close()
 
     return render_template(
         "painel_dono.html",
         reservas=reservas,
+        horarios_fixos=horarios_fixos,
         data_filtro=data_filtro,
         quadra_filtro=quadra_filtro
     )
+
 
 # ======================
 # GERENCIAR HORÁRIOS (DONO)

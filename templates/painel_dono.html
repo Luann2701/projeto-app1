@@ -13,18 +13,9 @@
     <h1>👑 Painel do Dono</h1>
 
     <div style="margin-bottom: 20px; display: flex; gap: 10px; justify-content: center;">
-        <a href="/admin/eventos" class="btn">
-            📤 Gerenciar Eventos
-        </a>
-
-        <a href="/admin/horarios" class="btn">
-            🕒 Gerenciar Horários
-        </a>
-
-        <a href="/admin/relatorio_mensal" class="btn">
-            📊 Relatório Mensal
-         </a>
-         
+        <a href="/admin/eventos" class="btn">📤 Gerenciar Eventos</a>
+        <a href="/admin/horarios" class="btn">🕒 Gerenciar Horários</a>
+        <a href="/admin/relatorio_mensal" class="btn">📊 Relatório Mensal</a>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -37,7 +28,24 @@
         {% endif %}
     {% endwith %}
 
-    <!-- FILTROS -->
+    <!-- ================= HORÁRIOS FIXOS ================= -->
+    <div class="box-fixos">
+        <h2>⏰ Horários Fixos Ativos</h2>
+
+        {% if horarios_fixos %}
+            <ul class="lista-fixos">
+                {% for quadra, hora in horarios_fixos %}
+                    <li>
+                        <strong>{{ quadra }}</strong> — {{ hora }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>Nenhum horário fixo cadastrado.</p>
+        {% endif %}
+    </div>
+
+    <!-- ================= FILTROS ================= -->
     <form method="GET" class="filtros">
         <input type="date" name="data" value="{{ data_filtro or '' }}">
 
@@ -52,7 +60,7 @@
         <a href="/painel_dono" class="btn secundario pequeno">Limpar</a>
     </form>
 
-    <!-- TABELA -->
+    <!-- ================= TABELA DE RESERVAS ================= -->
     <div class="tabela-box">
         <table>
             <thead>
@@ -71,12 +79,12 @@
             <tbody>
                 {% for r in reservas %}
                 <tr>
-                    <td>{{ r[0] }}</td> <!-- Cliente (email) -->
-                    <td>{{ r[1] or '-' }}</td> <!-- Telefone -->
-                    <td>{{ r[2] }}</td> <!-- Esporte -->
-                    <td>{{ r[3] }}</td> <!-- Quadra -->
-                    <td>{{ r[4] }}</td> <!-- Data -->
-                    <td>{{ r[5] }}</td> <!-- Horário -->
+                    <td>{{ r[0] }}</td>
+                    <td>{{ r[1] or '-' }}</td>
+                    <td>{{ r[2] }}</td>
+                    <td>{{ r[3] }}</td>
+                    <td>{{ r[4] }}</td>
+                    <td>{{ r[5] }}</td>
 
                     <td>
                         {% if r[6] %}
