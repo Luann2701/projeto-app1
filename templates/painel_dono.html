@@ -34,39 +34,37 @@
         <ul class="lista-fixos">
 
             {% for quadra, hora, nome, telefone in horarios_fixos %}
-            <li style="display:flex; justify-content:space-between; align-items:center; gap:15px;">
+            <li style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px;">
 
-                <div>
-                    <strong>{{ quadra }}</strong> — {{ hora }}<br>
-                    <small>
-                        👤 {{ nome or 'Não informado' }}
-                        {% if telefone and telefone != '—' %}
-                            | 📞 {{ telefone }}
-                        {% endif %}
-                    </small>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong>{{ quadra }}</strong> — {{ hora }}<br>
+                        <small>
+                            👤 {{ nome or 'Não informado' }}
+                            {% if telefone and telefone != '—' %}
+                                | 📞 {{ telefone }}
+                            {% endif %}
+                        </small>
+                    </div>
+
+                    <!-- ❌ CANCELAR FIXO DEFINITIVO -->
+                    <form method="POST"
+                          action="/admin/cancelar_fixo_definitivo"
+                          onsubmit="return confirm('Cancelar este horário FIXO definitivamente?');">
+
+                        <input type="hidden" name="quadra" value="{{ quadra }}">
+                        <input type="hidden" name="hora" value="{{ hora }}">
+
+                        <button type="submit" class="btn pequeno secundario">
+                            ❌ Cancelar definitivo
+                        </button>
+                    </form>
                 </div>
 
-                <!-- ❌ CANCELAR FIXO DEFINITIVO -->
-                <form method="POST"
-                      action="/admin/cancelar_fixo_definitivo"
-                      onsubmit="return confirm('Cancelar este horário FIXO definitivamente?');">
-
-                    <input type="hidden" name="quadra" value="{{ quadra }}">
-                    <input type="hidden" name="hora" value="{{ hora }}">
-
-                    <button type="submit" class="btn pequeno secundario">
-                        ❌ Cancelar
-                    </button>
-                </form>
-
-            </li>
-
-            <!-- 📅 CANCELAR FIXO APENAS NO DIA FILTRADO -->
-            <li style="margin-left:20px; margin-bottom:15px;">
-
+                <!-- 📅 CANCELAR FIXO SOMENTE NO DIA FILTRADO -->
                 <form method="POST"
                       action="/admin/cancelar_fixo_dia"
-                      onsubmit="return confirm('Cancelar este horário apenas no dia selecionado?');"
+                      onsubmit="return confirm('Cancelar este horário apenas neste dia?');"
                       style="display:flex; gap:10px; align-items:center;">
 
                     <input type="hidden" name="quadra" value="{{ quadra }}">
@@ -76,15 +74,15 @@
                     <button type="submit"
                             class="btn pequeno"
                             {% if not data_filtro %}disabled{% endif %}>
-                        ❌ Cancelar no dia {{ data_filtro or '' }}
+                        ❌ Cancelar só no dia {{ data_filtro or '' }}
                     </button>
-                </form>
 
-                {% if not data_filtro %}
-                    <small style="color:#999;">
-                        Selecione uma data acima para cancelar apenas neste dia
-                    </small>
-                {% endif %}
+                    {% if not data_filtro %}
+                        <small style="color:#999;">
+                            Selecione uma data acima para usar esta opção
+                        </small>
+                    {% endif %}
+                </form>
 
             </li>
             {% endfor %}
