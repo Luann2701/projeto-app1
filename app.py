@@ -1067,25 +1067,17 @@ def reserva_manual():
     # ================= HORÁRIO FIXO =================
     if tipo == "fixo":
 
-        # ⏰ cria horário fixo permanente
+        # ⏰ cria horário fixo permanente (SEM DATA)
         c.execute("""
             INSERT INTO horarios (quadra, data, hora, tipo, permanente)
             VALUES (%s, NULL, %s, 'fixo', TRUE)
         """, (quadra, horario))
 
-        # 👤 cria reserva IDENTIFICADORA do fixo
-        c.execute("""
-            INSERT INTO reservas
-            (nome, telefone, email, esporte, quadra, data, horario, pago, origem)
-            VALUES (%s,%s,%s,%s,%s,NULL,%s,FALSE,'fixo')
-        """, (
-            nome,
-            telefone,
-            email,
-            esporte,
-            quadra,
-            horario
-        ))
+        conn.commit()
+        conn.close()
+
+        # 🔒 fixo não cria reserva
+        return redirect(request.referrer)
 
     # ================= OCUPADO NORMAL =================
     else:
@@ -1495,6 +1487,65 @@ def esqueci_senha():
         return render_template("esqueci_senha.html", mensagem=mensagem)
 
     return render_template("esqueci_senha.html")
+
+# ======================
+# CANCELA FIXO SEMPRE
+# ======================
+
+@app.route("/admin/cancelar_fixo_definitivo", methods=["POST"])
+def cancelar_fixo_definitivo():
+
+    if "tipo" not in session or session["tipo"] != "dono":
+        abort(403)
+
+    quadra = request.form.get("quadra")
+    hora = request.form.get("hora")
+
+    conn = conectar()
+    c = conn.cursor()
+
+    c.execute("""
+        DELETE FROM horarios
+        WHERE quadra = %s
+          AND hora = %s
+          AND tipo = 'fixo'
+          AND permanente = TRUE
+    """, (quadra, hora))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(request.referrer)
+
+
+
+# ======================
+# CANCELA FIXO NO DIA
+# ======================
+
+@app.route("/admin/cancelar_fixo_dia", methods=["POST"])
+def cancelar_fixo_dia():
+
+    if "tipo" not in session or session["tipo"] != "dono":
+        abort(403)
+
+    quadra = request.form.get("quadra")
+    hora = request.form.get("hora")
+    data = request.form.get("data")
+
+    conn = conectar()
+    c = conn.cursor()
+
+    c.execute("""
+        INSERT INTO cancelamentos_fixos (quadra, hora, data)
+        VALUES (%s, %s, %s)
+        ON CONFLICT DO NOTHING
+    """, (quadra, hora, data))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(request.referrer)
 
 
 # ======================
