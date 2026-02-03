@@ -25,16 +25,6 @@
                         <small>⏳ Reservado até {{ expiracao[h] }}</small>
                     </button>
 
-                {% elif h in ocupados %}
-                    <button class="btn bloqueado" disabled>
-                        {{ h }} (Ocupado)
-                    </button>
-
-                {% elif tipo == "fechada" %}
-                    <button class="btn bloqueado" disabled>
-                        {{ h }} (Arena fechada)
-                    </button>
-
                 {% elif tipo == "fixo" %}
                     <button class="btn bloqueado" disabled>
                         {{ h }} (Horário fixo)
@@ -43,6 +33,16 @@
                 {% elif tipo == "dayuse" %}
                     <button class="btn bloqueado" disabled>
                         {{ h }} (Day Use)
+                    </button>
+
+                {% elif tipo == "fechada" %}
+                    <button class="btn bloqueado" disabled>
+                        {{ h }} (Arena fechada)
+                    </button>
+
+                {% elif h in ocupados %}
+                    <button class="btn bloqueado" disabled>
+                        {{ h }} (Ocupado)
                     </button>
 
                 {% else %}
@@ -116,7 +116,6 @@
     </form>
 </div>
 
-<!-- ================= JS ================= -->
 <script>
 let selectAtual = null;
 let valorAnterior = null;
@@ -127,10 +126,7 @@ function mudarTipoHorario(select, horario) {
     selectAtual = select;
     valorAnterior = select.dataset.atual || "livre";
 
-    // 🔒 OCUPADO ou FIXO → abre modal
     if (tipo === "ocupado" || tipo === "fixo") {
-
-        // 🔙 mantém visual antigo até salvar
         select.value = valorAnterior;
 
         document.getElementById("rm_horario").value = horario;
@@ -143,7 +139,6 @@ function mudarTipoHorario(select, horario) {
         return;
     }
 
-    // Outros tipos → salva direto
     enviarDireto(tipo, horario);
 }
 
