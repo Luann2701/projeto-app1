@@ -918,19 +918,15 @@ def painel_dono():
     # ⏰ HORÁRIOS FIXOS ATIVOS
     # ==========================
     c.execute("""
-        SELECT 
-            h.quadra,
-            h.hora,
-            COALESCE(r.nome, '—') AS nome,
-            COALESCE(r.telefone, '—') AS telefone
-        FROM horarios h
-        LEFT JOIN reservas r
-          ON r.quadra = h.quadra
-         AND r.horario = TO_CHAR(h.hora, 'HH24:MI')
-         AND r.origem = 'fixo'
-        WHERE h.tipo = 'fixo'
-          AND h.permanente = TRUE
-        ORDER BY h.quadra, h.hora
+        SELECT
+            quadra,
+            hora,
+            cliente,
+            telefone
+        FROM horarios
+        WHERE tipo = 'fixo'
+          AND permanente = TRUE
+        ORDER BY quadra, hora
     """)
     horarios_fixos = c.fetchall()
 
@@ -1522,9 +1518,7 @@ def cancelar_fixo_definitivo():
     conn.commit()
     conn.close()
 
-    return redirect(request.referrer)
-
-
+    return redirect("/painel_dono")
 
 # ======================
 # CANCELA FIXO NO DIA
@@ -1552,8 +1546,7 @@ def cancelar_fixo_dia():
     conn.commit()
     conn.close()
 
-    return redirect(request.referrer)
-
+    return redirect("/painel_dono")
 
 # ======================
 # RESET MINHA SENHA
