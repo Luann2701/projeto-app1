@@ -82,11 +82,11 @@
     {% endif %}
 </div>
 
-<!-- ================= MODAL (OCUPADO / FIXO) ================= -->
+<!-- ================= MODAL (SOMENTE OCUPADO) ================= -->
 <div id="modalReserva" class="modal-overlay">
     <form method="POST" action="/admin/reserva_manual" class="modal-box">
 
-        <h3 id="tituloModal">Reserva Manual</h3>
+        <h3>Reserva Manual</h3>
 
         <input name="nome" placeholder="Nome" required>
         <input name="telefone" placeholder="Telefone" required>
@@ -106,9 +106,6 @@
         <input type="hidden" name="data" value="{{ data }}">
         <input type="hidden" name="horario" id="rm_horario">
 
-        <!-- 🔥 ESSENCIAL -->
-        <input type="hidden" name="tipo" id="rm_tipo">
-
         <div class="modal-actions">
             <button type="button" class="cancelar" onclick="fecharModal()">Cancelar</button>
             <button type="submit" class="salvar">Salvar</button>
@@ -121,18 +118,33 @@
 <script>
 function mudarTipoHorario(tipo, horario) {
 
-    if (tipo === "ocupado" || tipo === "fixo") {
-
+    // 🔒 OCUPADO → abre modal (igual sempre foi)
+    if (tipo === "ocupado") {
         document.getElementById("rm_horario").value = horario;
-        document.getElementById("rm_tipo").value = tipo;
-
-        document.getElementById("tituloModal").innerText =
-            (tipo === "fixo") ? "HORÁRIO FIXO" : "RESERVA MANUAL";
-
         document.getElementById("modalReserva").style.display = "block";
         return;
     }
 
+    // 📌 FIXO → salva DIRETO como permanente
+    if (tipo === "fixo") {
+
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = "/admin/definir_horario";
+
+        form.innerHTML = `
+            <input type="hidden" name="data" value="{{ data }}">
+            <input type="hidden" name="hora" value="${horario}">
+            <input type="hidden" name="quadra" value="{{ quadra }}">
+            <input type="hidden" name="tipo" value="fixo">
+        `;
+
+        document.body.appendChild(form);
+        form.submit();
+        return;
+    }
+
+    // Outros tipos → fluxo antigo
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "/admin/definir_horario";
