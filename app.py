@@ -914,19 +914,18 @@ def painel_dono():
     reservas = c.fetchall()
 
     # ==========================
-    # ⏰ HORÁRIOS FIXOS ATIVOS
+    # ⏰ HORÁRIOS FIXOS (SEM DEPENDER DE RESERVA)
     # ==========================
     c.execute("""
         SELECT 
             h.quadra,
             h.hora,
-            r.nome,
-            r.telefone
+            COALESCE(r.nome, '—'),
+            COALESCE(r.telefone, '—')
         FROM horarios h
         LEFT JOIN reservas r
-            ON r.quadra = h.quadra
-           AND r.horario = h.hora
-           AND r.origem = 'dono'
+          ON r.quadra = h.quadra
+         AND r.horario = h.hora
         WHERE h.tipo = 'fixo'
           AND h.permanente = TRUE
         ORDER BY h.quadra, h.hora
