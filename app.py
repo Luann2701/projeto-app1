@@ -470,8 +470,9 @@ def horarios(esporte, quadra, data):
     hoje = agora.date()
     data_escolhida = datetime.strptime(data, "%Y-%m-%d").date()
 
-    # 🔧 CORREÇÃO OBRIGATÓRIA (Python ↔ Postgres)
-    dia_semana = (data_escolhida.weekday() + 1) % 7  # 0=domingo, 1=segunda...
+    # ✅ CORRETO: Python e Postgres usam o mesmo padrão
+    # 0 = segunda ... 6 = domingo
+    dia_semana = data_escolhida.weekday()
 
     # ==================================================
     # 🔒 CLIENTE: HOJE + 6 DIAS
@@ -541,22 +542,23 @@ def horarios(esporte, quadra, data):
     tipos_horarios = {}
     ocupados_dono = set()
 
-    # 🔒 HORÁRIOS FIXOS (PRIORIDADE ABSOLUTA)
+    # ==================================================
+    # 🔒 HORÁRIOS FIXOS (FUNCIONA NO DIA E NAS SEMANAS)
+    # ==================================================
     c.execute("""
-    SELECT h.hora
-    FROM horarios h
-    WHERE h.permanente = TRUE
-      AND h.quadra = %s
-      AND h.dia_semana = %s
-      AND NOT EXISTS (
-          SELECT 1
-          FROM cancelamentos_fixos c
-          WHERE c.quadra = h.quadra
-            AND c.hora = h.hora
-            AND c.data = %s
-      )
-""", (quadra, dia_semana, data))
-
+        SELECT h.hora
+        FROM horarios h
+        WHERE h.permanente = TRUE
+          AND h.quadra = %s
+          AND h.dia_semana = %s
+          AND NOT EXISTS (
+              SELECT 1
+              FROM cancelamentos_fixos c
+              WHERE c.quadra = h.quadra
+                AND c.hora = h.hora
+                AND c.data = %s
+          )
+    """, (quadra, dia_semana, data))
 
     for (hora,) in c.fetchall():
         hora_str = str(hora)[:5]
