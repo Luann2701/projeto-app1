@@ -63,7 +63,10 @@
             {% if tipo_usuario == "dono" %}
                 <span class="horario-texto">{{ h }}</span>
 
-                <select onchange="mudarTipoHorario(this, '{{ h }}')">
+                <select
+                    data-atual="{{ tipo or 'livre' }}"
+                    onchange="mudarTipoHorario(this, '{{ h }}')">
+
                     <option value="livre" {% if not tipo %}selected{% endif %}>Livre</option>
                     <option value="ocupado" {% if tipo == "ocupado" %}selected{% endif %}>🔒 Ocupado</option>
                     <option value="dayuse" {% if tipo == "dayuse" %}selected{% endif %}>Day Use</option>
@@ -117,20 +120,13 @@
 
 <!-- ================= JS ================= -->
 <script>
-let ultimoValor = null;
+let selectAtual = null;
 
 function mudarTipoHorario(select, horario) {
     const tipo = select.value;
-
-    // guarda valor anterior
-    if (!ultimoValor) {
-        ultimoValor = select.dataset.atual || "livre";
-    }
+    selectAtual = select;
 
     if (tipo === "ocupado" || tipo === "fixo") {
-
-        // volta o select visualmente até salvar
-        select.value = ultimoValor;
 
         document.getElementById("rm_horario").value = horario;
         document.getElementById("rm_tipo").value = tipo;
@@ -142,6 +138,10 @@ function mudarTipoHorario(select, horario) {
         return;
     }
 
+    enviarDireto(tipo, horario);
+}
+
+function enviarDireto(tipo, horario) {
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "/admin/definir_horario";
@@ -159,8 +159,8 @@ function mudarTipoHorario(select, horario) {
 
 function fecharModal() {
     document.getElementById("modalReserva").style.display = "none";
-    ultimoValor = null;
 }
+
 </script>
 
 {% if tipo_usuario != "dono" %}
