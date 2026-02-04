@@ -608,6 +608,57 @@ def horarios(esporte, quadra, data):
         tipo_usuario=session.get("tipo")
     )
 
+# ==========================
+# HORÁRIOS FIXOS NOVA TELA
+# ==========================
+
+@app.route("/admin/horarios-fixos")
+def admin_horarios_fixos():
+    if "usuario" not in session:
+        return redirect("/")
+
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT id, cliente, telefone, email, quadra, hora, dia_semana
+        FROM horarios_fixos
+        WHERE ativo = TRUE
+        ORDER BY quadra, hora
+    """)
+    dados = cur.fetchall()
+
+    hoje = datetime.now()
+    ano = hoje.year
+    mes = hoje.month
+
+    fixos = []
+
+    for id_fixo, cliente, telefone, email, quadra, hora, dia_semana in dados:
+        datas_mes = []
+
+        for dia in range(1, 32):
+            try:
+                data = datetime(ano, mes, dia)
+                if data.weekday() == dia_semana:
+                    datas_mes.append(data)
+            except:
+                pass
+
+        fixos.append({
+            "id": id_fixo,
+            "cliente": cliente,
+            "telefone": telefone,
+            "email": email,
+            "quadra": quadra,
+            "hora": hora,
+            "datas": datas_mes
+        })
+
+    cur.close()
+    conn.close()
+
+    return render_template("horarios_fixos.html", fixos=fixos)
 
 # ======================
 # MEUS HORÁRIOS
@@ -1505,28 +1556,24 @@ def esqueci_senha():
 
 @app.route("/admin/cancelar_fixo_definitivo", methods=["POST"])
 def cancelar_fixo_definitivo():
+    quadra = request.form["quadra"]
+    hora = request.form["hora"]
 
-    if "tipo" not in session or session["tipo"] != "dono":
-        abort(403)
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    cur = conn.cursor()
 
-    quadra = request.form.get("quadra")
-    hora = request.form.get("hora")
-
-    conn = conectar()
-    c = conn.cursor()
-
-    c.execute("""
-        DELETE FROM horarios
-        WHERE quadra = %s
-          AND hora = %s
-          AND tipo = 'fixo'
-          AND permanente = TRUE
+    cur.execute("""
+        UPDATE horarios_fixos
+        SET ativo = FALSE
+        WHERE quadra = %s AND hora = %s
     """, (quadra, hora))
 
     conn.commit()
+    cur.close()
     conn.close()
 
-    return redirect("/painel_dono")
+    flash("Horário fixo cancelado definitivamente.", "sucesso")
+    return redirect("/admin/horarios-fixos")
 
 
 # ======================
@@ -1535,30 +1582,25 @@ def cancelar_fixo_definitivo():
 
 @app.route("/admin/cancelar_fixo_dia", methods=["POST"])
 def cancelar_fixo_dia():
+    quadra = request.form["quadra"]
+    hora = request.form["hora"]
+    data = request.form["data"]
 
-    if "tipo" not in session or session["tipo"] != "dono":
-        abort(403)
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    cur = conn.cursor()
 
-    quadra = request.form.get("quadra")
-    hora = request.form.get("hora")
-    data = request.form.get("data")
-
-    if not data:
-        abort(400)
-
-    conn = conectar()
-    c = conn.cursor()
-
-    c.execute("""
-        INSERT INTO cancelamentos_fixos (quadra, hora, data)
+    cur.execute("""
+        INSERT INTO cancelamentos_fixo (quadra, hora, data)
         VALUES (%s, %s, %s)
         ON CONFLICT DO NOTHING
     """, (quadra, hora, data))
 
     conn.commit()
+    cur.close()
     conn.close()
 
-    return redirect("/painel_dono?data=" + data)
+    flash("Horário cancelado apenas neste dia.", "sucesso")
+    return redirect("/admin/horarios-fixos")
 
 
 # ======================
