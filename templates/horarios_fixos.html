@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Horários Fixos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body class="fundo-logo">
+
+<div class="card">
+    <h1>⏰ Horários Fixos</h1>
+
+    {% for f in fixos %}
+        <div class="bloco-fixo">
+
+            <div class="info-fixo">
+                <strong>Nome:</strong> {{ f.cliente }}<br>
+                <strong>Telefone:</strong> {{ f.telefone }}<br>
+                <strong>Email:</strong> {{ f.email }}<br>
+                <strong>Quadra:</strong> {{ f.quadra }}<br>
+                <strong>Hora:</strong> {{ f.hora }}
+            </div>
+
+            <div class="datas-fixo">
+                {% for d in f.datas %}
+                    <form method="POST" action="/admin/cancelar_fixo_dia" style="display:inline;">
+                        <input type="hidden" name="quadra" value="{{ f.quadra }}">
+                        <input type="hidden" name="hora" value="{{ f.hora }}">
+                        <input type="hidden" name="data" value="{{ d.strftime('%Y-%m-%d') }}">
+
+                        <button class="btn pequeno">
+                            {{ d.strftime('%d/%m') }}
+                        </button>
+                    </form>
+                {% endfor %}
+            </div>
+
+        </div>
+        <hr>
+    {% endfor %}
+
+    <a href="/painel_dono" class="btn secundario">⬅ Voltar</a>
+</div>
+
+</body>
+</html>
