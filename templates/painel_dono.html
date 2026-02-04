@@ -19,7 +19,7 @@
         <a href="/admin/relatorio_mensal" class="btn">📊 Relatório Mensal</a>
     </div>
 
-    <!-- ===== FLASH ===== -->
+    <!-- ===== FLASH MESSAGES ===== -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for categoria, mensagem in messages %}
@@ -36,22 +36,24 @@
 
     <div class="box-fixos oculto" id="fixosBox">
 
+        <!-- DATA PARA CANCELAR APENAS NO DIA -->
+        <div style="margin-bottom:15px; text-align:center;">
+            <label><strong>Data para cancelar apenas neste dia:</strong></label><br>
+            <input type="date" id="data_cancelamento" style="padding:5px;">
+        </div>
+
         {% if horarios_fixos %}
         <ul class="lista-fixos">
 
-            {% for quadra, hora, nome, telefone, dia_semana in horarios_fixos %}
-            <li class="fixo-item"
-                data-dia="{{ dia_semana }}"
-                data-quadra="{{ quadra }}"
-                data-hora="{{ hora }}"
-                style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+            {% for quadra, hora, nome, telefone in horarios_fixos %}
+            <li style="display:flex; flex-direction:column; gap:10px; margin-bottom:15px;">
 
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <strong>{{ quadra }}</strong> — {{ hora }}<br>
                         <small>
                             👤 {{ nome or 'Não informado' }}
-                            {% if telefone %}
+                            {% if telefone and telefone != '—' %}
                                 | 📞 {{ telefone }}
                             {% endif %}
                         </small>
@@ -61,16 +63,30 @@
                     <form method="POST"
                           action="/admin/cancelar_fixo_definitivo"
                           onsubmit="return confirm('Cancelar este horário FIXO definitivamente?');">
+
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="hora" value="{{ hora }}">
+
                         <button type="submit" class="btn pequeno secundario">
                             ❌ Cancelar definitivo
                         </button>
                     </form>
                 </div>
 
-                <!-- PRÓXIMAS 4 DATAS -->
-                <div class="datas-fixas" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+                <!-- CANCELAR SOMENTE NO DIA -->
+                <form method="POST"
+                      action="/admin/cancelar_fixo_dia"
+                      onsubmit="return confirmarCancelamentoDia(this);"
+                      style="display:flex; gap:10px; align-items:center;">
+
+                    <input type="hidden" name="quadra" value="{{ quadra }}">
+                    <input type="hidden" name="hora" value="{{ hora }}">
+                    <input type="hidden" name="data">
+
+                    <button type="submit" class="btn pequeno">
+                        ❌ Cancelar somente neste dia
+                    </button>
+                </form>
 
             </li>
             {% endfor %}
@@ -78,6 +94,81 @@
         {% else %}
             <p>Nenhum horário fixo cadastrado.</p>
         {% endif %}
+    </div>
+
+    <!-- ================= FILTROS ================= -->
+    <form method="GET" class="filtros">
+        <input type="date" name="data" value="{{ data_filtro or '' }}">
+
+        <select name="quadra">
+            <option value="">Todas as quadras</option>
+            <option value="Quadra 1" {% if quadra_filtro == 'Quadra 1' %}selected{% endif %}>Quadra 1</option>
+            <option value="Quadra 2" {% if quadra_filtro == 'Quadra 2' %}selected{% endif %}>Quadra 2</option>
+            <option value="Quadra 3" {% if quadra_filtro == 'Quadra 3' %}selected{% endif %}>Quadra 3</option>
+        </select>
+
+        <button type="submit" class="btn pequeno">Filtrar</button>
+        <a href="/painel_dono" class="btn secundario pequeno">Limpar</a>
+    </form>
+
+    <!-- ================= RESERVAS ================= -->
+    <div class="tabela-box">
+        <table>
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Telefone</th>
+                    <th>Esporte</th>
+                    <th>Quadra</th>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for r in reservas %}
+                <tr>
+                    <td>{{ r[0] }}</td>
+                    <td>{{ r[1] or '-' }}</td>
+                    <td>{{ r[2] }}</td>
+                    <td>{{ r[3] }}</td>
+                    <td>{{ r[4] }}</td>
+                    <td>{{ r[5] }}</td>
+
+                    <td>
+                        {% if r[6] %}
+                            <span class="status pago">Pago</span>
+                        {% else %}
+                            <span class="status pendente">Pendente</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <form method="POST"
+                              action="/cancelar_reserva"
+                              onsubmit="return confirm('Cancelar esta reserva?');">
+
+                            <input type="hidden" name="usuario" value="{{ r[0] }}">
+                            <input type="hidden" name="esporte" value="{{ r[2] }}">
+                            <input type="hidden" name="quadra" value="{{ r[3] }}">
+                            <input type="hidden" name="data" value="{{ r[4] }}">
+                            <input type="hidden" name="horario" value="{{ r[5] }}">
+
+                            <button type="submit" class="btn pequeno secundario">
+                                ❌ Cancelar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8">Nenhuma reserva encontrada</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <a href="/logout" class="btn secundario">Sair</a>
@@ -89,49 +180,22 @@
 function toggleFixos() {
     const box = document.getElementById("fixosBox");
     const icone = document.getElementById("icone-fixos");
+
     box.classList.toggle("oculto");
     icone.textContent = box.classList.contains("oculto") ? "▼" : "▲";
 }
 
-function proximasDatas(diaSemana, total = 4) {
-    const hoje = new Date();
-    hoje.setHours(0,0,0,0);
-    const datas = [];
-    let d = new Date(hoje);
+function confirmarCancelamentoDia(form) {
+    const data = document.getElementById("data_cancelamento").value;
 
-    while (datas.length < total) {
-        if (d.getDay() === diaSemana && d >= hoje) {
-            datas.push(new Date(d));
-        }
-        d.setDate(d.getDate() + 1);
+    if (!data) {
+        alert("Selecione uma data para cancelar apenas neste dia.");
+        return false;
     }
-    return datas;
+
+    form.querySelector('input[name="data"]').value = data;
+    return confirm("Cancelar este horário APENAS no dia " + data + "?");
 }
-
-document.querySelectorAll(".fixo-item").forEach(item => {
-    const diaSemana = parseInt(item.dataset.dia);
-    const quadra = item.dataset.quadra;
-    const hora = item.dataset.hora;
-    const container = item.querySelector(".datas-fixas");
-
-    proximasDatas(diaSemana).forEach(d => {
-        const iso = d.toISOString().split("T")[0];
-        const label = d.toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit"
-        });
-
-        container.innerHTML += `
-            <form method="POST" action="/admin/cancelar_fixo_dia"
-                  onsubmit="return confirm('Cancelar apenas o dia ${label}?');">
-                <input type="hidden" name="quadra" value="${quadra}">
-                <input type="hidden" name="hora" value="${hora}">
-                <input type="hidden" name="data" value="${iso}">
-                <button type="submit" class="btn pequeno">${label}</button>
-            </form>
-        `;
-    });
-});
 </script>
 
 </body>
