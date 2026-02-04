@@ -46,12 +46,9 @@
                 <td>
                     <div class="dias-mes">
                         {% for d in f.datas %}
-                        <form method="POST"
-                              action="/admin/cancelar_fixo_dia">
-
+                        <form method="POST" action="/admin/cancelar_fixo_dia">
                             <input type="hidden" name="id_fixo" value="{{ f.id }}">
                             <input type="hidden" name="data" value="{{ d.data.strftime('%Y-%m-%d') }}">
-
                             <button type="submit" class="dia-bolinha">
                                 {{ d.data.strftime('%d') }}
                             </button>
@@ -66,8 +63,7 @@
                           action="/admin/cancelar_fixo_definitivo"
                           onsubmit="return confirm('Cancelar horário fixo definitivamente?');">
 
-                        <input type="hidden" name="quadra" value="{{ f.quadra }}">
-                        <input type="hidden" name="hora" value="{{ f.hora }}">
+                        <input type="hidden" name="id_fixo" value="{{ f.id }}">
 
                         <button type="submit" class="btn-cancelar-fixo">
                             ❌
