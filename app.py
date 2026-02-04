@@ -1568,7 +1568,11 @@ def esqueci_senha():
 
 @app.route("/admin/cancelar_fixo_definitivo", methods=["POST"])
 def cancelar_fixo_definitivo():
-    id_fixo = request.form["id_fixo"]
+    id_fixo = request.form.get("id_fixo")
+
+    if not id_fixo:
+        flash("Erro ao cancelar: ID do horário não recebido.", "erro")
+        return redirect("/admin/horarios-fixos")
 
     print("🚨 CANCELAR FIXO DEFINITIVO ID:", id_fixo)
 
@@ -1589,6 +1593,7 @@ def cancelar_fixo_definitivo():
 
     flash("Horário fixo cancelado definitivamente.", "sucesso")
     return redirect("/admin/horarios-fixos")
+
 
 # ======================
 # CANCELA FIXO NO DIA
