@@ -8,7 +8,7 @@
 
 <body class="fundo-logo">
 
-<div class="card grande">
+<div class="card grande card-fixos">
     <h1>⏰ Horários Fixos</h1>
 
     {% if fixos %}
@@ -16,47 +16,49 @@
         <thead>
             <tr>
                 <th>Cliente</th>
-                <th>Contato</th>
+                <th>Hora</th>
                 <th>Quadra</th>
                 <th>Dias do mês</th>
-                <th>Cancelar definitivo</th>
+                <th>Cancelar</th>
             </tr>
         </thead>
 
         <tbody>
         {% for f in fixos %}
             <tr>
-                <!-- COLUNA ESQUERDA -->
-                <td>
-                    <strong>{{ f.cliente }}</strong><br>
-                    📞 {{ f.telefone }}<br>
-                    ✉ {{ f.email }}
+
+                <!-- CLIENTE -->
+                <td class="fixo-cliente">
+                    <strong>{{ f.cliente }}</strong>
+                    <div class="fixo-contato">
+                        📞 {{ f.telefone }}<br>
+                        ✉ {{ f.email or '-' }}
+                    </div>
                 </td>
 
-                <td>
-                    {{ f.hora }}
-                </td>
+                <!-- HORA -->
+                <td>{{ f.hora }}</td>
 
-                <td>
-                    {{ f.quadra }}
-                </td>
+                <!-- QUADRA -->
+                <td>{{ f.quadra }}</td>
 
-                <!-- DATAS FIXAS -->
+                <!-- DIAS -->
                 <td>
-                    {% for d in f.datas %}
+                    <div class="dias-mes">
+                        {% for d in f.datas %}
                         <form method="POST"
-                              action="/admin/cancelar_fixo_dia"
-                              style="display:inline-block; margin:4px;">
+                              action="/admin/cancelar_fixo_dia">
 
                             <input type="hidden" name="quadra" value="{{ f.quadra }}">
                             <input type="hidden" name="hora" value="{{ f.hora }}">
                             <input type="hidden" name="data" value="{{ d.data.strftime('%Y-%m-%d') }}">
 
-                            <button type="submit" class="btn pequeno">
+                            <button type="submit" class="dia-bolinha">
                                 {{ d.data.strftime('%d') }}
                             </button>
                         </form>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 </td>
 
                 <!-- CANCELAR DEFINITIVO -->
@@ -68,11 +70,12 @@
                         <input type="hidden" name="quadra" value="{{ f.quadra }}">
                         <input type="hidden" name="hora" value="{{ f.hora }}">
 
-                        <button type="submit" class="btn pequeno secundario">
+                        <button type="submit" class="btn-cancelar-fixo">
                             ❌
                         </button>
                     </form>
                 </td>
+
             </tr>
         {% endfor %}
         </tbody>
@@ -82,7 +85,7 @@
         <p style="text-align:center;">Nenhum horário fixo cadastrado.</p>
     {% endif %}
 
-    <a href="/painel_dono" class="btn secundario">⬅ Voltar</a>
+    <a href="/painel_dono" class="btn-voltar">⬅ Voltar</a>
 </div>
 
 </body>
