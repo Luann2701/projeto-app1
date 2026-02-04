@@ -1568,10 +1568,9 @@ def esqueci_senha():
 
 @app.route("/admin/cancelar_fixo_definitivo", methods=["POST"])
 def cancelar_fixo_definitivo():
-    quadra = request.form["quadra"]
-    hora = request.form["hora"]
+    id_fixo = request.form["id_fixo"]
 
-    print("🚨 CANCELAR FIXO DEFINITIVO:", quadra, hora)
+    print("🚨 CANCELAR FIXO DEFINITIVO ID:", id_fixo)
 
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
     cur = conn.cursor()
@@ -1579,8 +1578,8 @@ def cancelar_fixo_definitivo():
     cur.execute("""
         UPDATE horarios_fixos
         SET ativo = FALSE
-        WHERE quadra = %s AND hora = %s
-    """, (quadra, hora))
+        WHERE id = %s
+    """, (id_fixo,))
 
     print("🗑️ LINHAS AFETADAS:", cur.rowcount)
 
@@ -1590,8 +1589,6 @@ def cancelar_fixo_definitivo():
 
     flash("Horário fixo cancelado definitivamente.", "sucesso")
     return redirect("/admin/horarios-fixos")
-
-
 
 # ======================
 # CANCELA FIXO NO DIA
