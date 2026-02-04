@@ -651,9 +651,10 @@ img, video, iframe {
 /* ===== HORÁRIOS FIXOS ===== */
 
 .card-fixos {
-    max-width: 650px;
+    max-width: 480px;   /* 🔼 aumenta o card */
+    width: 100%;        /* garante largura */
     margin: 0 auto;
-    padding: 20px;
+    padding: 24px;      /* mais respiro */
 }
 
 .tabela-fixos {
@@ -775,3 +776,17 @@ img, video, iframe {
     color: #999;
     font-style: italic;
 }
+.fixo-contato span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;     /* 🔼 texto */
+}
+
+.fixo-contato span::first-letter {
+    font-size: 18px;    /* 🔼 emoji */
+}
+.fixo-contato {
+    margin-top: 6px;
+}
+
