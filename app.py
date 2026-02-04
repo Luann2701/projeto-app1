@@ -617,16 +617,24 @@ from datetime import datetime
 
 @app.route("/admin/horarios-fixos")
 def admin_horarios_fixos():
-    if "usuario" not in session:
-        return redirect("/")
 
-    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    if "usuario" not in session or session.get("tipo") != "dono":
+        return redirect("/login")
+
+    conn = conectar()
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT cliente, telefone, email, quadra, hora, dia_semana
-        FROM horarios_fixos
-        WHERE ativo = TRUE
+        SELECT
+            cliente,
+            telefone,
+            email,
+            quadra,
+            hora,
+            dia_semana
+        FROM horarios
+        WHERE tipo = 'fixo'
+          AND permanente = TRUE
         ORDER BY quadra, hora
     """)
     dados = cur.fetchall()
@@ -640,31 +648,21 @@ def admin_horarios_fixos():
 
     for cliente, telefone, email, quadra, hora, dia_semana in dados:
 
-        # 🔒 PROTEÇÃO CONTRA ERRO
         if dia_semana is None:
             continue
 
-        try:
-            dia_semana = int(dia_semana)
-        except:
-            continue
-
         datas_mes = []
-
         for dia in range(1, ultimo_dia + 1):
             data = datetime(ano, mes, dia)
-
             if data.weekday() == dia_semana:
-                datas_mes.append({
-                    "data": data
-                })
+                datas_mes.append({"data": data})
 
         fixos.append({
             "cliente": cliente,
             "telefone": telefone,
             "email": email,
             "quadra": quadra,
-            "hora": hora,
+            "hora": str(hora)[:5],
             "datas": datas_mes
         })
 
@@ -672,6 +670,7 @@ def admin_horarios_fixos():
     conn.close()
 
     return render_template("horarios_fixos.html", fixos=fixos)
+
 
 # ======================
 # MEUS HORÁRIOS
