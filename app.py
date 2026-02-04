@@ -1156,7 +1156,7 @@ def reserva_manual():
     pago = request.form.get("pago") == "true"
 
     # 🔧 CORREÇÃO OBRIGATÓRIA (Python ↔ Postgres)
-    dia_semana = (datetime.strptime(data, "%Y-%m-%d").weekday() + 1) % 7
+    dia_semana = datetime.strptime(data, "%Y-%m-%d").weekday()
 
     conn = conectar()
     c = conn.cursor()
