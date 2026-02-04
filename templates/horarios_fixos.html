@@ -28,13 +28,22 @@
             <tr>
 
                 <!-- CLIENTE -->
-                <td class="fixo-cliente">
-                    <strong>{{ f.cliente }}</strong>
-                    <div class="fixo-contato">
-                        📞 {{ f.telefone }}<br>
-                        ✉ {{ f.email or '-' }}
-                    </div>
-                </td>
+                 <td class="fixo-cliente">
+                 <strong>{{ f.cliente }}</strong>
+
+                 <div class="fixo-contato">
+                  {% if f.telefone %}
+                 <span>📞 {{ f.telefone }}</span>
+                  {% endif %}
+
+                  {% if f.email %}
+                 <span>✉️ {{ f.email }}</span>
+                  {% else %}
+                 <span class="email-vazio">✉️ sem email</span>
+                  {% endif %}
+                 </div>
+                 </td>
+
 
                 <!-- HORA -->
                 <td>{{ f.hora }}</td>
