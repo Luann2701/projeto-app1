@@ -673,8 +673,6 @@ def admin_horarios_fixos():
 
     return render_template("horarios_fixos.html", fixos=fixos)
 
-
-
 # ======================
 # MEUS HORÁRIOS
 # ======================

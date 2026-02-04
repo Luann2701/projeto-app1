@@ -30,12 +30,11 @@
 
     <!-- ================= HORÁRIOS FIXOS ================= -->
     <form action="/admin/horarios-fixos" method="get">
-    <button type="submit" class="barra-fixos" style="width:100%; cursor:pointer;">
-        <span>⏰ Consultar Horários Fixos</span>
-        <span>➡</span>
-      </button>
-     </form>
-
+        <button type="submit" class="barra-fixos" style="width:100%; cursor:pointer;">
+            <span>⏰ Consultar Horários Fixos</span>
+            <span id="icone-fixos">➡</span>
+        </button>
+    </form>
 
     <div class="box-fixos oculto" id="fixosBox">
 
@@ -184,7 +183,7 @@ function toggleFixos() {
     const box = document.getElementById("fixosBox");
     const icone = document.getElementById("icone-fixos");
     box.classList.toggle("oculto");
-    icone.textContent = box.classList.contains("oculto") ? "▼" : "▲";
+    icone.textContent = box.classList.contains("oculto") ? "➡" : "⬇";
 }
 
 function confirmarCancelamentoDia(form) {
