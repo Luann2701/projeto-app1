@@ -613,9 +613,14 @@ def horarios(esporte, quadra, data):
 # ==========================
 
 import calendar
+from datetime import datetime
+from flask import render_template, session, redirect
+import psycopg2
+import os
 
 @app.route("/admin/horarios-fixos")
 def admin_horarios_fixos():
+
     if "usuario" not in session:
         return redirect("/")
 
@@ -628,6 +633,7 @@ def admin_horarios_fixos():
         WHERE ativo = TRUE
         ORDER BY quadra, hora
     """)
+
     dados = cur.fetchall()
 
     hoje = datetime.now()
@@ -638,14 +644,16 @@ def admin_horarios_fixos():
     fixos = []
 
     for id_fixo, cliente, telefone, email, quadra, hora, dia_semana in dados:
+
         datas_mes = []
 
         for dia in range(1, ultimo_dia + 1):
             data = datetime(ano, mes, dia)
+
             if data.weekday() == dia_semana:
                 datas_mes.append({
                     "data": data,
-                    "cancelado": False  # depois você cruza com cancelamentos
+                    "cancelado": False
                 })
 
         fixos.append({
@@ -661,7 +669,10 @@ def admin_horarios_fixos():
     cur.close()
     conn.close()
 
-    return render_template("horarios_fixos.html", fixos=fixos)
+    return render_template(
+        "horarios_fixos.html",
+        fixos=fixos
+    )
 
 
 # ======================

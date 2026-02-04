@@ -8,71 +8,46 @@
 
 <body class="fundo-logo">
 
-<div class="card grande">
-
+<div class="card">
     <h1>⏰ Horários Fixos</h1>
 
     {% if fixos %}
         {% for f in fixos %}
             <div class="bloco-fixo">
 
-                <!-- ===== INFO DO CLIENTE ===== -->
                 <div class="info-fixo">
-                    <p><strong>Nome:</strong> {{ f.cliente }}</p>
-                    <p><strong>Telefone:</strong> {{ f.telefone }}</p>
-                    <p><strong>Email:</strong> {{ f.email }}</p>
-                    <p><strong>Quadra:</strong> {{ f.quadra }}</p>
-                    <p><strong>Hora:</strong> {{ f.hora }}</p>
-
-                    <!-- CANCELAR DEFINITIVO -->
-                    <form method="POST"
-                          action="/admin/cancelar_fixo_definitivo"
-                          onsubmit="return confirm('Cancelar este horário FIXO definitivamente?');">
-                        <input type="hidden" name="fixo_id" value="{{ f.id }}">
-                        <button type="submit" class="btn pequeno secundario">
-                            ❌ Cancelar definitivo
-                        </button>
-                    </form>
+                    <strong>Nome:</strong> {{ f.cliente }}<br>
+                    <strong>Telefone:</strong> {{ f.telefone }}<br>
+                    <strong>Email:</strong> {{ f.email }}<br>
+                    <strong>Quadra:</strong> {{ f.quadra }}<br>
+                    <strong>Hora:</strong> {{ f.hora }}
                 </div>
 
-                <!-- ===== DATAS DO MÊS ===== -->
                 <div class="datas-fixo">
-                    <p><strong>Dias deste mês:</strong></p>
-
                     {% for d in f.datas %}
                         <form method="POST"
                               action="/admin/cancelar_fixo_dia"
-                              style="display:inline;"
-                              onsubmit="return confirm('Cancelar APENAS no dia {{ d.data.strftime('%d/%m/%Y') }}?');">
+                              style="display:inline;">
 
-                            <input type="hidden" name="fixo_id" value="{{ f.id }}">
+                            <input type="hidden" name="quadra" value="{{ f.quadra }}">
+                            <input type="hidden" name="hora" value="{{ f.hora }}">
                             <input type="hidden" name="data" value="{{ d.data.strftime('%Y-%m-%d') }}">
 
-                            {% if d.cancelado %}
-                                <button type="button" class="btn pequeno secundario" disabled>
-                                    {{ d.data.strftime('%d/%m') }} ❌
-                                </button>
-                            {% else %}
-                                <button type="submit" class="btn pequeno">
-                                    {{ d.data.strftime('%d/%m') }}
-                                </button>
-                            {% endif %}
+                            <button type="submit" class="btn pequeno">
+                                {{ d.data.strftime('%d/%m') }}
+                            </button>
                         </form>
                     {% endfor %}
                 </div>
 
             </div>
-
             <hr>
         {% endfor %}
     {% else %}
-        <p style="text-align:center;">Nenhum horário fixo cadastrado.</p>
+        <p style="text-align:center;">Nenhum horário fixo encontrado.</p>
     {% endif %}
 
-    <div style="text-align:center; margin-top:20px;">
-        <a href="/painel_dono" class="btn secundario">⬅ Voltar ao painel</a>
-    </div>
-
+    <a href="/painel_dono" class="btn secundario">⬅ Voltar</a>
 </div>
 
 </body>
