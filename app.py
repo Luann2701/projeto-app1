@@ -623,7 +623,7 @@ def admin_horarios_fixos():
         return redirect("/login")
 
     conn = conectar()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur = conn.cursor()
 
     cur.execute("""
         SELECT
@@ -634,8 +634,9 @@ def admin_horarios_fixos():
             quadra,
             hora,
             dia_semana
-        FROM horarios_fixos
-        WHERE ativo = TRUE
+        FROM horarios
+        WHERE tipo = 'fixo'
+          AND permanente = TRUE
         ORDER BY quadra, hora
     """)
 
@@ -648,24 +649,21 @@ def admin_horarios_fixos():
 
     fixos = []
 
-    for f in dados:
-
-        if f["dia_semana"] is None:
-            continue
+    for id_fixo, cliente, telefone, email, quadra, hora, dia_semana in dados:
 
         datas_mes = []
         for dia in range(1, ultimo_dia + 1):
             data = datetime(ano, mes, dia)
-            if data.weekday() == f["dia_semana"]:
+            if data.weekday() == dia_semana:
                 datas_mes.append({"data": data})
 
         fixos.append({
-            "id": f["id"],                      # 🔑 AGORA EXISTE
-            "cliente": f["cliente"],
-            "telefone": f["telefone"],
-            "email": f["email"],
-            "quadra": f["quadra"],
-            "hora": str(f["hora"])[:5],
+            "id": id_fixo,          # 🔑 ESSENCIAL
+            "cliente": cliente,
+            "telefone": telefone,
+            "email": email,
+            "quadra": quadra,
+            "hora": str(hora)[:5],
             "datas": datas_mes
         })
 
@@ -1569,53 +1567,29 @@ def esqueci_senha():
 # CANCELA FIXO SEMPRE
 # ======================
 
-@app.route("/admin/horarios-fixos")
-def horarios_fixos():
+@app.route("/admin/cancelar_fixo_definitivo", methods=["POST"])
+def cancelar_fixo_definitivo():
+    id_fixo = request.form.get("id_fixo")
 
-    conn = psycopg2.connect(os.environ["DATABASE_URL"])
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    if not id_fixo:
+        flash("Erro: ID não recebido.", "erro")
+        return redirect("/admin/horarios-fixos")
+
+    conn = conectar()
+    cur = conn.cursor()
 
     cur.execute("""
-        SELECT
-            hf.id,               -- 🔑 OBRIGATÓRIO
-            hf.cliente,
-            hf.telefone,
-            hf.email,
-            hf.hora,
-            hf.quadra
-        FROM horarios_fixos hf
-        WHERE hf.ativo = TRUE
-        ORDER BY hf.hora
-    """)
+        UPDATE horarios
+        SET permanente = FALSE
+        WHERE id = %s
+    """, (id_fixo,))
 
-    fixos_db = cur.fetchall()
-
-    fixos = []
-
-    for f in fixos_db:
-        cur.execute("""
-            SELECT data
-            FROM horarios_fixos_datas
-            WHERE id_fixo = %s
-            ORDER BY data
-        """, (f["id"],))
-
-        datas = cur.fetchall()
-
-        fixos.append({
-            "id": f["id"],            # 🔥 SEM ISSO, TUDO QUEBRA
-            "cliente": f["cliente"],
-            "telefone": f["telefone"],
-            "email": f["email"],
-            "hora": f["hora"],
-            "quadra": f["quadra"],
-            "datas": datas
-        })
-
+    conn.commit()
     cur.close()
     conn.close()
 
-    return render_template("horarios_fixos.html", fixos=fixos)
+    flash("Horário fixo cancelado definitivamente.", "sucesso")
+    return redirect("/admin/horarios-fixos")
 
 
 # ======================
