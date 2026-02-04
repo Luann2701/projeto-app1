@@ -29,10 +29,13 @@
     {% endwith %}
 
     <!-- ================= HORÁRIOS FIXOS ================= -->
-    <div class="barra-fixos" onclick="toggleFixos()">
+    <form action="/admin/horarios-fixos" method="get">
+    <button type="submit" class="barra-fixos" style="width:100%; cursor:pointer;">
         <span>⏰ Consultar Horários Fixos</span>
-        <span id="icone-fixos">▼</span>
-    </div>
+        <span>➡</span>
+      </button>
+     </form>
+
 
     <div class="box-fixos oculto" id="fixosBox">
 

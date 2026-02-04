@@ -612,6 +612,8 @@ def horarios(esporte, quadra, data):
 # HORÁRIOS FIXOS NOVA TELA
 # ==========================
 
+import calendar
+
 @app.route("/admin/horarios-fixos")
 def admin_horarios_fixos():
     if "usuario" not in session:
@@ -631,19 +633,20 @@ def admin_horarios_fixos():
     hoje = datetime.now()
     ano = hoje.year
     mes = hoje.month
+    ultimo_dia = calendar.monthrange(ano, mes)[1]
 
     fixos = []
 
     for id_fixo, cliente, telefone, email, quadra, hora, dia_semana in dados:
         datas_mes = []
 
-        for dia in range(1, 32):
-            try:
-                data = datetime(ano, mes, dia)
-                if data.weekday() == dia_semana:
-                    datas_mes.append(data)
-            except:
-                pass
+        for dia in range(1, ultimo_dia + 1):
+            data = datetime(ano, mes, dia)
+            if data.weekday() == dia_semana:
+                datas_mes.append({
+                    "data": data,
+                    "cancelado": False  # depois você cruza com cancelamentos
+                })
 
         fixos.append({
             "id": id_fixo,
@@ -659,6 +662,7 @@ def admin_horarios_fixos():
     conn.close()
 
     return render_template("horarios_fixos.html", fixos=fixos)
+
 
 # ======================
 # MEUS HORÁRIOS
