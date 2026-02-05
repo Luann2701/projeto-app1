@@ -96,9 +96,11 @@
 <script>
 function toggleCancelamento(quadra, hora, data, estaCancelado) {
 
-    const msg = estaCancelado
-        ? "Deseja REATIVAR este horário fixo neste dia?"
-        : "Deseja CANCELAR este horário fixo neste dia?";
+    const cancelar = !estaCancelado; // 🔥 ISSO É O PRINCIPAL
+
+    const msg = cancelar
+        ? "Deseja CANCELAR este horário fixo neste dia?"
+        : "Deseja REATIVAR este horário fixo neste dia?";
 
     if (!confirm(msg)) return;
 
@@ -108,14 +110,21 @@ function toggleCancelamento(quadra, hora, data, estaCancelado) {
         body: JSON.stringify({
             quadra: quadra,
             hora: hora,
-            data: data
+            data: data,
+            cancelar: cancelar   // 🔥 AGORA MANDA CORRETAMENTE
         })
     })
-    .then(res => res.json())
-    .then(() => location.reload())
+    .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+    })
+    .then(() => {
+        location.reload(); // atualiza bolinha / estado
+    })
     .catch(() => alert('Erro ao cancelar/reativar o dia'));
 }
 </script>
+
 
 
 </body>

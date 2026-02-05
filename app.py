@@ -16,6 +16,19 @@ import pytz
 import mercadopago
 
 
+import psycopg2
+import os
+
+def get_db_connection():
+    return psycopg2.connect(
+        host=os.environ.get("DB_HOST"),
+        database=os.environ.get("DB_NAME"),
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASSWORD"),
+        port=os.environ.get("DB_PORT", 5432)
+    )
+
+
 def get_conn():
     return psycopg2.connect(
         os.environ.get("DATABASE_URL"),
@@ -1638,16 +1651,19 @@ def cancelar_fixo_dia():
 
 from flask import request, jsonify
 
-@app.route("/admin/toggle_fixo_dia", methods=["POST"])
+@app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
     data = request.get_json()
 
-    quadra = data["quadra"]
-    hora = data["hora"] + ":00" if len(data["hora"]) == 5 else data["hora"]
-    dia = data["data"]
-    cancelar = data["cancelar"]
+    quadra = data.get('quadra')
+    hora = data.get('hora')
+    dia = data.get('data')
+    cancelar = data.get('cancelar')
 
-    conn = get_conn()
+    if cancelar is None:
+        return jsonify({'erro': 'Campo cancelar não enviado'}), 400
+
+    conn = get_db_connection()
     cur = conn.cursor()
 
     if cancelar:
@@ -1666,7 +1682,7 @@ def toggle_fixo_dia():
     cur.close()
     conn.close()
 
-    return jsonify(ok=True)
+    return jsonify({'ok': True})
 
 
 
