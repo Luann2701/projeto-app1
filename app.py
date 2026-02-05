@@ -1649,29 +1649,27 @@ from flask import request, jsonify
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
     try:
-        # Pega os dados enviados pelo fetch (JSON)
-        data_json = request.get_json()
-        
-        quadra = data_json.get('quadra')
-        hora = data_json.get('hora')
-        dia = data_json.get('data')
-        esta_cancelado = data_json.get('estaCancelado') # True ou False
+        data = request.get_json()
+        quadra = data.get('quadra')
+        hora = data.get('hora')
+        dia = data.get('data')
+        # Garante que seja booleano
+        esta_cancelado = bool(data.get('estaCancelado')) 
 
-        if not all([quadra, hora, dia]) or esta_cancelado is None:
+        if not all([quadra, hora, dia]):
             return jsonify(ok=False, erro="Dados incompletos"), 400
 
-        # Conecta ao banco (certifique-se que get_db_connection() está definida)
-        conn = get_db_connection()
+        conn = conectar() # Use sua função de conexão
         cur = conn.cursor()
 
         if esta_cancelado:
-            # Se a bolinha já estava cinza (cancelada), vamos REATIVAR (deletar da tabela)
+            # Se já ESTAVA cancelado (bolinha cinza), o dono quer REATIVAR
             cur.execute("""
                 DELETE FROM cancelamentos_fixos
                 WHERE quadra = %s AND hora = %s AND data = %s
             """, (quadra, hora, dia))
         else:
-            # Se a bolinha estava laranja, vamos CANCELAR (inserir na tabela)
+            # Se NÃO estava cancelado (bolinha laranja), o dono quer CANCELAR
             cur.execute("""
                 INSERT INTO cancelamentos_fixos (quadra, hora, data)
                 VALUES (%s, %s, %s)
@@ -1685,10 +1683,11 @@ def toggle_fixo_dia():
         return jsonify(ok=True)
 
     except Exception as e:
-        print("ERRO EM toggle_fixo_dia:", e)
+        print("ERRO TOGGLE_FIXO_DIA:", e)
         return jsonify(ok=False, erro=str(e)), 500
 
-#testeeeeeeeeeeeeeeee
+
+#testeeeeeee
 # ======================
 # RESET MINHA SENHA
 # ======================
