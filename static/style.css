@@ -789,5 +789,46 @@ img, video, iframe {
 .fixo-contato {
     margin-top: 6px;
 }
+.dias-mes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+.dia-bolinha {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    background: #ff7a00;
+    color: white;
+}
+
+.dia-bolinha.cancelado {
+    background: #bbb;
+    color: #555;
+}
 
 
+.dia-bolinha {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ff7a00;
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dia-bolinha.cancelado {
+    background: #bbb;
+    color: #555;
+}

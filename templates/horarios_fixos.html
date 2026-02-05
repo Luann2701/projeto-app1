@@ -94,7 +94,14 @@
 
 <!-- JS -->
 <script>
-function toggleCancelamento(quadra, hora, data) {
+function toggleCancelamento(quadra, hora, data, estaCancelado) {
+
+    const msg = estaCancelado
+        ? "Deseja REATIVAR este horário fixo neste dia?"
+        : "Deseja CANCELAR este horário fixo neste dia?";
+
+    if (!confirm(msg)) return;
+
     fetch('/admin/toggle_fixo_dia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,6 +116,7 @@ function toggleCancelamento(quadra, hora, data) {
     .catch(() => alert('Erro ao cancelar/reativar o dia'));
 }
 </script>
+
 
 </body>
 </html>

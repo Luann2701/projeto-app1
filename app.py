@@ -170,7 +170,7 @@ def criar_banco():
         "SELECT 1 FROM usuarios WHERE tipo = %s",
         ("dono",)
     )
-
+    
     if not c.fetchone():
         c.execute(
             "INSERT INTO usuarios (usuario, senha, tipo) VALUES (%s, %s, %s)",
@@ -1623,52 +1623,64 @@ def cancelar_fixo_dia():
     flash("Horário cancelado apenas neste dia.", "sucesso")
     return redirect("/admin/horarios-fixos")
 
-# =============================
-# CANCELAR FIXO NO DIA 2
-# =============================
+# ======================
+# CANCELA FIXO NO DIA 2
+# ======================
 
-@app.route("/admin/toggle_fixo_dia", methods=["POST"])
-def toggle_fixo_dia():
+from flask import request, jsonify
+import psycopg2
 
-    if session.get("tipo") != "dono":
-        abort(403)
+@app.route("/toggle-dia-fixo", methods=["POST"])
+def toggle_dia_fixo():
+    data = request.get_json()
 
-    quadra = request.json["quadra"]
-    hora = request.json["hora"]
-    data = request.json["data"]
+    # validação básica
+    if not data:
+        return jsonify({"ok": False, "erro": "JSON vazio"}), 400
 
-    conn = conectar()
-    cur = conn.cursor()
+    horario_id = data.get("horario_id")
+    dia = data.get("dia")
+    cancelar = data.get("cancelar")
 
-    # verifica se já está cancelado
-    cur.execute("""
-        SELECT 1
-        FROM cancelamentos_fixos
-        WHERE quadra = %s AND hora = %s AND data = %s
-    """, (quadra, hora, data))
+    if horario_id is None or dia is None or cancelar is None:
+        return jsonify({"ok": False, "erro": "Dados incompletos"}), 400
 
-    existe = cur.fetchone()
+    # 🔌 conexão com o banco
+    conn = psycopg2.connect(
+        host="localhost",
+        database="SEU_BANCO",
+        user="SEU_USUARIO",
+        password="SUA_SENHA"
+    )
 
-    if existe:
-        # 🔁 REATIVA
-        cur.execute("""
-            DELETE FROM cancelamentos_fixos
-            WHERE quadra = %s AND hora = %s AND data = %s
-        """, (quadra, hora, data))
-        status = "reativado"
-    else:
-        # ❌ CANCELA
-        cur.execute("""
-            INSERT INTO cancelamentos_fixos (quadra, hora, data)
-            VALUES (%s, %s, %s)
-            ON CONFLICT DO NOTHING
-        """, (quadra, hora, data))
-        status = "cancelado"
+    cursor = conn.cursor()
 
-    conn.commit()
+    try:
+        if cancelar:
+            cursor.execute("""
+                INSERT INTO cancelamentos_fixos (horario_fixo_id, dia, cancelado)
+                VALUES (%s, %s, TRUE)
+                ON CONFLICT (horario_fixo_id, dia)
+                DO UPDATE SET cancelado = TRUE
+            """, (horario_id, dia))
+        else:
+            cursor.execute("""
+                DELETE FROM cancelamentos_fixos
+                WHERE horario_fixo_id = %s AND dia = %s
+            """, (horario_id, dia))
+
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        cursor.close()
+        conn.close()
+        return jsonify({"ok": False, "erro": str(e)}), 500
+
+    cursor.close()
     conn.close()
 
-    return {"status": status}
+    return jsonify({"ok": True})
 
 
 # ======================
