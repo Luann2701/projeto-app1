@@ -1188,13 +1188,14 @@ def reserva_manual():
         c.execute("""
             INSERT INTO horarios
             (quadra, data, hora, tipo, permanente, dia_semana, cliente, telefone)
-            VALUES (%s, NULL, %s, 'fixo', TRUE, %s, %s, %s)
+            VALUES (%s, NULL, %s, 'fixo', TRUE, %s, %s, %s, %s)
         """, (
             quadra,
             horario,
             dia_semana,
             nome,
-            telefone
+            telefone,
+            email
         ))
 
         conn.commit()
