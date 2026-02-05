@@ -16,14 +16,12 @@ import pytz
 import mercadopago
 
 
-import psycopg2
-import os
-
 def get_db_connection():
     return psycopg2.connect(
         os.environ.get("DATABASE_URL"),
         sslmode="require"
     )
+
 
 
 def get_conn():
@@ -1652,7 +1650,7 @@ from flask import request, jsonify
 def toggle_fixo_dia():
     try:
         data = request.get_json()
-        print("TOGGLE FIXO RECEBIDO:", data)
+        print("DADOS RECEBIDOS:", data)
 
         quadra = data.get('quadra')
         hora = data.get('hora')
@@ -1684,9 +1682,11 @@ def toggle_fixo_dia():
         return jsonify({'ok': True})
 
     except Exception as e:
-        print("ERRO TOGGLE_FIXO:", e)
+        print("ERRO AO CANCELAR FIXO:", e)
         return jsonify({'ok': False, 'erro': str(e)}), 500
 
+
+print("ENTROU NA ROTA TOGGLE_FIXO_DIA")
 
 #testeeeeeeeeeeeeeeee
 # ======================
