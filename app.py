@@ -20,13 +20,13 @@ import psycopg2
 import os
 
 def get_db_connection():
-    return psycopg2.connect(
-        host=os.environ.get("DB_HOST"),
-        database=os.environ.get("DB_NAME"),
-        user=os.environ.get("DB_USER"),
-        password=os.environ.get("DB_PASSWORD"),
-        port=os.environ.get("DB_PORT", 5432)
-    )
+    database_url = os.environ.get("DATABASE_URL")
+
+    if not database_url:
+        raise Exception("DATABASE_URL não configurada no Render")
+
+    return psycopg2.connect(database_url)
+
 
 
 def get_conn():
@@ -1653,15 +1653,15 @@ from flask import request, jsonify
 
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
-    data = request.get_json()
+    data = request.get_json(force=True)
 
     quadra = data.get('quadra')
     hora = data.get('hora')
     dia = data.get('data')
     cancelar = data.get('cancelar')
 
-    if cancelar is None:
-        return jsonify({'erro': 'Campo cancelar não enviado'}), 400
+    if None in (quadra, hora, dia, cancelar):
+        return jsonify({'erro': 'Dados incompletos'}), 400
 
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1683,6 +1683,7 @@ def toggle_fixo_dia():
     conn.close()
 
     return jsonify({'ok': True})
+
 
 
 
