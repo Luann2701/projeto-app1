@@ -1160,7 +1160,7 @@ def reserva_manual():
     tipo = request.form.get("tipo", "ocupado").lower().strip()
     pago = request.form.get("pago") == "true"
 
-    # 🔧 CORREÇÃO OBRIGATÓRIA (Python ↔ Postgres)
+    # 🔧 Correção Python ↔ Postgres
     dia_semana = datetime.strptime(data, "%Y-%m-%d").weekday()
 
     conn = conectar()
@@ -1187,7 +1187,7 @@ def reserva_manual():
 
         c.execute("""
             INSERT INTO horarios
-            (quadra, data, hora, tipo, permanente, dia_semana, cliente, telefone)
+            (quadra, data, hora, tipo, permanente, dia_semana, cliente, telefone, email)
             VALUES (%s, NULL, %s, 'fixo', TRUE, %s, %s, %s, %s)
         """, (
             quadra,
