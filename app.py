@@ -1650,43 +1650,43 @@ from flask import request, jsonify
 def toggle_fixo_dia():
     try:
         data = request.get_json()
-        print("DADOS RECEBIDOS:", data)
+        print("DADOS:", data)
 
         quadra = data.get('quadra')
         hora = data.get('hora')
         dia = data.get('data')
-        cancelar = data.get('cancelar')
+        esta_cancelado = data.get('estaCancelado')
 
-        if None in (quadra, hora, dia, cancelar):
-            return jsonify({'ok': False, 'erro': 'Dados incompletos'}), 400
+        if None in (quadra, hora, dia, esta_cancelado):
+            return jsonify(ok=False, erro="Dados incompletos"), 400
 
         conn = get_db_connection()
         cur = conn.cursor()
 
-        if cancelar:
+        if esta_cancelado:
+            # REATIVAR → apagar da tabela
+            cur.execute("""
+                DELETE FROM cancelamentos_fixos
+                WHERE quadra = %s AND hora = %s AND data = %s
+            """, (quadra, hora, dia))
+        else:
+            # CANCELAR → inserir na tabela
             cur.execute("""
                 INSERT INTO cancelamentos_fixos (quadra, hora, data)
                 VALUES (%s, %s, %s)
                 ON CONFLICT DO NOTHING
-            """, (quadra, hora, dia))
-        else:
-            cur.execute("""
-                DELETE FROM cancelamentos_fixos
-                WHERE quadra = %s AND hora = %s AND data = %s
             """, (quadra, hora, dia))
 
         conn.commit()
         cur.close()
         conn.close()
 
-        return jsonify({'ok': True})
+        return jsonify(ok=True)
 
     except Exception as e:
-        print("ERRO AO CANCELAR FIXO:", e)
-        return jsonify({'ok': False, 'erro': str(e)}), 500
+        print("ERRO TOGGLE_FIXO_DIA:", e)
+        return jsonify(ok=False, erro=str(e)), 500
 
-
-print("ENTROU NA ROTA TOGGLE_FIXO_DIA")
 
 #testeeeeeeeeeeeeeeee
 # ======================

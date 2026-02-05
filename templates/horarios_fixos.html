@@ -109,18 +109,19 @@ function toggleCancelamento(quadra, hora, data, estaCancelado) {
             quadra: quadra,
             hora: hora,
             data: data,
-            cancelar: !estaCancelado   // 🔥 AQUI ESTÁ A CHAVE
+            estaCancelado: estaCancelado
         })
     })
     .then(res => res.json())
-    .then(r => {
-        if (!r.ok) throw 'erro';
-        location.reload();
+    .then(resp => {
+        if (!resp.ok) {
+            alert("Erro: " + resp.erro);
+        } else {
+            location.reload();
+        }
     })
     .catch(() => alert('Erro ao cancelar/reativar o dia'));
 }
 </script>
-
-
 </body>
 </html>
