@@ -1649,32 +1649,33 @@ from flask import request, jsonify
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
     try:
-        data = request.get_json()
-        print("DADOS:", data)
+        # Pega os dados enviados pelo fetch (JSON)
+        data_json = request.get_json()
+        
+        quadra = data_json.get('quadra')
+        hora = data_json.get('hora')
+        dia = data_json.get('data')
+        esta_cancelado = data_json.get('estaCancelado') # True ou False
 
-        quadra = data.get('quadra')
-        hora = data.get('hora')
-        dia = data.get('data')
-        esta_cancelado = data.get('estaCancelado')
-
-        if None in (quadra, hora, dia, esta_cancelado):
+        if not all([quadra, hora, dia]) or esta_cancelado is None:
             return jsonify(ok=False, erro="Dados incompletos"), 400
 
+        # Conecta ao banco (certifique-se que get_db_connection() está definida)
         conn = get_db_connection()
         cur = conn.cursor()
 
         if esta_cancelado:
-            # REATIVAR → apagar da tabela
+            # Se a bolinha já estava cinza (cancelada), vamos REATIVAR (deletar da tabela)
             cur.execute("""
                 DELETE FROM cancelamentos_fixos
                 WHERE quadra = %s AND hora = %s AND data = %s
             """, (quadra, hora, dia))
         else:
-            # CANCELAR → inserir na tabela
+            # Se a bolinha estava laranja, vamos CANCELAR (inserir na tabela)
             cur.execute("""
                 INSERT INTO cancelamentos_fixos (quadra, hora, data)
                 VALUES (%s, %s, %s)
-                ON CONFLICT DO NOTHING
+                ON CONFLICT (quadra, hora, data) DO NOTHING
             """, (quadra, hora, dia))
 
         conn.commit()
@@ -1684,9 +1685,8 @@ def toggle_fixo_dia():
         return jsonify(ok=True)
 
     except Exception as e:
-        print("ERRO TOGGLE_FIXO_DIA:", e)
+        print("ERRO EM toggle_fixo_dia:", e)
         return jsonify(ok=False, erro=str(e)), 500
-
 
 #testeeeeeeeeeeeeeeee
 # ======================

@@ -5,7 +5,6 @@
     <title>Horários Fixos</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-
 <body class="fundo-logo">
 
 <div class="card grande card-fixos">
@@ -22,69 +21,44 @@
                 <th>Cancelar</th>
             </tr>
         </thead>
-
         <tbody>
         {% for f in fixos %}
             <tr>
-
-                <!-- CLIENTE -->
                 <td class="fixo-cliente">
                     <strong>{{ f.cliente }}</strong>
-
                     <div class="fixo-contato">
-                        {% if f.telefone %}
-                            <span>📞 {{ f.telefone }}</span>
-                        {% endif %}
-
-                        {% if f.email %}
-                            <span>✉️ {{ f.email }}</span>
-                        {% else %}
-                            <span class="email-vazio">✉️ sem email</span>
-                        {% endif %}
+                        {% if f.telefone %}<span>📞 {{ f.telefone }}</span>{% endif %}
+                        {% if f.email %}<span>✉️ {{ f.email }}</span>{% else %}<span class="email-vazio">✉️ sem email</span>{% endif %}
                     </div>
                 </td>
-
-                <!-- HORA -->
                 <td>{{ f.hora }}</td>
-
-                <!-- QUADRA -->
                 <td>{{ f.quadra }}</td>
-
-                <!-- DIAS DO MÊS -->
                 <td>
                     <div class="dias-mes">
                         {% for d in f.datas %}
                         <span
-                            class="dia-bolinha{% if d.cancelado %} cancelado{% endif %}"
+                            class="dia-bolinha {{ 'cancelado' if d.cancelado else '' }}"
                             title="Clique para cancelar ou reativar este dia"
-                            onclick="toggleCancelamento('{{ f.quadra }}','{{ f.hora }}','{{ d.data_iso }}')">
-                            {{ d.data.strftime('%d') }}
+                            data-quadra="{{ f.quadra }}"
+                            data-hora="{{ f.hora }}"
+                            data-data_iso="{{ d.data_iso }}"
+                            data-cancelado="{{ 'true' if d.cancelado else 'false' }}"
+                            onclick="executarToggle(this)">
+                            {{ d.dia }}
                         </span>
                         {% endfor %}
                     </div>
                 </td>
-
-                <!-- CANCELAR DEFINITIVO -->
                 <td>
-                    <form method="POST"
-                          action="/admin/cancelar_fixo_definitivo"
-                          onsubmit="return confirm('Cancelar horário fixo definitivamente?');">
-
+                    <form method="POST" action="/admin/cancelar_fixo_definitivo" onsubmit="return confirm('Cancelar horário fixo definitivamente?');">
                         <input type="hidden" name="id_fixo" value="{{ f.id }}">
-
-                        <button type="submit"
-                                class="btn-cancelar-fixo"
-                                title="Cancelar definitivamente">
-                            ❌
-                        </button>
+                        <button type="submit" class="btn-cancelar-fixo" title="Cancelar definitivamente">❌</button>
                     </form>
                 </td>
-
             </tr>
         {% endfor %}
         </tbody>
     </table>
-
     {% else %}
         <p style="text-align:center;">Nenhum horário fixo cadastrado.</p>
     {% endif %}
@@ -92,9 +66,13 @@
     <a href="/painel_dono" class="btn-voltar">⬅ Voltar</a>
 </div>
 
-<!-- JS -->
 <script>
-function toggleCancelamento(quadra, hora, data, estaCancelado) {
+function executarToggle(elemento) {
+    // Captura os dados dos atributos data-
+    const quadra = elemento.getAttribute('data-quadra');
+    const hora = elemento.getAttribute('data-hora');
+    const data = elemento.getAttribute('data-data_iso');
+    const estaCancelado = elemento.getAttribute('data-cancelado') === 'true';
 
     const msg = estaCancelado
         ? "Deseja REATIVAR este horário fixo neste dia?"
@@ -114,13 +92,16 @@ function toggleCancelamento(quadra, hora, data, estaCancelado) {
     })
     .then(res => res.json())
     .then(resp => {
-        if (!resp.ok) {
-            alert("Erro: " + resp.erro);
-        } else {
+        if (resp.ok) {
             location.reload();
+        } else {
+            alert("Erro: " + resp.erro);
         }
     })
-    .catch(() => alert('Erro ao cancelar/reativar o dia'));
+    .catch(err => {
+        console.error(err);
+        alert('Erro ao processar a requisição.');
+    });
 }
 </script>
 </body>
