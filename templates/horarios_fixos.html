@@ -96,11 +96,12 @@
 <script>
 function toggleCancelamento(quadra, hora, data, estaCancelado) {
 
-    const msg = estaCancelado
-        ? "Deseja REATIVAR este horário fixo neste dia?"
-        : "Deseja CANCELAR este horário fixo neste dia?";
-
-    if (!confirm(msg)) return;
+    console.log("ENVIANDO:", {
+        quadra,
+        hora,
+        data,
+        cancelar: !estaCancelado
+    });
 
     fetch('/admin/toggle_fixo_dia', {
         method: 'POST',
@@ -112,14 +113,22 @@ function toggleCancelamento(quadra, hora, data, estaCancelado) {
             cancelar: !estaCancelado
         })
     })
-    .then(r => r.json())
-    .then(() => location.reload())
-    .catch(() => alert('Erro ao cancelar/reativar o dia'));
+    .then(res => {
+        if (!res.ok) {
+            throw new Error("Status HTTP: " + res.status);
+        }
+        return res.json();
+    })
+    .then(resp => {
+        console.log("RESPOSTA:", resp);
+        location.reload();
+    })
+    .catch(err => {
+        console.error("ERRO FETCH:", err);
+        alert("Erro ao cancelar (veja o console)");
+    });
 }
 </script>
-
-
-
 
 </body>
 </html>

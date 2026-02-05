@@ -1653,38 +1653,42 @@ from flask import request, jsonify
 
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
-    data = request.get_json(force=True)
+    try:
+        data = request.get_json(force=True)
+        print("DADOS RECEBIDOS:", data)
 
-    quadra = data.get('quadra')
-    hora = data.get('hora')
-    dia = data.get('data')
-    cancelar = data.get('cancelar')
+        quadra = data.get('quadra')
+        hora = data.get('hora')
+        dia = data.get('data')
+        cancelar = data.get('cancelar')
 
-    if None in (quadra, hora, dia, cancelar):
-        return jsonify({'erro': 'Dados incompletos'}), 400
+        if quadra is None or hora is None or dia is None or cancelar is None:
+            return jsonify({'erro': 'Dados incompletos', 'data': data}), 400
 
-    conn = get_db_connection()
-    cur = conn.cursor()
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-    if cancelar:
-        cur.execute("""
-            INSERT INTO cancelamentos_fixos (quadra, hora, data)
-            VALUES (%s, %s, %s)
-            ON CONFLICT DO NOTHING
-        """, (quadra, hora, dia))
-    else:
-        cur.execute("""
-            DELETE FROM cancelamentos_fixos
-            WHERE quadra = %s AND hora = %s AND data = %s
-        """, (quadra, hora, dia))
+        if cancelar:
+            cur.execute("""
+                INSERT INTO cancelamentos_fixos (quadra, hora, data)
+                VALUES (%s, %s, %s)
+                ON CONFLICT DO NOTHING
+            """, (quadra, hora, dia))
+        else:
+            cur.execute("""
+                DELETE FROM cancelamentos_fixos
+                WHERE quadra = %s AND hora = %s AND data = %s
+            """, (quadra, hora, dia))
 
-    conn.commit()
-    cur.close()
-    conn.close()
+        conn.commit()
+        cur.close()
+        conn.close()
 
-    return jsonify({'ok': True})
+        return jsonify({'ok': True})
 
-
+    except Exception as e:
+        print("ERRO NA ROTA:", e)
+        return jsonify({'erro': str(e)}), 500
 
 
 #testeeeeeeeeeeeeeeee
