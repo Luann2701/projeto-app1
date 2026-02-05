@@ -28,22 +28,21 @@
             <tr>
 
                 <!-- CLIENTE -->
-                 <td class="fixo-cliente">
-                 <strong>{{ f.cliente }}</strong>
+                <td class="fixo-cliente">
+                    <strong>{{ f.cliente }}</strong>
 
-                 <div class="fixo-contato">
-                  {% if f.telefone %}
-                 <span>📞 {{ f.telefone }}</span>
-                  {% endif %}
+                    <div class="fixo-contato">
+                        {% if f.telefone %}
+                            <span>📞 {{ f.telefone }}</span>
+                        {% endif %}
 
-                  {% if f.email %}
-                 <span>✉️ {{ f.email }}</span>
-                  {% else %}
-                 <span class="email-vazio">✉️ sem email</span>
-                  {% endif %}
-                 </div>
-                 </td>
-
+                        {% if f.email %}
+                            <span>✉️ {{ f.email }}</span>
+                        {% else %}
+                            <span class="email-vazio">✉️ sem email</span>
+                        {% endif %}
+                    </div>
+                </td>
 
                 <!-- HORA -->
                 <td>{{ f.hora }}</td>
@@ -55,15 +54,12 @@
                 <td>
                     <div class="dias-mes">
                         {% for d in f.datas %}
-                        <form method="POST" action="/admin/cancelar_fixo_dia">
-                            <input type="hidden" name="id_fixo" value="{{ f.id }}">
-                            <input type="hidden" name="data" value="{{ d.data.strftime('%Y-%m-%d') }}">
-                            <button type="submit"
-                                    class="dia-bolinha"
-                                    title="Cancelar apenas este dia">
-                                {{ d.data.strftime('%d') }}
-                            </button>
-                        </form>
+                        <span
+                            class="dia-bolinha{% if d.cancelado %} cancelado{% endif %}"
+                            title="Clique para cancelar ou reativar este dia"
+                            onclick="toggleCancelamento('{{ f.quadra }}','{{ f.hora }}','{{ d.data_iso }}')">
+                            {{ d.data.strftime('%d') }}
+                        </span>
                         {% endfor %}
                     </div>
                 </td>
@@ -74,7 +70,6 @@
                           action="/admin/cancelar_fixo_definitivo"
                           onsubmit="return confirm('Cancelar horário fixo definitivamente?');">
 
-                        <!-- 🔑 ESSENCIAL -->
                         <input type="hidden" name="id_fixo" value="{{ f.id }}">
 
                         <button type="submit"
@@ -96,6 +91,24 @@
 
     <a href="/painel_dono" class="btn-voltar">⬅ Voltar</a>
 </div>
+
+<!-- JS -->
+<script>
+function toggleCancelamento(quadra, hora, data) {
+    fetch('/admin/toggle_fixo_dia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            quadra: quadra,
+            hora: hora,
+            data: data
+        })
+    })
+    .then(res => res.json())
+    .then(() => location.reload())
+    .catch(() => alert('Erro ao cancelar/reativar o dia'));
+}
+</script>
 
 </body>
 </html>

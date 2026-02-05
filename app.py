@@ -1623,6 +1623,53 @@ def cancelar_fixo_dia():
     flash("Horário cancelado apenas neste dia.", "sucesso")
     return redirect("/admin/horarios-fixos")
 
+# =============================
+# CANCELAR FIXO NO DIA 2
+# =============================
+
+@app.route("/admin/toggle_fixo_dia", methods=["POST"])
+def toggle_fixo_dia():
+
+    if session.get("tipo") != "dono":
+        abort(403)
+
+    quadra = request.json["quadra"]
+    hora = request.json["hora"]
+    data = request.json["data"]
+
+    conn = conectar()
+    cur = conn.cursor()
+
+    # verifica se já está cancelado
+    cur.execute("""
+        SELECT 1
+        FROM cancelamentos_fixos
+        WHERE quadra = %s AND hora = %s AND data = %s
+    """, (quadra, hora, data))
+
+    existe = cur.fetchone()
+
+    if existe:
+        # 🔁 REATIVA
+        cur.execute("""
+            DELETE FROM cancelamentos_fixos
+            WHERE quadra = %s AND hora = %s AND data = %s
+        """, (quadra, hora, data))
+        status = "reativado"
+    else:
+        # ❌ CANCELA
+        cur.execute("""
+            INSERT INTO cancelamentos_fixos (quadra, hora, data)
+            VALUES (%s, %s, %s)
+            ON CONFLICT DO NOTHING
+        """, (quadra, hora, data))
+        status = "cancelado"
+
+    conn.commit()
+    conn.close()
+
+    return {"status": status}
+
 
 # ======================
 # RESET MINHA SENHA
