@@ -623,8 +623,9 @@ def admin_horarios_fixos():
         return redirect("/login")
 
     conn = conectar()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
+    # 1️⃣ Busca os horários fixos permanentes
     cur.execute("""
         SELECT
             id,
@@ -639,16 +640,32 @@ def admin_horarios_fixos():
           AND permanente = TRUE
         ORDER BY quadra, hora
     """)
-
     dados = cur.fetchall()
 
+    # 2️⃣ Busca os cancelamentos do mês atual
     hoje = datetime.now()
     ano = hoje.year
     mes = hoje.month
     ultimo_dia = calendar.monthrange(ano, mes)[1]
 
+    cur.execute("""
+        SELECT quadra, hora, data
+        FROM cancelamentos_fixo
+        WHERE EXTRACT(YEAR FROM data) = %s
+          AND EXTRACT(MONTH FROM data) = %s
+    """, (ano, mes))
+
+    cancelamentos = cur.fetchall()
+
+    # transforma cancelamentos em um set para consulta rápida
+    cancelados_set = set()
+    for c in cancelamentos:
+        chave = (c["quadra"], str(c["hora"])[:5], c["data"].date())
+        cancelados_set.add(chave)
+
     fixos_dict = {}
 
+    # 3️⃣ Monta os horários fixos com datas do mês
     for id_fixo, cliente, telefone, email, quadra, hora, dia_semana in dados:
 
         if id_fixo not in fixos_dict:
@@ -667,8 +684,17 @@ def admin_horarios_fixos():
 
         for dia in range(1, ultimo_dia + 1):
             data = datetime(ano, mes, dia)
+
             if data.weekday() == dia_semana:
-                fixos_dict[id_fixo]["datas"].append({"data": data})
+                chave_cancelamento = (quadra, str(hora)[:5], data.date())
+
+                # ❌ se estiver cancelado, pula
+                if chave_cancelamento in cancelados_set:
+                    continue
+
+                fixos_dict[id_fixo]["datas"].append({
+                    "data": data
+                })
 
     fixos = list(fixos_dict.values())
 
@@ -676,6 +702,7 @@ def admin_horarios_fixos():
     conn.close()
 
     return render_template("horarios_fixos.html", fixos=fixos)
+
 
 
 # ======================
