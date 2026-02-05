@@ -20,13 +20,10 @@ import psycopg2
 import os
 
 def get_db_connection():
-    database_url = os.environ.get("DATABASE_URL")
-
-    if not database_url:
-        raise Exception("DATABASE_URL não configurada no Render")
-
-    return psycopg2.connect(database_url)
-
+    return psycopg2.connect(
+        os.environ.get("DATABASE_URL"),
+        sslmode="require"
+    )
 
 
 def get_conn():
@@ -1654,16 +1651,16 @@ from flask import request, jsonify
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
     try:
-        data = request.get_json(force=True)
-        print("DADOS RECEBIDOS:", data)
+        data = request.get_json()
+        print("TOGGLE FIXO RECEBIDO:", data)
 
         quadra = data.get('quadra')
         hora = data.get('hora')
         dia = data.get('data')
         cancelar = data.get('cancelar')
 
-        if quadra is None or hora is None or dia is None or cancelar is None:
-            return jsonify({'erro': 'Dados incompletos', 'data': data}), 400
+        if None in (quadra, hora, dia, cancelar):
+            return jsonify({'ok': False, 'erro': 'Dados incompletos'}), 400
 
         conn = get_db_connection()
         cur = conn.cursor()
@@ -1687,8 +1684,8 @@ def toggle_fixo_dia():
         return jsonify({'ok': True})
 
     except Exception as e:
-        print("ERRO NA ROTA:", e)
-        return jsonify({'erro': str(e)}), 500
+        print("ERRO TOGGLE_FIXO:", e)
+        return jsonify({'ok': False, 'erro': str(e)}), 500
 
 
 #testeeeeeeeeeeeeeeee
