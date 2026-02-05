@@ -1639,34 +1639,35 @@ def cancelar_fixo_dia():
 from flask import request, jsonify
 
 @app.route("/admin/toggle_fixo_dia", methods=["POST"])
-def toggle_dia_fixo():
+def toggle_fixo_dia():
     data = request.get_json()
 
-    quadra = data.get("quadra")
-    hora = data.get("hora")
-    dia = data.get("dia")
-    cancelar = data.get("cancelar")
+    quadra = data["quadra"]
+    hora = data["hora"] + ":00" if len(data["hora"]) == 5 else data["hora"]
+    dia = data["data"]
+    cancelar = data["cancelar"]
 
     conn = get_conn()
-    cursor = conn.cursor()
+    cur = conn.cursor()
 
     if cancelar:
-        cursor.execute("""
+        cur.execute("""
             INSERT INTO cancelamentos_fixos (quadra, hora, data)
             VALUES (%s, %s, %s)
-            ON CONFLICT (quadra, hora, data) DO NOTHING
+            ON CONFLICT DO NOTHING
         """, (quadra, hora, dia))
     else:
-        cursor.execute("""
+        cur.execute("""
             DELETE FROM cancelamentos_fixos
             WHERE quadra = %s AND hora = %s AND data = %s
         """, (quadra, hora, dia))
 
     conn.commit()
-    cursor.close()
+    cur.close()
     conn.close()
 
     return jsonify(ok=True)
+
 
 
 #testeeeeeeeeeeeeeeee
