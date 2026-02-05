@@ -33,9 +33,9 @@ body.fundo-logo::before {
     position: relative;
     z-index: 1;
     background: white;
-    padding: 35px;
-    width: 340px;
-    border-radius: 18px;
+    padding: 40px;
+    width: 460px;
+    border-radius: 20px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
@@ -44,7 +44,7 @@ body.fundo-logo::before {
 .card h1,
 .card h2 {
     color: #ff7a00;
-    margin-bottom: 22px;
+    margin-bottom: 24px;
 }
 
 /* BOTÕES */
@@ -205,8 +205,8 @@ table th {
 
 @media (max-width: 480px) {
     .card {
-        width: 90%;
-        padding: 25px;
+        width: 92%;
+        padding: 28px;
     }
 }
 
@@ -789,22 +789,5 @@ img, video, iframe {
 .fixo-contato {
     margin-top: 6px;
 }
-.dia-bolinha {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: #ff8c00;
-    color: white;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    margin: 4px;
-    font-weight: bold;
-}
 
-.dia-bolinha.cancelado {
-    background: #9e9e9e;
-    opacity: 0.6;
-}
 
