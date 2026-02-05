@@ -1599,7 +1599,7 @@ def cancelar_fixo_definitivo():
 
 
 # ======================
-# CANCELA FIXO NO DIA
+# CANCELA FIXO NO DIA 1
 # ======================
 
 @app.route("/admin/cancelar_fixo_dia", methods=["POST"])
@@ -1623,6 +1623,43 @@ def cancelar_fixo_dia():
 
     flash("Horário cancelado apenas neste dia.", "sucesso")
     return redirect("/admin/horarios-fixos")
+
+# ======================================
+# CANCELA FIXO NO DIA 2 bolinhas
+# ======================================
+
+@app.route("/admin/toggle-dia-fixo", methods=["POST"])
+def toggle_dia_fixo():
+
+    if session.get("tipo") != "dono":
+        abort(403)
+
+    dados = request.get_json()
+
+    horario_fixo_id = dados.get("horario_fixo_id")
+    data = dados.get("data")
+    cancelar = dados.get("cancelar")
+
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    cur = conn.cursor()
+
+    if cancelar:
+        cur.execute("""
+            INSERT INTO horarios_fixos_excecoes (horario_fixo_id, data)
+            VALUES (%s, %s)
+            ON CONFLICT DO NOTHING
+        """, (horario_fixo_id, data))
+    else:
+        cur.execute("""
+            DELETE FROM horarios_fixos_excecoes
+            WHERE horario_fixo_id = %s AND data = %s
+        """, (horario_fixo_id, data))
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return "", 204
 
 
 # ======================
