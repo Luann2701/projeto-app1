@@ -15,6 +15,17 @@ import requests
 import pytz
 import mercadopago
 
+import psycopg2
+
+def get_conn():
+    return psycopg2.connect(
+        host="localhost",
+        database="SEU_BANCO",
+        user="SEU_USER",
+        password="SUA_SENHA"
+    )
+
+
 mp = mercadopago.SDK(os.getenv("MERCADOPAGO_ACCESS_TOKEN"))
 
 
@@ -1628,72 +1639,37 @@ def cancelar_fixo_dia():
 # ======================
 
 from flask import request, jsonify
-import psycopg2
-from datetime import datetime
 
 @app.route("/admin/toggle_fixo_dia", methods=["POST"])
-def toggle_fixo_dia():
+def toggle_dia_fixo():
     data = request.get_json()
 
     quadra = data.get("quadra")
     hora = data.get("hora")
-    data_str = data.get("data")  # yyyy-mm-dd
+    dia = data.get("dia")
+    cancelar = data.get("cancelar")
 
-    if not quadra or not hora or not data_str:
-        return jsonify({"ok": False, "erro": "Dados incompletos"}), 400
-
-    dia = int(datetime.strptime(data_str, "%Y-%m-%d").day)
-
-    conn = psycopg2.connect(
-        host="localhost",
-        database="SEU_BANCO",
-        user="SEU_USUARIO",
-        password="SUA_SENHA"
-    )
+    conn = get_conn()          # 👈 AGORA EXISTE
     cursor = conn.cursor()
 
-    # 🔎 acha o ID do horário fixo
-    cursor.execute("""
-        SELECT id
-        FROM horarios_fixos
-        WHERE quadra = %s AND hora = %s
-    """, (quadra, hora))
-
-    row = cursor.fetchone()
-    if not row:
-        cursor.close()
-        conn.close()
-        return jsonify({"ok": False, "erro": "Horário fixo não encontrado"}), 404
-
-    horario_id = row[0]
-
-    # 🔁 verifica se já está cancelado
-    cursor.execute("""
-        SELECT 1
-        FROM cancelamentos_fixos
-        WHERE horario_fixo_id = %s AND dia = %s
-    """, (horario_id, dia))
-
-    ja_cancelado = cursor.fetchone()
-
-    if ja_cancelado:
-        # reativar
+    if cancelar:
+        cursor.execute("""
+            INSERT INTO cancelamentos_fixos (quadra, hora, data)
+            VALUES (%s, %s, %s)
+            ON CONFLICT DO NOTHING
+        """, (quadra, hora, dia))
+    else:
         cursor.execute("""
             DELETE FROM cancelamentos_fixos
-            WHERE horario_fixo_id = %s AND dia = %s
-        """, (horario_id, dia))
-    else:
-        # cancelar
-        cursor.execute("""
-            INSERT INTO cancelamentos_fixos (horario_fixo_id, dia, cancelado)
-            VALUES (%s, %s, TRUE)
-        """, (horario_id, dia))
+            WHERE quadra = %s AND hora = %s AND data = %s
+        """, (quadra, hora, dia))
 
     conn.commit()
     cursor.close()
     conn.close()
 
-    return jsonify({"ok": True})
+    return jsonify(ok=True)
+
 
 
 #testeeeeeeeeeeeeeeee
