@@ -1629,14 +1629,20 @@ def cancelar_fixo_dia():
 
 from flask import request, jsonify
 import psycopg2
+from datetime import datetime
 
 @app.route("/admin/toggle_fixo_dia", methods=["POST"])
-def toggle_dia_fixo():
+def toggle_fixo_dia():
     data = request.get_json()
 
-    horario_id = data.get("horario_id")
-    dia = data.get("dia")
-    cancelar = data.get("cancelar")
+    quadra = data.get("quadra")
+    hora = data.get("hora")
+    data_str = data.get("data")  # yyyy-mm-dd
+
+    if not quadra or not hora or not data_str:
+        return jsonify({"ok": False, "erro": "Dados incompletos"}), 400
+
+    dia = int(datetime.strptime(data_str, "%Y-%m-%d").day)
 
     conn = psycopg2.connect(
         host="localhost",
@@ -1646,17 +1652,41 @@ def toggle_dia_fixo():
     )
     cursor = conn.cursor()
 
-    if cancelar:
-        cursor.execute("""
-            INSERT INTO cancelamentos_fixos (horario_fixo_id, dia, cancelado)
-            VALUES (%s, %s, TRUE)
-            ON CONFLICT (horario_fixo_id, dia)
-            DO UPDATE SET cancelado = TRUE
-        """, (horario_id, dia))
-    else:
+    # 🔎 acha o ID do horário fixo
+    cursor.execute("""
+        SELECT id
+        FROM horarios_fixos
+        WHERE quadra = %s AND hora = %s
+    """, (quadra, hora))
+
+    row = cursor.fetchone()
+    if not row:
+        cursor.close()
+        conn.close()
+        return jsonify({"ok": False, "erro": "Horário fixo não encontrado"}), 404
+
+    horario_id = row[0]
+
+    # 🔁 verifica se já está cancelado
+    cursor.execute("""
+        SELECT 1
+        FROM cancelamentos_fixos
+        WHERE horario_fixo_id = %s AND dia = %s
+    """, (horario_id, dia))
+
+    ja_cancelado = cursor.fetchone()
+
+    if ja_cancelado:
+        # reativar
         cursor.execute("""
             DELETE FROM cancelamentos_fixos
             WHERE horario_fixo_id = %s AND dia = %s
+        """, (horario_id, dia))
+    else:
+        # cancelar
+        cursor.execute("""
+            INSERT INTO cancelamentos_fixos (horario_fixo_id, dia, cancelado)
+            VALUES (%s, %s, TRUE)
         """, (horario_id, dia))
 
     conn.commit()
