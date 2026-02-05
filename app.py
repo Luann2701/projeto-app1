@@ -623,9 +623,8 @@ def admin_horarios_fixos():
         return redirect("/login")
 
     conn = conectar()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur = conn.cursor()
 
-    # 🔹 Horários fixos
     cur.execute("""
         SELECT
             id,
@@ -640,20 +639,8 @@ def admin_horarios_fixos():
           AND permanente = TRUE
         ORDER BY quadra, hora
     """)
+
     dados = cur.fetchall()
-
-    # 🔹 Cancelamentos por dia
-    cur.execute("""
-        SELECT quadra, hora, data
-        FROM cancelamentos_fixo
-    """)
-    cancelados = cur.fetchall()
-
-    # transforma cancelados em set para consulta rápida
-    cancelados_set = {
-        (c["quadra"], str(c["hora"])[:5], c["data"].strftime("%Y-%m-%d"))
-        for c in cancelados
-    }
 
     hoje = datetime.now()
     ano = hoje.year
@@ -662,20 +649,16 @@ def admin_horarios_fixos():
 
     fixos_dict = {}
 
-    for row in dados:
-        id_fixo = row["id"]
-        quadra = row["quadra"]
-        hora = str(row["hora"])[:5]
-        dia_semana = row["dia_semana"]
+    for id_fixo, cliente, telefone, email, quadra, hora, dia_semana in dados:
 
         if id_fixo not in fixos_dict:
             fixos_dict[id_fixo] = {
                 "id": id_fixo,
-                "cliente": row["cliente"],
-                "telefone": row["telefone"],
-                "email": row["email"] or "sem email",
+                "cliente": cliente,
+                "telefone": telefone,
+                "email": email or "sem email",
                 "quadra": quadra,
-                "hora": hora,
+                "hora": str(hora)[:5],
                 "datas": []
             }
 
@@ -685,14 +668,7 @@ def admin_horarios_fixos():
         for dia in range(1, ultimo_dia + 1):
             data = datetime(ano, mes, dia)
             if data.weekday() == dia_semana:
-                data_str = data.strftime("%Y-%m-%d")
-
-                cancelado = (quadra, hora, data_str) in cancelados_set
-
-                fixos_dict[id_fixo]["datas"].append({
-                    "data": data,
-                    "cancelado": cancelado
-                })
+                fixos_dict[id_fixo]["datas"].append({"data": data})
 
     fixos = list(fixos_dict.values())
 
@@ -700,9 +676,6 @@ def admin_horarios_fixos():
     conn.close()
 
     return render_template("horarios_fixos.html", fixos=fixos)
-
-
-
 
 # ======================
 # MEUS HORÁRIOS
@@ -1649,43 +1622,6 @@ def cancelar_fixo_dia():
 
     flash("Horário cancelado apenas neste dia.", "sucesso")
     return redirect("/admin/horarios-fixos")
-
-# ======================================
-# CANCELA FIXO NO DIA 2 bolinhas
-# ======================================
-
-@app.route("/admin/toggle-dia-fixo", methods=["POST"])
-def toggle_dia_fixo():
-
-    if session.get("tipo") != "dono":
-        abort(403)
-
-    dados = request.get_json()
-
-    horario_fixo_id = dados.get("horario_fixo_id")
-    data = dados.get("data")
-    cancelar = dados.get("cancelar")
-
-    conn = psycopg2.connect(os.environ["DATABASE_URL"])
-    cur = conn.cursor()
-
-    if cancelar:
-        cur.execute("""
-            INSERT INTO horarios_fixos_excecoes (horario_fixo_id, data)
-            VALUES (%s, %s)
-            ON CONFLICT DO NOTHING
-        """, (horario_fixo_id, data))
-    else:
-        cur.execute("""
-            DELETE FROM horarios_fixos_excecoes
-            WHERE horario_fixo_id = %s AND data = %s
-        """, (horario_fixo_id, data))
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    return "", 204
 
 
 # ======================
