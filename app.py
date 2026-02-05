@@ -1630,57 +1630,41 @@ def cancelar_fixo_dia():
 from flask import request, jsonify
 import psycopg2
 
-@app.route("/toggle-dia-fixo", methods=["POST"])
+@app.route("/admin/toggle_fixo_dia", methods=["POST"])
 def toggle_dia_fixo():
     data = request.get_json()
-
-    # validação básica
-    if not data:
-        return jsonify({"ok": False, "erro": "JSON vazio"}), 400
 
     horario_id = data.get("horario_id")
     dia = data.get("dia")
     cancelar = data.get("cancelar")
 
-    if horario_id is None or dia is None or cancelar is None:
-        return jsonify({"ok": False, "erro": "Dados incompletos"}), 400
-
-    # 🔌 conexão com o banco
     conn = psycopg2.connect(
         host="localhost",
         database="SEU_BANCO",
         user="SEU_USUARIO",
         password="SUA_SENHA"
     )
-
     cursor = conn.cursor()
 
-    try:
-        if cancelar:
-            cursor.execute("""
-                INSERT INTO cancelamentos_fixos (horario_fixo_id, dia, cancelado)
-                VALUES (%s, %s, TRUE)
-                ON CONFLICT (horario_fixo_id, dia)
-                DO UPDATE SET cancelado = TRUE
-            """, (horario_id, dia))
-        else:
-            cursor.execute("""
-                DELETE FROM cancelamentos_fixos
-                WHERE horario_fixo_id = %s AND dia = %s
-            """, (horario_id, dia))
+    if cancelar:
+        cursor.execute("""
+            INSERT INTO cancelamentos_fixos (horario_fixo_id, dia, cancelado)
+            VALUES (%s, %s, TRUE)
+            ON CONFLICT (horario_fixo_id, dia)
+            DO UPDATE SET cancelado = TRUE
+        """, (horario_id, dia))
+    else:
+        cursor.execute("""
+            DELETE FROM cancelamentos_fixos
+            WHERE horario_fixo_id = %s AND dia = %s
+        """, (horario_id, dia))
 
-        conn.commit()
-
-    except Exception as e:
-        conn.rollback()
-        cursor.close()
-        conn.close()
-        return jsonify({"ok": False, "erro": str(e)}), 500
-
+    conn.commit()
     cursor.close()
     conn.close()
 
     return jsonify({"ok": True})
+
 
 #testeeeeeeeeeeeeeeee
 # ======================
