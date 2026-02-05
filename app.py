@@ -637,7 +637,6 @@ def admin_horarios_fixos():
         FROM horarios
         WHERE tipo = 'fixo'
           AND permanente = TRUE
-          AND ativo = TRUE
         ORDER BY quadra, hora
     """)
 
@@ -648,12 +647,10 @@ def admin_horarios_fixos():
     mes = hoje.month
     ultimo_dia = calendar.monthrange(ano, mes)[1]
 
-    # 🔑 DICIONÁRIO PARA AGRUPAR POR ID
     fixos_dict = {}
 
     for id_fixo, cliente, telefone, email, quadra, hora, dia_semana in dados:
 
-        # Cria o horário fixo apenas uma vez
         if id_fixo not in fixos_dict:
             fixos_dict[id_fixo] = {
                 "id": id_fixo,
@@ -673,7 +670,6 @@ def admin_horarios_fixos():
             if data.weekday() == dia_semana:
                 fixos_dict[id_fixo]["datas"].append({"data": data})
 
-    # Converte para lista (o HTML espera lista)
     fixos = list(fixos_dict.values())
 
     cur.close()
