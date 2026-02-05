@@ -15,15 +15,13 @@ import requests
 import pytz
 import mercadopago
 
-import psycopg2
 
 def get_conn():
     return psycopg2.connect(
-        host="localhost",
-        database="SEU_BANCO",
-        user="SEU_USER",
-        password="SUA_SENHA"
+        os.environ.get("DATABASE_URL"),
+        sslmode="require"
     )
+
 
 
 mp = mercadopago.SDK(os.getenv("MERCADOPAGO_ACCESS_TOKEN"))
@@ -1649,14 +1647,14 @@ def toggle_dia_fixo():
     dia = data.get("dia")
     cancelar = data.get("cancelar")
 
-    conn = get_conn()          # 👈 AGORA EXISTE
+    conn = get_conn()
     cursor = conn.cursor()
 
     if cancelar:
         cursor.execute("""
             INSERT INTO cancelamentos_fixos (quadra, hora, data)
             VALUES (%s, %s, %s)
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (quadra, hora, data) DO NOTHING
         """, (quadra, hora, dia))
     else:
         cursor.execute("""
@@ -1669,7 +1667,6 @@ def toggle_dia_fixo():
     conn.close()
 
     return jsonify(ok=True)
-
 
 
 #testeeeeeeeeeeeeeeee
