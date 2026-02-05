@@ -625,7 +625,7 @@ def admin_horarios_fixos():
     conn = conectar()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    # 1️⃣ Busca os horários fixos permanentes
+    # 🔹 Horários fixos
     cur.execute("""
         SELECT
             id,
@@ -642,40 +642,40 @@ def admin_horarios_fixos():
     """)
     dados = cur.fetchall()
 
-    # 2️⃣ Busca os cancelamentos do mês atual
+    # 🔹 Cancelamentos por dia
+    cur.execute("""
+        SELECT quadra, hora, data
+        FROM cancelamentos_fixo
+    """)
+    cancelados = cur.fetchall()
+
+    # transforma cancelados em set para consulta rápida
+    cancelados_set = {
+        (c["quadra"], str(c["hora"])[:5], c["data"].strftime("%Y-%m-%d"))
+        for c in cancelados
+    }
+
     hoje = datetime.now()
     ano = hoje.year
     mes = hoje.month
     ultimo_dia = calendar.monthrange(ano, mes)[1]
 
-    cur.execute("""
-        SELECT quadra, hora, data
-        FROM cancelamentos_fixo
-        WHERE EXTRACT(YEAR FROM data) = %s
-          AND EXTRACT(MONTH FROM data) = %s
-    """, (ano, mes))
-
-    cancelamentos = cur.fetchall()
-
-    # transforma cancelamentos em um set para consulta rápida
-    cancelados_set = set()
-    for c in cancelamentos:
-        chave = (c["quadra"], str(c["hora"])[:5], c["data"].date())
-        cancelados_set.add(chave)
-
     fixos_dict = {}
 
-    # 3️⃣ Monta os horários fixos com datas do mês
-    for id_fixo, cliente, telefone, email, quadra, hora, dia_semana in dados:
+    for row in dados:
+        id_fixo = row["id"]
+        quadra = row["quadra"]
+        hora = str(row["hora"])[:5]
+        dia_semana = row["dia_semana"]
 
         if id_fixo not in fixos_dict:
             fixos_dict[id_fixo] = {
                 "id": id_fixo,
-                "cliente": cliente,
-                "telefone": telefone,
-                "email": email or "sem email",
+                "cliente": row["cliente"],
+                "telefone": row["telefone"],
+                "email": row["email"] or "sem email",
                 "quadra": quadra,
-                "hora": str(hora)[:5],
+                "hora": hora,
                 "datas": []
             }
 
@@ -684,16 +684,14 @@ def admin_horarios_fixos():
 
         for dia in range(1, ultimo_dia + 1):
             data = datetime(ano, mes, dia)
-
             if data.weekday() == dia_semana:
-                chave_cancelamento = (quadra, str(hora)[:5], data.date())
+                data_str = data.strftime("%Y-%m-%d")
 
-                # ❌ se estiver cancelado, pula
-                if chave_cancelamento in cancelados_set:
-                    continue
+                cancelado = (quadra, hora, data_str) in cancelados_set
 
                 fixos_dict[id_fixo]["datas"].append({
-                    "data": data
+                    "data": data,
+                    "cancelado": cancelado
                 })
 
     fixos = list(fixos_dict.values())
@@ -702,6 +700,7 @@ def admin_horarios_fixos():
     conn.close()
 
     return render_template("horarios_fixos.html", fixos=fixos)
+
 
 
 
