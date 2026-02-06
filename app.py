@@ -1646,45 +1646,49 @@ def cancelar_fixo_dia():
 
 from flask import request, jsonify
 
+from flask import request, redirect, url_for
+
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
+
+    quadra = request.form.get('quadra')
+    hora = request.form.get('hora')
+    data = request.form.get('data')
+    cancelado = request.form.get('cancelado')  # "1" ou "0"
+
+    if not quadra or not hora or not data:
+        print("❌ DADOS INCOMPLETOS:", quadra, hora, data)
+        return redirect(url_for('admin_horarios_fixos'))
+
+    conn = conectar()
+    cur = conn.cursor()
+
     try:
-        data = request.get_json()
-
-        quadra = data.get('quadra')
-        hora = data.get('hora')
-        dia = data.get('data')
-        cancelar = data.get('cancelar')  # 🔥 AGORA BATE COM O JS
-
-        if quadra is None or hora is None or dia is None or cancelar is None:
-            return jsonify(ok=False, erro="Dados incompletos"), 400
-
-        conn = conectar()
-        cur = conn.cursor()
-
-        if cancelar:
-            # CANCELAR o dia
+        if cancelado == "1":
+            # REATIVAR
+            cur.execute("""
+                DELETE FROM cancelamentos_fixos
+                WHERE quadra = %s AND hora = %s AND data = %s
+            """, (quadra, hora, data))
+        else:
+            # CANCELAR
             cur.execute("""
                 INSERT INTO cancelamentos_fixos (quadra, hora, data)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (quadra, hora, data) DO NOTHING
-            """, (quadra, hora, dia))
-        else:
-            # REATIVAR o dia
-            cur.execute("""
-                DELETE FROM cancelamentos_fixos
-                WHERE quadra = %s AND hora = %s AND data = %s
-            """, (quadra, hora, dia))
+            """, (quadra, hora, data))
 
         conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        print("🔥 ERRO TOGGLE_FIXO_DIA:", e)
+
+    finally:
         cur.close()
         conn.close()
 
-        return jsonify(ok=True)
-
-    except Exception as e:
-        print("ERRO TOGGLE_FIXO_DIA:", e)
-        return jsonify(ok=False, erro=str(e)), 500
+    return redirect(url_for('admin_horarios_fixos'))
 
 
 # ======================

@@ -52,24 +52,33 @@
 
                 <!-- DIAS DO MÊS -->
                 <td>
-    <div class="dias-mes">
-        {% for d in f.datas %}
-        <span
-            class="dia-bolinha{% if d.cancelado %} cancelado{% endif %}"
-            title="Clique para cancelar ou reativar este dia"
-            onclick="toggleCancelamento(
-                '{{ f.quadra }}',
-                '{{ f.hora }}',
-                '{{ d.data_iso }}',
-                '{{ 1 if d.cancelado else 0 }}'
-            )">
-            {{ d.data.strftime('%d') }}
-        </span>
+               <div class="dias-mes">
+                {% for d in f.datas %}
+                 <form method="POST"
+              action="/admin/toggle_fixo_dia"
+              style="display:inline;">
+
+            <input type="hidden" name="quadra" value="{{ f.quadra }}">
+            <input type="hidden" name="hora" value="{{ f.hora }}">
+            <input type="hidden" name="data" value="{{ d.data_iso }}">
+            <input type="hidden" name="cancelado" value="{{ 1 if d.cancelado else 0 }}">
+
+            <button type="submit"
+        class="dia-bolinha{% if d.cancelado %} cancelado{% endif %}"
+        title="Clique para cancelar ou reativar este dia"
+        {% if d.cancelado %}
+            onclick="return confirm('Reativar este dia?')"
+        {% else %}
+            onclick="return confirm('Cancelar este dia?')"
+        {% endif %}>
+    {{ d.data.strftime('%d') }}
+</button>
+
+
+        </form>
         {% endfor %}
     </div>
 </td>
-
-                
 
 
                 <!-- CANCELAR DEFINITIVO -->
