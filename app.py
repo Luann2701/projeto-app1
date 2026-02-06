@@ -1644,17 +1644,13 @@ def cancelar_fixo_dia():
 # CANCELA FIXO NO DIA 2
 # ======================
 
-from flask import request, jsonify
-
-from flask import request, redirect, url_for
-
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
 
     quadra = request.form.get('quadra')
     hora = request.form.get('hora')
     data = request.form.get('data')
-    cancelado = request.form.get('cancelado')  # "1" ou "0"
+    cancelado = request.form.get('cancelado')  # "1" = estava cancelado
 
     if not quadra or not hora or not data:
         print("❌ DADOS INCOMPLETOS:", quadra, hora, data)
@@ -1665,13 +1661,13 @@ def toggle_fixo_dia():
 
     try:
         if cancelado == "1":
-            # REATIVAR
+            # 🔁 REATIVAR
             cur.execute("""
                 DELETE FROM cancelamentos_fixos
                 WHERE quadra = %s AND hora = %s AND data = %s
             """, (quadra, hora, data))
         else:
-            # CANCELAR
+            # ⛔ CANCELAR
             cur.execute("""
                 INSERT INTO cancelamentos_fixos (quadra, hora, data)
                 VALUES (%s, %s, %s)
@@ -1689,6 +1685,7 @@ def toggle_fixo_dia():
         conn.close()
 
     return redirect(url_for('admin_horarios_fixos'))
+
 
 
 # ======================
