@@ -1644,9 +1644,11 @@ def cancelar_fixo_dia():
 # CANCELA FIXO NO DIA 2
 # ======================
 
+import logging
+
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
-    print("🟢 POST RECEBIDO:", request.form)
+    app.logger.warning(f"POST RECEBIDO: {request.form}")
     quadra = request.form.get('quadra')
     hora = request.form.get('hora')
     data = request.form.get('data')
