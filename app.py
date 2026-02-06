@@ -642,6 +642,9 @@ def admin_horarios_fixos():
     conn = conectar()
     cur = conn.cursor()
 
+    # ===============================
+    # HORÁRIOS FIXOS ATIVOS
+    # ===============================
     cur.execute("""
         SELECT
             id,
@@ -656,9 +659,25 @@ def admin_horarios_fixos():
           AND permanente = TRUE
         ORDER BY quadra, hora
     """)
-
     dados = cur.fetchall()
 
+    # ===============================
+    # CANCELAMENTOS DE FIXOS
+    # ===============================
+    cur.execute("""
+        SELECT quadra, hora, data
+        FROM cancelamentos_fixos
+    """)
+    cancelados_db = cur.fetchall()
+
+    cancelados_set = set(
+        (q, str(h)[:5], d.strftime("%Y-%m-%d"))
+        for q, h, d in cancelados_db
+    )
+
+    # ===============================
+    # CALENDÁRIO DO MÊS ATUAL
+    # ===============================
     hoje = datetime.now()
     ano = hoje.year
     mes = hoje.month
@@ -684,8 +703,21 @@ def admin_horarios_fixos():
 
         for dia in range(1, ultimo_dia + 1):
             data = datetime(ano, mes, dia)
+
             if data.weekday() == dia_semana:
-                fixos_dict[id_fixo]["datas"].append({"data": data})
+                data_str = data.strftime("%Y-%m-%d")
+
+                cancelado = (
+                    quadra,
+                    str(hora)[:5],
+                    data_str
+                ) in cancelados_set
+
+                fixos_dict[id_fixo]["datas"].append({
+                    "data": data,
+                    "data_str": data_str,
+                    "cancelado": cancelado
+                })
 
     fixos = list(fixos_dict.values())
 
@@ -693,6 +725,7 @@ def admin_horarios_fixos():
     conn.close()
 
     return render_template("horarios_fixos.html", fixos=fixos)
+
 
 # ======================
 # MEUS HORÁRIOS
