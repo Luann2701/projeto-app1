@@ -52,33 +52,30 @@
 
                 <!-- DIAS DO MÊS -->
                 <td>
-    <div class="dias-mes">
-        {% for d in f.datas %}
+                    <div class="dias-mes">
+                        {% for d in f.datas %}
 
-        {% set msg = 'Reativar este dia deste horário fixo?' if d.cancelado else 'Cancelar este dia deste horário fixo?' %}
+                        {% set msg = 'Reativar este dia deste horário fixo?' if d.cancelado else 'Cancelar este dia deste horário fixo?' %}
 
-        <form method="POST"
-              action="/admin/toggle_fixo_dia"
-              style="display:inline;"
-              onsubmit="return confirm('{{ msg }}');">
+                        <form method="POST"
+                              action="/admin/toggle_fixo_dia"
+                              style="display:inline;"
+                              onsubmit="return abrirConfirmacao(this, '{{ msg }}');">
 
-            <input type="hidden" name="quadra" value="{{ f.quadra }}">
-            <input type="hidden" name="hora" value="{{ f.hora }}">
-            <input type="hidden" name="data" value="{{ d.data.strftime('%Y-%m-%d') }}">
-            <input type="hidden" name="cancelado" value="{{ 1 if d.cancelado else 0 }}">
+                            <input type="hidden" name="quadra" value="{{ f.quadra }}">
+                            <input type="hidden" name="hora" value="{{ f.hora }}">
+                            <input type="hidden" name="data" value="{{ d.data.strftime('%Y-%m-%d') }}">
+                            <input type="hidden" name="cancelado" value="{{ 1 if d.cancelado else 0 }}">
 
-            <button type="submit"
-                    class="dia-bolinha{% if d.cancelado %} cancelado{% endif %}">
-                {{ d.data.strftime('%d') }}
-            </button>
+                            <button type="submit"
+                                    class="dia-bolinha{% if d.cancelado %} cancelado{% endif %}">
+                                {{ d.data.strftime('%d') }}
+                            </button>
 
-        </form>
-        {% endfor %}
-    </div>
-</td>
-
-
-
+                        </form>
+                        {% endfor %}
+                    </div>
+                </td>
 
                 <!-- CANCELAR DEFINITIVO -->
                 <td>
@@ -108,32 +105,39 @@
     <a href="/painel_dono" class="btn-voltar">⬅ Voltar</a>
 </div>
 
+<!-- MODAL CONFIRMAÇÃO -->
+<div id="modal-confirm" class="modal-overlay">
+    <div class="modal-box">
+        <h2>Confirmar ação</h2>
+        <p id="modal-msg"></p>
+
+        <div class="modal-botoes">
+            <button class="btn-confirmar" onclick="confirmarModal()">Confirmar</button>
+            <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
 <!-- JS -->
 <script>
-function toggleCancelamento(quadra, hora, data, estaCancelado) {
+let formParaEnviar = null;
 
-    const msg = estaCancelado
-        ? "Deseja REATIVAR este horário fixo neste dia?"
-        : "Deseja CANCELAR este horário fixo neste dia?";
+function abrirConfirmacao(form, mensagem) {
+    formParaEnviar = form;
+    document.getElementById('modal-msg').innerText = mensagem;
+    document.getElementById('modal-confirm').style.display = 'flex';
+    return false;
+}
 
-    if (!confirm(msg)) return;
+function fecharModal() {
+    document.getElementById('modal-confirm').style.display = 'none';
+    formParaEnviar = null;
+}
 
-    fetch('/admin/toggle_fixo_dia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            quadra: quadra,
-            hora: hora,
-            data: data,
-            cancelar: !estaCancelado   // 🔥 CASA COM O BACKEND
-        })
-    })
-    .then(res => res.json())
-    .then(r => {
-        if (!r.ok) throw r.erro;
-        location.reload();
-    })
-    .catch(() => alert('Erro ao cancelar/reativar o dia'));
+function confirmarModal() {
+    if (formParaEnviar) {
+        formParaEnviar.submit();
+    }
 }
 </script>
 

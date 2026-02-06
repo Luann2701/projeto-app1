@@ -832,3 +832,69 @@ img, video, iframe {
     background: #bbb;
     color: #555;
 }
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modal-box {
+    background: #fff;
+    padding: 25px 30px;
+    border-radius: 12px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    animation: aparecer .25s ease;
+}
+
+.modal-box h2 {
+    margin-top: 0;
+    font-size: 22px;
+}
+
+.modal-box p {
+    font-size: 16px;
+    margin: 15px 0 25px;
+}
+
+.modal-botoes {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-confirmar {
+    background: #e53935;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-cancelar {
+    background: #e0e0e0;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.btn-confirmar:hover {
+    background: #c62828;
+}
+
+.btn-cancelar:hover {
+    background: #bdbdbd;
+}
+
+@keyframes aparecer {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
