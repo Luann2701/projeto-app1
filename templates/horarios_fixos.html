@@ -64,7 +64,7 @@
 
             <input type="hidden" name="quadra" value="{{ f.quadra }}">
             <input type="hidden" name="hora" value="{{ f.hora }}">
-            <input type="hidden" name="data" value="{{ d.data_iso }}">
+            <input type="hidden" name="data" value="{{ d.data.strftime('%Y-%m-%d') }}">
             <input type="hidden" name="cancelado" value="{{ 1 if d.cancelado else 0 }}">
 
             <button type="submit"
