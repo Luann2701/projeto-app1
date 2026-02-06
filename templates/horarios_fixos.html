@@ -52,17 +52,25 @@
 
                 <!-- DIAS DO MÊS -->
                 <td>
-                    <div class="dias-mes">
-                        {% for d in f.datas %}
-                        <span
-                            class="dia-bolinha{% if d.cancelado %} cancelado{% endif %}"
-                            title="Clique para cancelar ou reativar este dia"
-                            onclick="toggleCancelamento('{{ f.quadra }}','{{ f.hora }}','{{ d.data_iso }}')">
-                            {{ d.data.strftime('%d') }}
-                        </span>
-                        {% endfor %}
-                    </div>
-                </td>
+    <div class="dias-mes">
+        {% for d in f.datas %}
+        <span
+            class="dia-bolinha{% if d.cancelado %} cancelado{% endif %}"
+            title="Clique para cancelar ou reativar este dia"
+            onclick="toggleCancelamento(
+                '{{ f.quadra }}',
+                '{{ f.hora }}',
+                '{{ d.data_iso }}',
+                '{{ 1 if d.cancelado else 0 }}'
+            )">
+            {{ d.data.strftime('%d') }}
+        </span>
+        {% endfor %}
+    </div>
+</td>
+
+                
+
 
                 <!-- CANCELAR DEFINITIVO -->
                 <td>
@@ -109,18 +117,17 @@ function toggleCancelamento(quadra, hora, data, estaCancelado) {
             quadra: quadra,
             hora: hora,
             data: data,
-            cancelar: !estaCancelado   // 🔥 AQUI ESTÁ A CHAVE
+            cancelar: !estaCancelado   // 🔥 CASA COM O BACKEND
         })
     })
     .then(res => res.json())
     .then(r => {
-        if (!r.ok) throw 'erro';
+        if (!r.ok) throw r.erro;
         location.reload();
     })
     .catch(() => alert('Erro ao cancelar/reativar o dia'));
 }
 </script>
-
 
 </body>
 </html>

@@ -1650,30 +1650,30 @@ from flask import request, jsonify
 def toggle_fixo_dia():
     try:
         data = request.get_json()
+
         quadra = data.get('quadra')
         hora = data.get('hora')
         dia = data.get('data')
-        # Garante que seja booleano
-        esta_cancelado = bool(data.get('estaCancelado')) 
+        cancelar = data.get('cancelar')  # 🔥 AGORA BATE COM O JS
 
-        if not all([quadra, hora, dia]):
+        if quadra is None or hora is None or dia is None or cancelar is None:
             return jsonify(ok=False, erro="Dados incompletos"), 400
 
-        conn = conectar() # Use sua função de conexão
+        conn = conectar()
         cur = conn.cursor()
 
-        if esta_cancelado:
-            # Se já ESTAVA cancelado (bolinha cinza), o dono quer REATIVAR
-            cur.execute("""
-                DELETE FROM cancelamentos_fixos
-                WHERE quadra = %s AND hora = %s AND data = %s
-            """, (quadra, hora, dia))
-        else:
-            # Se NÃO estava cancelado (bolinha laranja), o dono quer CANCELAR
+        if cancelar:
+            # CANCELAR o dia
             cur.execute("""
                 INSERT INTO cancelamentos_fixos (quadra, hora, data)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (quadra, hora, data) DO NOTHING
+            """, (quadra, hora, dia))
+        else:
+            # REATIVAR o dia
+            cur.execute("""
+                DELETE FROM cancelamentos_fixos
+                WHERE quadra = %s AND hora = %s AND data = %s
             """, (quadra, hora, dia))
 
         conn.commit()
@@ -1687,7 +1687,6 @@ def toggle_fixo_dia():
         return jsonify(ok=False, erro=str(e)), 500
 
 
-#testeeeeeee
 # ======================
 # RESET MINHA SENHA
 # ======================
