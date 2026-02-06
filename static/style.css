@@ -898,3 +898,8 @@ img, video, iframe {
     from { transform: scale(0.9); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
 }
+
+.btn-perigo {
+    background-color: #c62828;
+    color: #fff;
+}
