@@ -34,7 +34,7 @@ body.fundo-logo::before {
     z-index: 1;
     background: white;
     padding: 40px;
-    width: 460px;
+    width: 600px;
     border-radius: 20px;
     text-align: center;
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -44,7 +44,7 @@ body.fundo-logo::before {
 .card h1,
 .card h2 {
     color: #ff7a00;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
 }
 
 /* BOTÕES */
@@ -651,7 +651,7 @@ img, video, iframe {
 /* ===== HORÁRIOS FIXOS ===== */
 
 .card-fixos {
-    max-width: 480px;   /* 🔼 aumenta o card */
+    max-width: 600px;   /* 🔼 aumenta o card */
     width: 100%;        /* garante largura */
     margin: 0 auto;
     padding: 24px;      /* mais respiro */
