@@ -1646,7 +1646,7 @@ def cancelar_fixo_dia():
 
 @app.route('/admin/toggle_fixo_dia', methods=['POST'])
 def toggle_fixo_dia():
-
+    print("🟢 POST RECEBIDO:", request.form)
     quadra = request.form.get('quadra')
     hora = request.form.get('hora')
     data = request.form.get('data')
@@ -1673,8 +1673,9 @@ def toggle_fixo_dia():
                 VALUES (%s, %s, %s)
                 ON CONFLICT (quadra, hora, data) DO NOTHING
             """, (quadra, hora, data))
-
+        print("🔄 TOGGLE:", quadra, hora, data, "cancelado =", cancelado)
         conn.commit()
+        print("✅ COMMIT REALIZADO")
 
     except Exception as e:
         conn.rollback()
