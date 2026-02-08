@@ -1050,6 +1050,7 @@ def relatorio_mensal():
         FROM reservas
         WHERE status = 'pago'
         GROUP BY mes
+        ORDER BY mes
     """)
     reservas = {row[0]: row[1] for row in c.fetchall()}
 
@@ -1061,34 +1062,53 @@ def relatorio_mensal():
         FROM horarios
         WHERE tipo = 'day_use'
         GROUP BY mes
+        ORDER BY mes
     """)
     day_uses = {row[0]: row[1] for row in c.fetchall()}
 
-    # 🟢 Horários Fixos (por dia)
+    # 🟢 Horários Fixos (CORRIGIR AQUI SE NECESSÁRIO)
     c.execute("""
         SELECT 
-            to_char(data, 'YYYY-MM') AS mes,
+            to_char(data_criacao, 'YYYY-MM') AS mes,
             COUNT(*) 
-        FROM horarios_fixos_excecoes
+        FROM horarios_fixos
         GROUP BY mes
+        ORDER BY mes
     """)
     fixos = {row[0]: row[1] for row in c.fetchall()}
 
     conn.close()
 
-    # 📅 Junta todos os meses existentes
     meses = sorted(set(reservas) | set(day_uses) | set(fixos))
 
     dados = []
+    total_reservas = 0
+    total_day_use = 0
+    total_fixos = 0
+
     for mes in meses:
+        r = reservas.get(mes, 0)
+        d = day_uses.get(mes, 0)
+        f = fixos.get(mes, 0)
+
+        total_reservas += r
+        total_day_use += d
+        total_fixos += f
+
         dados.append({
             "mes": mes,
-            "reservas": reservas.get(mes, 0),
-            "day_uses": day_uses.get(mes, 0),
-            "fixos": fixos.get(mes, 0)
+            "reservas": r,
+            "day_uses": d,
+            "fixos": f
         })
 
-    return render_template("relatorio_mensal.html", dados=dados)
+    return render_template(
+        "relatorio_mensal.html",
+        dados=dados,
+        total_reservas=total_reservas,
+        total_day_use=total_day_use,
+        total_fixos=total_fixos
+    )
 
 
 # ======================

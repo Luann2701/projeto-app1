@@ -21,7 +21,7 @@
             color: #ff7a00;
             font-size: 26px;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
 
         .tabela-relatorio {
@@ -42,14 +42,20 @@
             padding: 12px;
             text-align: center;
             border-bottom: 1px solid #eee;
+            font-size: 14px;
         }
 
         .tabela-relatorio tr:nth-child(even) {
             background: #f9f9f9;
         }
 
+        .linha-total {
+            font-weight: bold;
+            background: #ececec !important;
+        }
+
         .btn-voltar {
-            margin-top: 20px;
+            margin-top: 25px;
             width: 100%;
             padding: 12px;
             background: #444;
@@ -82,23 +88,45 @@
                 <th>Mês</th>
                 <th>Reservas Pagas</th>
                 <th>Day Uses</th>
-                <th>Horários Fixos</th>
+                <th>🔁 Fixos</th>
             </tr>
         </thead>
         <tbody>
+
+            {% set total_reservas = 0 %}
+            {% set total_day_use = 0 %}
+            {% set total_fixos = 0 %}
+
             {% for d in dados %}
-            <tr>
-                <td>{{ d.mes }}</td>
-                <td>{{ d.reservas }}</td>
-                <td>{{ d.day_uses }}</td>
-                <td>{{ d.fixos }}</td>
-            </tr>
+
+                {% set total_reservas = total_reservas + d.reservas %}
+                {% set total_day_use = total_day_use + d.day_uses %}
+                {% set total_fixos = total_fixos + d.fixos %}
+
+                <tr>
+                    <td>
+                        {{ d.mes[5:7] }}/{{ d.mes[0:4] }}
+                    </td>
+                    <td>{{ d.reservas }}</td>
+                    <td>{{ d.day_uses }}</td>
+                    <td>{{ d.fixos }}</td>
+                </tr>
             {% endfor %}
+
+            <!-- Linha de Total -->
+            <tr class="linha-total">
+                <td>Total</td>
+                <td>{{ total_reservas }}</td>
+                <td>{{ total_day_use }}</td>
+                <td>{{ total_fixos }}</td>
+            </tr>
+
         </tbody>
     </table>
+
     {% else %}
         <p style="text-align:center; color:#777;">
-            Nenhum dado disponível.
+            Nenhum dado disponível para exibição.
         </p>
     {% endif %}
 
