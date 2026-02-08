@@ -1026,13 +1026,12 @@ def painel_dono():
 # RELATÓRIO MENSAL (DONO)
 # ======================
 
-@app.route("/relatorio_mensal")
-def relatorio_mensal():
-    dados = [
-        ("Janeiro/2026", 12, 4),
-        ("Fevereiro/2026", 20, 8)
-    ]
-    return render_template("relatorio_mensal.html", dados=dados)
+@app.route("/painel_dono")
+def painel_dono():
+    if not session.get("dono_logado"):
+        return redirect("/login_dono")
+
+    return render_template("painel_dono.html")
 
 
 
