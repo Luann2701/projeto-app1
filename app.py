@@ -1026,14 +1026,69 @@ def painel_dono():
 # RELATÓRIO MENSAL (DONO)
 # ======================
 
-@app.route("/painel_dono")
-def painel_dono():
-    if not session.get("dono_logado"):
-        return redirect("/login_dono")
+@app.route("/admin/relatorio_mensal")
+def relatorio_mensal():
 
-    return render_template("painel_dono.html")
+    if session.get("tipo") != "dono":
+        return redirect("/")
 
+    data_filtro = request.args.get("data")
+    quadra_filtro = request.args.get("quadra")
 
+    conn = conectar()
+    c = conn.cursor()
+
+    # ==========================
+    # 📋 RESERVAS PAGAS
+    # ==========================
+    query = """
+        SELECT 
+            COALESCE(r.nome, u.usuario) AS cliente,
+            COALESCE(r.telefone, u.telefone) AS telefone,
+            r.esporte,
+            r.quadra,
+            r.data,
+            r.horario
+        FROM reservas r
+        LEFT JOIN usuarios u ON u.usuario = r.usuario
+        WHERE r.pago = TRUE
+    """
+    params = []
+
+    if data_filtro:
+        query += " AND r.data = %s"
+        params.append(data_filtro)
+
+    if quadra_filtro:
+        query += " AND r.quadra = %s"
+        params.append(quadra_filtro)
+
+    query += " ORDER BY r.data, r.horario"
+
+    c.execute(query, params)
+    reservas = c.fetchall()
+
+    # ==========================
+    # ⏰ HORÁRIOS FIXOS
+    # ==========================
+    c.execute("""
+        SELECT quadra, hora, cliente, telefone
+        FROM horarios
+        WHERE tipo = 'fixo'
+          AND permanente = TRUE
+        ORDER BY quadra, hora
+    """)
+    horarios_fixos = c.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "relatorio_mensal.html",
+        reservas=reservas,
+        horarios_fixos=horarios_fixos,
+        data_filtro=data_filtro,
+        quadra_filtro=quadra_filtro
+    )
 
     # ==========================
     # 📋 RESERVAS PAGAS
