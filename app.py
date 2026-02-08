@@ -1021,6 +1021,20 @@ def painel_dono():
     conn = conectar()
     c = conn.cursor()
 
+
+# ======================
+# RELATÓRIO MENSAL (DONO)
+# ======================
+
+@app.route("/admin/relatorio_mensal")
+def relatorio_mensal():
+
+    if "usuario" not in session or session.get("tipo") != "dono":
+        return redirect("/login")
+
+    return render_template("relatorio_mensal.html")
+
+
     # ==========================
     # 📋 RESERVAS PAGAS
     # ==========================

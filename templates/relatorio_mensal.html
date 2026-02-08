@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Relatório Mensal</title>
-    <link rel="stylesheet" href="/static/css/painel.css">
+
+    <!-- CSS principal -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/painel.css') }}">
+
     <style>
         .relatorio-container {
             max-width: 900px;
@@ -62,6 +65,13 @@
         .btn-voltar:hover {
             background: #222;
         }
+
+        .msg-vazia {
+            text-align: center;
+            padding: 20px;
+            color: #777;
+            font-size: 16px;
+        }
     </style>
 </head>
 
@@ -73,24 +83,30 @@
         📊 Relatório Mensal de Uso
     </div>
 
-    <table class="tabela-relatorio">
-        <tr>
-            <th>Mês</th>
-            <th>Horários Usados</th>
-            <th>Day Uses</th>
-        </tr>
+    {% if dados %}
+        <table class="tabela-relatorio">
+            <tr>
+                <th>Mês</th>
+                <th>Horários Usados</th>
+                <th>Day Uses</th>
+            </tr>
 
-        {% for mes, horarios, dayuses in dados %}
-        <tr>
-            <td>{{ mes }}</td>
-            <td>{{ horarios }}</td>
-            <td>{{ dayuses }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+            {% for mes, horarios, dayuses in dados %}
+            <tr>
+                <td>{{ mes }}</td>
+                <td>{{ horarios }}</td>
+                <td>{{ dayuses }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <div class="msg-vazia">
+            Nenhum dado disponível para exibição.
+        </div>
+    {% endif %}
 
-    <a href="/painel_dono">
-        <button class="btn-voltar">⬅ Voltar ao Painel</button>
+    <a href="/painel_dono" class="btn-voltar" style="display:block; text-align:center; text-decoration:none;">
+        ⬅ Voltar ao Painel
     </a>
 
 </div>
