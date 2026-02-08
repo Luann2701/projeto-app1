@@ -1048,7 +1048,7 @@ def relatorio_mensal():
             to_char(data, 'YYYY-MM') AS mes,
             COUNT(*) 
         FROM reservas
-        WHERE status = 'pago'
+        WHERE pago = TRUE
         GROUP BY mes
         ORDER BY mes
     """)
@@ -1060,18 +1060,20 @@ def relatorio_mensal():
             to_char(data, 'YYYY-MM') AS mes,
             COUNT(*) 
         FROM horarios
-        WHERE tipo = 'day_use'
+        WHERE tipo = 'dayuse'
         GROUP BY mes
         ORDER BY mes
     """)
     day_uses = {row[0]: row[1] for row in c.fetchall()}
 
-    # 🟢 Horários Fixos (CORRIGIR AQUI SE NECESSÁRIO)
+    # 🟢 Horários Fixos
     c.execute("""
         SELECT 
-            to_char(data_criacao, 'YYYY-MM') AS mes,
+            to_char(criado_em, 'YYYY-MM') AS mes,
             COUNT(*) 
-        FROM horarios_fixos
+        FROM horarios
+        WHERE tipo = 'fixo'
+          AND permanente = TRUE
         GROUP BY mes
         ORDER BY mes
     """)
