@@ -36,7 +36,7 @@
             background: #ff7a00;
             color: white;
             padding: 12px;
-            font-size: 16px;
+            font-size: 15px;
         }
 
         .tabela-relatorio td {
@@ -60,6 +60,9 @@
             border-radius: 10px;
             font-size: 16px;
             cursor: pointer;
+            text-align: center;
+            display: block;
+            text-decoration: none;
         }
 
         .btn-voltar:hover {
@@ -83,21 +86,26 @@
         📊 Relatório Mensal de Uso
     </div>
 
-    {% if dados %}
+    {% if dados and dados|length > 0 %}
         <table class="tabela-relatorio">
-            <tr>
-                <th>Mês</th>
-                <th>Horários Usados</th>
-                <th>Day Uses</th>
-            </tr>
-
-            {% for mes, horarios, dayuses in dados %}
-            <tr>
-                <td>{{ mes }}</td>
-                <td>{{ horarios }}</td>
-                <td>{{ dayuses }}</td>
-            </tr>
-            {% endfor %}
+            <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th>Reservas Pagas</th>
+                    <th>Day Uses</th>
+                    <th>Horários Fixos</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in dados %}
+                <tr>
+                    <td>{{ d.mes }}</td>
+                    <td>{{ d.reservas }}</td>
+                    <td>{{ d.day_uses }}</td>
+                    <td>{{ d.fixos }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
     {% else %}
         <div class="msg-vazia">
@@ -105,7 +113,7 @@
         </div>
     {% endif %}
 
-    <a href="/painel_dono" class="btn-voltar" style="display:block; text-align:center; text-decoration:none;">
+    <a href="/painel_dono" class="btn-voltar">
         ⬅ Voltar ao Painel
     </a>
 

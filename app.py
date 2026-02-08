@@ -1036,148 +1036,64 @@ def painel_dono():
 # RELATÓRIO MENSAL (DONO)
 # ======================
 
-@app.route("/admin/relatorio_mensal")
+@app.route("/relatorio_mensal")
 def relatorio_mensal():
-
-    if session.get("tipo") != "dono":
+    # 🔐 acesso só do dono
+    if "tipo" not in session or session["tipo"] != "dono":
         return redirect("/")
-
-    data_filtro = request.args.get("data")
-    quadra_filtro = request.args.get("quadra")
 
     conn = conectar()
     c = conn.cursor()
 
-    # ==========================
-    # 📋 RESERVAS PAGAS
-    # ==========================
-    query = """
-        SELECT 
-            COALESCE(r.nome, u.usuario) AS cliente,
-            COALESCE(r.telefone, u.telefone) AS telefone,
-            r.esporte,
-            r.quadra,
-            r.data,
-            r.horario
-        FROM reservas r
-        LEFT JOIN usuarios u ON u.usuario = r.usuario
-        WHERE r.pago = TRUE
-    """
-    params = []
-
-    if data_filtro:
-        query += " AND r.data = %s"
-        params.append(data_filtro)
-
-    if quadra_filtro:
-        query += " AND r.quadra = %s"
-        params.append(quadra_filtro)
-
-    query += " ORDER BY r.data, r.horario"
-
-    c.execute(query, params)
-    reservas = c.fetchall()
-
-    # ==========================
-    # ⏰ HORÁRIOS FIXOS
-    # ==========================
+    # 🔵 Reservas pagas
     c.execute("""
-        SELECT quadra, hora, cliente, telefone
-        FROM horarios
-        WHERE tipo = 'fixo'
-          AND permanente = TRUE
-        ORDER BY quadra, hora
-    """)
-    horarios_fixos = c.fetchall()
-
-    conn.close()
-
-    return render_template(
-        "relatorio_mensal.html",
-        reservas=reservas,
-        horarios_fixos=horarios_fixos,
-        data_filtro=data_filtro,
-        quadra_filtro=quadra_filtro
-    )
-
-    # ==========================
-    # 📋 RESERVAS PAGAS
-    # ==========================
-    query = """
         SELECT 
-            COALESCE(r.nome, u.usuario) AS cliente,
-            COALESCE(r.telefone, u.telefone) AS telefone,
-            r.esporte,
-            r.quadra,
-            r.data,
-            r.horario,
-            r.pago
-        FROM reservas r
-        LEFT JOIN usuarios u ON u.usuario = r.usuario
-        WHERE r.pago = TRUE
-    """
-    params = []
+            strftime('%Y-%m', data) AS mes,
+            COUNT(*) AS total
+        FROM reservas
+        WHERE status = 'pago'
+        GROUP BY mes
+    """)
+    reservas = {row[0]: row[1] for row in c.fetchall()}
 
-    if data_filtro:
-        query += " AND r.data = %s"
-        params.append(data_filtro)
+    # 🟠 Day Uses
+    c.execute("""
+        SELECT 
+            strftime('%Y-%m', data) AS mes,
+            COUNT(*) AS total
+        FROM horarios
+        WHERE tipo = 'day_use'
+        GROUP BY mes
+    """)
+    day_uses = {row[0]: row[1] for row in c.fetchall()}
 
-    if quadra_filtro:
-        query += " AND r.quadra = %s"
-        params.append(quadra_filtro)
-
-    query += " ORDER BY r.data, r.horario"
-
-    c.execute(query, params)
-    reservas = c.fetchall()
-
-    # ==========================
-    # ⏰ HORÁRIOS FIXOS ATIVOS
-    # ==========================
-    query_fixos = """
-        SELECT
-            h.quadra,
-            h.hora,
-            h.cliente,
-            h.telefone
-        FROM horarios h
-        WHERE h.tipo = 'fixo'
-          AND h.permanente = TRUE
-    """
-
-    params_fixos = []
-
-    # 🔥 se tiver data selecionada, exclui os cancelados nesse dia
-    if data_filtro:
-        query_fixos += """
-            AND NOT EXISTS (
-                SELECT 1
-                FROM cancelamentos_fixos c
-                WHERE c.quadra = h.quadra
-                  AND c.hora = h.hora
-                  AND c.data = %s
-            )
-        """
-        params_fixos.append(data_filtro)
-
-    if quadra_filtro:
-        query_fixos += " AND h.quadra = %s"
-        params_fixos.append(quadra_filtro)
-
-    query_fixos += " ORDER BY h.quadra, h.hora"
-
-    c.execute(query_fixos, params_fixos)
-    horarios_fixos = c.fetchall()
+    # 🟢 Horários Fixos
+    c.execute("""
+        SELECT 
+            strftime('%Y-%m', data) AS mes,
+            COUNT(*) AS total
+        FROM horarios_fixos
+        GROUP BY mes
+    """)
+    fixos = {row[0]: row[1] for row in c.fetchall()}
 
     conn.close()
 
-    return render_template(
-        "painel_dono.html",
-        reservas=reservas,
-        horarios_fixos=horarios_fixos,
-        data_filtro=data_filtro,
-        quadra_filtro=quadra_filtro
-    )
+    # 📅 junta todos os meses existentes
+    meses = sorted(set(reservas) | set(day_uses) | set(fixos))
+
+    dados = []
+    for mes in meses:
+        dados.append({
+            "mes": mes,
+            "reservas": reservas.get(mes, 0),
+            "day_uses": day_uses.get(mes, 0),
+            "fixos": fixos.get(mes, 0)
+        })
+
+    return render_template("relatorio_mensal.html", dados=dados)
+
+
 # ======================
 # GERENCIAR HORÁRIOS (DONO)
 # ======================
