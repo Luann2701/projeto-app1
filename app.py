@@ -1042,40 +1042,41 @@ def relatorio_mensal():
     conn = conectar()
     c = conn.cursor()
 
-    # Reservas Pagas
+    # 🔵 Reservas pagas
     c.execute("""
         SELECT 
-            substr(data, 1, 7) AS mes,
-            COUNT(*)
+            to_char(data, 'YYYY-MM') AS mes,
+            COUNT(*) 
         FROM reservas
         WHERE status = 'pago'
         GROUP BY mes
     """)
     reservas = {row[0]: row[1] for row in c.fetchall()}
 
-    # Day Uses
+    # 🟠 Day Uses
     c.execute("""
         SELECT 
-            substr(data, 1, 7) AS mes,
-            COUNT(*)
+            to_char(data, 'YYYY-MM') AS mes,
+            COUNT(*) 
         FROM horarios
         WHERE tipo = 'day_use'
         GROUP BY mes
     """)
     day_uses = {row[0]: row[1] for row in c.fetchall()}
 
-    # Horários Fixos
+    # 🟢 Horários Fixos (por dia)
     c.execute("""
         SELECT 
-            substr(data, 1, 7) AS mes,
-            COUNT(*)
-        FROM horarios_fixos
+            to_char(data, 'YYYY-MM') AS mes,
+            COUNT(*) 
+        FROM horarios_fixos_excecoes
         GROUP BY mes
     """)
     fixos = {row[0]: row[1] for row in c.fetchall()}
 
     conn.close()
 
+    # 📅 Junta todos os meses existentes
     meses = sorted(set(reservas) | set(day_uses) | set(fixos))
 
     dados = []
@@ -1089,28 +1090,6 @@ def relatorio_mensal():
 
     return render_template("relatorio_mensal.html", dados=dados)
 
-@app.route("/debug_banco")
-def debug_banco():
-    conn = conectar()
-    c = conn.cursor()
-
-    # listar tabelas
-    c.execute("""
-        SELECT name FROM sqlite_master
-        WHERE type='table'
-    """)
-    tabelas = c.fetchall()
-
-    resultado = {}
-
-    for tabela in tabelas:
-        nome = tabela[0]
-        c.execute(f"PRAGMA table_info({nome})")
-        colunas = c.fetchall()
-        resultado[nome] = colunas
-
-    conn.close()
-    return resultado
 
 # ======================
 # GERENCIAR HORÁRIOS (DONO)
