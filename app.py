@@ -1030,48 +1030,45 @@ def painel_dono():
         quadra_filtro=quadra_filtro
     )
 
-
-
 # ======================
 # RELATÓRIO MENSAL (DONO)
 # ======================
 
 @app.route("/relatorio_mensal")
 def relatorio_mensal():
-    # 🔐 acesso só do dono
     if "tipo" not in session or session["tipo"] != "dono":
         return redirect("/")
 
     conn = conectar()
     c = conn.cursor()
 
-    # 🔵 Reservas pagas
+    # Reservas Pagas
     c.execute("""
         SELECT 
-            strftime('%Y-%m', data) AS mes,
-            COUNT(*) AS total
+            substr(data, 1, 7) AS mes,
+            COUNT(*)
         FROM reservas
         WHERE status = 'pago'
         GROUP BY mes
     """)
     reservas = {row[0]: row[1] for row in c.fetchall()}
 
-    # 🟠 Day Uses
+    # Day Uses
     c.execute("""
         SELECT 
-            strftime('%Y-%m', data) AS mes,
-            COUNT(*) AS total
+            substr(data, 1, 7) AS mes,
+            COUNT(*)
         FROM horarios
         WHERE tipo = 'day_use'
         GROUP BY mes
     """)
     day_uses = {row[0]: row[1] for row in c.fetchall()}
 
-    # 🟢 Horários Fixos
+    # Horários Fixos
     c.execute("""
         SELECT 
-            strftime('%Y-%m', data) AS mes,
-            COUNT(*) AS total
+            substr(data, 1, 7) AS mes,
+            COUNT(*)
         FROM horarios_fixos
         GROUP BY mes
     """)
@@ -1079,7 +1076,6 @@ def relatorio_mensal():
 
     conn.close()
 
-    # 📅 junta todos os meses existentes
     meses = sorted(set(reservas) | set(day_uses) | set(fixos))
 
     dados = []
@@ -1093,6 +1089,28 @@ def relatorio_mensal():
 
     return render_template("relatorio_mensal.html", dados=dados)
 
+@app.route("/debug_banco")
+def debug_banco():
+    conn = conectar()
+    c = conn.cursor()
+
+    # listar tabelas
+    c.execute("""
+        SELECT name FROM sqlite_master
+        WHERE type='table'
+    """)
+    tabelas = c.fetchall()
+
+    resultado = {}
+
+    for tabela in tabelas:
+        nome = tabela[0]
+        c.execute(f"PRAGMA table_info({nome})")
+        colunas = c.fetchall()
+        resultado[nome] = colunas
+
+    conn.close()
+    return resultado
 
 # ======================
 # GERENCIAR HORÁRIOS (DONO)

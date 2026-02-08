@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Relatório Mensal</title>
 
-    <!-- CSS principal -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/painel.css') }}">
 
     <style>
@@ -28,8 +27,8 @@
         .tabela-relatorio {
             width: 100%;
             border-collapse: collapse;
-            overflow: hidden;
             border-radius: 12px;
+            overflow: hidden;
         }
 
         .tabela-relatorio th {
@@ -43,7 +42,6 @@
             padding: 12px;
             text-align: center;
             border-bottom: 1px solid #eee;
-            font-weight: 500;
         }
 
         .tabela-relatorio tr:nth-child(even) {
@@ -56,10 +54,8 @@
             padding: 12px;
             background: #444;
             color: white;
-            border: none;
             border-radius: 10px;
             font-size: 16px;
-            cursor: pointer;
             text-align: center;
             display: block;
             text-decoration: none;
@@ -67,13 +63,6 @@
 
         .btn-voltar:hover {
             background: #222;
-        }
-
-        .msg-vazia {
-            text-align: center;
-            padding: 20px;
-            color: #777;
-            font-size: 16px;
         }
     </style>
 </head>
@@ -87,33 +76,33 @@
     </div>
 
     {% if dados and dados|length > 0 %}
-        <table class="tabela-relatorio">
-            <thead>
-                <tr>
-                    <th>Mês</th>
-                    <th>Reservas Pagas</th>
-                    <th>Day Uses</th>
-                    <th>Horários Fixos</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for d in dados %}
-                <tr>
-                    <td>{{ d.mes }}</td>
-                    <td>{{ d.reservas }}</td>
-                    <td>{{ d.day_uses }}</td>
-                    <td>{{ d.fixos }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <table class="tabela-relatorio">
+        <thead>
+            <tr>
+                <th>Mês</th>
+                <th>Reservas Pagas</th>
+                <th>Day Uses</th>
+                <th>Horários Fixos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for d in dados %}
+            <tr>
+                <td>{{ d.mes }}</td>
+                <td>{{ d.reservas }}</td>
+                <td>{{ d.day_uses }}</td>
+                <td>{{ d.fixos }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% else %}
-        <div class="msg-vazia">
-            Nenhum dado disponível para exibição.
-        </div>
+        <p style="text-align:center; color:#777;">
+            Nenhum dado disponível.
+        </p>
     {% endif %}
 
-    <a href="/painel_dono" class="btn-voltar">
+    <a href="{{ url_for('painel_dono') }}" class="btn-voltar">
         ⬅ Voltar ao Painel
     </a>
 
