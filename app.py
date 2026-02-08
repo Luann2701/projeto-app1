@@ -1021,6 +1021,16 @@ def painel_dono():
     conn = conectar()
     c = conn.cursor()
 
+    # 🔽 SEU CÓDIGO DE CONSULTAS AQUI
+    # nada precisa ser mudado acima
+
+    return render_template(
+        "painel_dono.html",
+        data_filtro=data_filtro,
+        quadra_filtro=quadra_filtro
+    )
+
+
 
 # ======================
 # RELATÓRIO MENSAL (DONO)
