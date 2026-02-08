@@ -1042,7 +1042,31 @@ def relatorio_mensal():
     conn = conectar()
     c = conn.cursor()
 
-    # 🔵 Reservas pagas
+    print("========== DIAGNÓSTICO RELATÓRIO ==========")
+
+    # 🔍 TOTAL RESERVAS
+    c.execute("SELECT COUNT(*) FROM reservas")
+    print("TOTAL RESERVAS:", c.fetchone()[0])
+
+    # 🔍 RESERVAS PAGAS
+    c.execute("SELECT COUNT(*) FROM reservas WHERE pago = TRUE")
+    print("RESERVAS PAGAS:", c.fetchone()[0])
+
+    # 🔍 TOTAL HORARIOS
+    c.execute("SELECT COUNT(*) FROM horarios")
+    print("TOTAL HORARIOS:", c.fetchone()[0])
+
+    # 🔍 DAY USE
+    c.execute("SELECT COUNT(*) FROM horarios WHERE tipo = 'dayuse'")
+    print("DAY USE:", c.fetchone()[0])
+
+    # 🔍 FIXOS
+    c.execute("SELECT COUNT(*) FROM horarios WHERE tipo = 'fixo' AND permanente = TRUE")
+    print("FIXOS:", c.fetchone()[0])
+
+    print("===========================================")
+
+    # 🔵 Reservas pagas por mês
     c.execute("""
         SELECT 
             to_char(data, 'YYYY-MM') AS mes,
@@ -1054,7 +1078,7 @@ def relatorio_mensal():
     """)
     reservas = {row[0]: row[1] for row in c.fetchall()}
 
-    # 🟠 Day Uses
+    # 🟠 Day Uses por mês
     c.execute("""
         SELECT 
             to_char(data, 'YYYY-MM') AS mes,
@@ -1066,7 +1090,7 @@ def relatorio_mensal():
     """)
     day_uses = {row[0]: row[1] for row in c.fetchall()}
 
-    # 🟢 Horários Fixos
+    # 🟢 Fixos por mês
     c.execute("""
         SELECT 
             to_char(data, 'YYYY-MM') AS mes,
