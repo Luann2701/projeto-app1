@@ -1022,7 +1022,14 @@ def painel_dono():
     c = conn.cursor()
 
     query = """
-        SELECT nome, telefone, esporte, quadra, data, horario, pago
+        SELECT 
+            COALESCE(nome, usuario, 'Não informado') AS cliente,
+            COALESCE(telefone, '-') AS telefone,
+            esporte,
+            quadra,
+            data,
+            horario,
+            COALESCE(pago, FALSE) AS pago
         FROM reservas
         WHERE 1=1
     """
