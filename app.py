@@ -1522,6 +1522,8 @@ def logout():
 # CANCELAR RESERVAS
 # ======================
 
+from datetime import datetime
+
 @app.route("/cancelar_reserva", methods=["POST"])
 def cancelar_reserva():
     if "tipo" not in session or session["tipo"] != "dono":
@@ -1530,6 +1532,9 @@ def cancelar_reserva():
     quadra = request.form.get("quadra")
     data = request.form.get("data")
     horario = request.form.get("horario")
+
+    # 🔥 Converte string para TIME (corrige erro 500)
+    horario_time = datetime.strptime(horario, "%H:%M").time()
 
     conn = conectar()
     c = conn.cursor()
@@ -1549,9 +1554,9 @@ def cancelar_reserva():
           AND data = %s
           AND hora = %s
           AND tipo = 'ocupado'
-    """, (quadra, data, horario))
+    """, (quadra, data, horario_time))
 
-    # 3️⃣ Ajusta relatório
+    # 3️⃣ Ajusta relatório (só se a tabela existir)
     c.execute("""
         UPDATE historico_horarios
         SET ativo = FALSE
@@ -1565,14 +1570,13 @@ def cancelar_reserva():
             ORDER BY criado_em DESC
             LIMIT 1
         )
-    """, (data, horario, quadra))
+    """, (data, horario_time, quadra))
 
     conn.commit()
     conn.close()
 
-    flash("Reserva cancelada, horário liberado e relatório ajustado!", "sucesso")
+    flash("Reserva cancelada com sucesso!", "sucesso")
     return redirect("/painel_dono")
-
 
 # ======================
 # LOGIN GOOGLE
