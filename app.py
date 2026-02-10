@@ -1011,7 +1011,7 @@ def excluir_evento(id_evento):
 
 @app.route("/painel_dono")
 def painel_dono():
-    # 🔐 garante acesso só ao dono
+
     if "tipo" not in session or session["tipo"] != "dono":
         return redirect("/")
 
@@ -1021,14 +1021,35 @@ def painel_dono():
     conn = conectar()
     c = conn.cursor()
 
-    # 🔽 SEU CÓDIGO DE CONSULTAS AQUI
-    # nada precisa ser mudado acima
+    query = """
+        SELECT usuario, esporte, quadra, data, horario, pago
+        FROM reservas
+        WHERE 1=1
+    """
+    params = []
+
+    if data_filtro:
+        query += " AND data = %s"
+        params.append(data_filtro)
+
+    if quadra_filtro:
+        query += " AND quadra = %s"
+        params.append(quadra_filtro)
+
+    query += " ORDER BY data DESC, horario"
+
+    c.execute(query, params)
+    reservas_db = c.fetchall()
+
+    conn.close()
 
     return render_template(
         "painel_dono.html",
+        reservas=reservas_db,
         data_filtro=data_filtro,
         quadra_filtro=quadra_filtro
     )
+
 
 # ======================
 # RELATÓRIO MENSAL (DONO)
