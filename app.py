@@ -1022,7 +1022,7 @@ def painel_dono():
     c = conn.cursor()
 
     query = """
-        SELECT usuario, esporte, quadra, data, horario, pago
+        SELECT nome, telefone, esporte, quadra, data, horario, pago
         FROM reservas
         WHERE 1=1
     """
