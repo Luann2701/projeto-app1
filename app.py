@@ -803,6 +803,7 @@ def reservar():
 
     usuario = session["usuario"]
     email = session.get("email", "cliente@arenacorpoativo.com")
+    telefone = session.get("telefone", "")  # 🔥 agora salva telefone
 
     esporte = request.form["esporte"]
     quadra = request.form["quadra"]
@@ -814,7 +815,7 @@ def reservar():
     conn = conectar()
     c = conn.cursor()
 
-    # 🔒 1️⃣ TRAVA REAL: impede reserva duplicada (paga OU pendente)
+    # 🔒 1️⃣ TRAVA REAL
     c.execute("""
         SELECT 1 FROM reservas
         WHERE quadra = %s
@@ -830,8 +831,7 @@ def reservar():
     if c.fetchone():
         conn.close()
         flash(
-            "⏳ Outro cliente já reservou este horário. "
-            "Aguarde alguns minutos para ver se o pagamento será concluído.",
+            "⏳ Outro cliente já reservou este horário.",
             "warning"
         )
         return redirect(url_for(
@@ -841,16 +841,17 @@ def reservar():
             data=data
         ))
 
-    # 🟡 2️⃣ CRIA RESERVA PENDENTE IMEDIATA
+    # 🟡 2️⃣ CRIA RESERVA PENDENTE
     c.execute("""
         INSERT INTO reservas (
-            usuario, esporte, quadra, data, horario,
+            usuario, telefone, esporte, quadra, data, horario,
             pago, status, criado_em
         )
-        VALUES (%s, %s, %s, %s, %s, FALSE, 'pendente', NOW())
+        VALUES (%s, %s, %s, %s, %s, %s, FALSE, 'pendente', NOW())
         RETURNING id
     """, (
         usuario,
+        telefone,
         esporte,
         quadra,
         data,
@@ -858,10 +859,23 @@ def reservar():
     ))
 
     reserva_id = c.fetchone()[0]
-    conn.commit()
-    conn.close()  # ⛔ fecha ANTES do Mercado Pago
 
-    # 💳 3️⃣ CRIA PAGAMENTO PIX
+    # 🔥 3️⃣ MARCA HORÁRIO COMO OCUPADO IMEDIATAMENTE
+    c.execute("""
+        INSERT INTO horarios (
+            data, hora, tipo, quadra
+        )
+        VALUES (%s, %s, 'ocupado', %s)
+    """, (
+        data,
+        horario,
+        quadra
+    ))
+
+    conn.commit()
+    conn.close()
+
+    # 💳 4️⃣ CRIA PAGAMENTO PIX
     payment_data = {
         "transaction_amount": float(valor),
         "description": f"Reserva Quadra {quadra} - {data} {horario}",
@@ -884,10 +898,18 @@ def reservar():
         qr_code_copia_cola = pix_data["qr_code"]
 
     except Exception as e:
-        # ❌ cancelamento limpo se falhar
+        # ❌ rollback limpo
         conn = conectar()
         c = conn.cursor()
+
         c.execute("DELETE FROM reservas WHERE id = %s", (reserva_id,))
+        c.execute("""
+            DELETE FROM horarios
+            WHERE quadra = %s
+              AND data = %s
+              AND hora = %s
+        """, (quadra, data, horario))
+
         conn.commit()
         conn.close()
 
@@ -900,7 +922,7 @@ def reservar():
             data=data
         ))
 
-    # 🔗 4️⃣ LINKA PAGAMENTO ↔ RESERVA
+    # 🔗 5️⃣ LINKA PAGAMENTO
     conn = conectar()
     c = conn.cursor()
 
@@ -918,7 +940,6 @@ def reservar():
     conn.commit()
     conn.close()
 
-    # 🚀 5️⃣ TELA DE PAGAMENTO
     return render_template(
         "pagamento.html",
         reserva_id=reserva_id,
@@ -926,7 +947,6 @@ def reservar():
         qr_code_base64=qr_code_base64,
         qr_code_copia_cola=qr_code_copia_cola
     )
-
 
 # ======================
 # EVENTOS DO DONO
