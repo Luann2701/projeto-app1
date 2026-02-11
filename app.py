@@ -771,29 +771,46 @@ def cancelar_pagamento(reserva_id):
     conn = conectar()
     c = conn.cursor()
 
+    # 🔎 Busca dados da reserva pendente
     c.execute("""
-        SELECT esporte, quadra, data
+        SELECT esporte, quadra, data, horario
         FROM reservas
         WHERE id = %s AND pago = FALSE
     """, (reserva_id,))
+
     reserva = c.fetchone()
 
     if not reserva:
         conn.close()
         return redirect("/")
 
-    esporte, quadra, data = reserva
+    esporte, quadra, data, horario = reserva
 
-    c.execute("DELETE FROM reservas WHERE id = %s", (reserva_id,))
+    # 🗑 Remove a reserva
+    c.execute("""
+        DELETE FROM reservas
+        WHERE id = %s
+    """, (reserva_id,))
+
+    # 🔓 Remove o horário que foi marcado como ocupado
+    c.execute("""
+        DELETE FROM horarios
+        WHERE quadra = %s
+          AND data = %s
+          AND hora = %s
+          AND tipo = 'ocupado'
+    """, (quadra, data, horario))
+
     conn.commit()
     conn.close()
 
     return redirect(url_for(
-    "horarios",
-    esporte=esporte,
-    quadra=quadra,
-    data=data
-))
+        "horarios",
+        esporte=esporte,
+        quadra=quadra,
+        data=data
+    ))
+
 
 
 @app.route("/reservar", methods=["POST"])
