@@ -1059,17 +1059,20 @@ def painel_dono():
     c = conn.cursor()
 
     query = """
-        SELECT 
-            COALESCE(nome, usuario, 'Não informado') AS cliente,
-            COALESCE(telefone, '-') AS telefone,
-            esporte,
-            quadra,
-            data,
-            horario,
-            COALESCE(pago, FALSE) AS pago
-        FROM reservas
-        WHERE 1=1
-    """
+    SELECT 
+        COALESCE(r.nome, u.usuario, 'Não informado') AS cliente,
+        COALESCE(u.telefone, '-') AS telefone,
+        r.esporte,
+        r.quadra,
+        r.data,
+        r.horario,
+        COALESCE(r.pago, FALSE) AS pago
+    FROM reservas r
+    LEFT JOIN usuarios u
+        ON u.usuario = r.usuario
+    WHERE 1=1
+"""
+
     params = []
 
     if data_filtro:
