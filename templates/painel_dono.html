@@ -4,6 +4,58 @@
     <meta charset="UTF-8">
     <title>Painel do Dono</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- ===== CSS DO MODAL (NÃO AFETA O RESTO) ===== -->
+    <style>
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .modal-box {
+            background: #fff;
+            padding: 25px;
+            border-radius: 14px;
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0,0,0,0.35);
+        }
+
+        .modal-box h2 {
+            margin-bottom: 10px;
+        }
+
+        .modal-botoes {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-confirmar {
+            flex: 1;
+            background: #e53935;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-cancelar {
+            flex: 1;
+            background: #ddd;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body class="fundo-logo">
@@ -16,8 +68,7 @@
     <div class="top-buttons">
         <a href="/admin/eventos" class="btn">📤 Gerenciar Eventos</a>
         <a href="/admin/horarios" class="btn">🕒 Gerenciar Horários</a>
-        <a href="{{ url_for('relatorio_mensal') }}" class="btn"> 📊 Relatório Mensal </a>
-
+        <a href="{{ url_for('relatorio_mensal') }}" class="btn">📊 Relatório Mensal</a>
     </div>
 
     <!-- ================= FLASH MESSAGES ================= -->
@@ -39,7 +90,6 @@
 
     <div class="box-fixos oculto" id="fixosBox">
 
-        <!-- DATA PARA CANCELAR APENAS NO DIA -->
         <div class="cancelamento-dia">
             <label><strong>Data para cancelar apenas neste dia:</strong></label><br>
             <input type="date" id="data_cancelamento">
@@ -47,10 +97,8 @@
 
         {% if horarios_fixos %}
         <ul class="lista-fixos">
-
             {% for quadra, hora, nome, telefone in horarios_fixos %}
             <li class="item-fixo">
-
                 <div class="info-fixo">
                     <strong>{{ quadra }}</strong> — {{ hora }}<br>
                     <small>
@@ -61,38 +109,28 @@
                     </small>
                 </div>
 
-                <!-- AÇÕES -->
                 <div class="acoes-fixo">
-
-                    <!-- CANCELAR DEFINITIVO -->
                     <form method="POST"
                           action="/admin/cancelar_fixo_definitivo"
                           onsubmit="return confirm('Cancelar este horário FIXO definitivamente?');">
-
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="hora" value="{{ hora }}">
-
                         <button type="submit" class="btn pequeno secundario">
                             ❌ Cancelar definitivo
                         </button>
                     </form>
 
-                    <!-- CANCELAR SOMENTE NO DIA -->
                     <form method="POST"
                           action="/admin/cancelar_fixo_dia"
                           onsubmit="return confirmarCancelamentoDia(this);">
-
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="hora" value="{{ hora }}">
                         <input type="hidden" name="data">
-
                         <button type="submit" class="btn pequeno">
                             ❌ Cancelar somente neste dia
                         </button>
                     </form>
-
                 </div>
-
             </li>
             {% endfor %}
         </ul>
@@ -151,14 +189,12 @@
                     <td>
                         <form method="POST"
                               action="/cancelar_reserva"
-                              onsubmit="return confirm('Cancelar esta reserva?');">
-
+                              onsubmit="abrirModalReserva(this); return false;">
                             <input type="hidden" name="usuario" value="{{ r[0] }}">
                             <input type="hidden" name="esporte" value="{{ r[2] }}">
                             <input type="hidden" name="quadra" value="{{ r[3] }}">
                             <input type="hidden" name="data" value="{{ r[4] }}">
                             <input type="hidden" name="horario" value="{{ r[5] }}">
-
                             <button type="submit" class="btn pequeno secundario">
                                 ❌ Cancelar
                             </button>
@@ -178,26 +214,52 @@
 
 </div>
 
+<!-- ===== MODAL CANCELAR RESERVA ===== -->
+<div id="modal-cancelar-reserva" class="modal-overlay">
+    <div class="modal-box">
+        <h2>Confirmar ação</h2>
+        <p>Cancelar esta <strong>reserva</strong>?</p>
+
+        <div class="modal-botoes">
+            <button id="btn-confirmar-reserva" class="btn-confirmar">
+                Confirmar
+            </button>
+            <button class="btn-cancelar" onclick="fecharModalReserva()">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- ================= SCRIPTS ================= -->
 <script>
-function toggleFixos() {
-    const box = document.getElementById("fixosBox");
-    const icone = document.getElementById("icone-fixos");
-    box.classList.toggle("oculto");
-    icone.textContent = box.classList.contains("oculto") ? "➡" : "⬇";
-}
-
 function confirmarCancelamentoDia(form) {
     const data = document.getElementById("data_cancelamento").value;
-
     if (!data) {
         alert("Selecione uma data para cancelar apenas neste dia.");
         return false;
     }
-
     form.querySelector('input[name="data"]').value = data;
     return confirm("Cancelar este horário APENAS no dia " + data + "?");
 }
+
+let formReserva = null;
+
+function abrirModalReserva(form) {
+    formReserva = form;
+    document.getElementById("modal-cancelar-reserva").style.display = "flex";
+}
+
+function fecharModalReserva() {
+    document.getElementById("modal-cancelar-reserva").style.display = "none";
+    formReserva = null;
+}
+
+document.getElementById("btn-confirmar-reserva").onclick = function () {
+    if (formReserva) {
+        formReserva.submit();
+    }
+};
 </script>
 
 </body>
