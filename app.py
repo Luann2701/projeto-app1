@@ -291,6 +291,9 @@ def inicio():
 # ======================
 # LOGIN CLIENTE
 # ======================
+
+from werkzeug.security import check_password_hash
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -298,22 +301,23 @@ def login():
         senha = request.form["senha"]
 
         conn = conectar()
-        c = conn.cursor()
+        c = conn.cursor(dictionary=True)
         c.execute(
-            "SELECT * FROM usuarios WHERE usuario=%s AND senha=%s AND tipo='cliente'",
-            (usuario, senha),
+            "SELECT * FROM usuarios WHERE usuario=%s AND tipo='cliente'",
+            (usuario,)
         )
         user = c.fetchone()
         conn.close()
 
-        if user:
+        if user and check_password_hash(user["senha"], senha):
             session["usuario"] = usuario
             session["tipo"] = "cliente"
             return redirect("/telefone")
-        else:
-            return render_template("error.html", mensagem="Login inválido")
+
+        return render_template("error.html", mensagem="Login inválido")
 
     return render_template("login.html")
+
 
 # ======================
 # LOGIN DONO
