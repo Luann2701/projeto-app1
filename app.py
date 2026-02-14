@@ -361,6 +361,13 @@ def login_dono():
 # ======================
 # CADASTRO CLIENTE
 # ======================
+
+@app.route("/gerar_hash")
+def gerar_hash():
+    from werkzeug.security import generate_password_hash
+    return generate_password_hash("SUA_SENHA_DO_DONO")
+
+
 @app.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
     if request.method == "POST":
