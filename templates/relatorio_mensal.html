@@ -94,30 +94,28 @@
         <tbody>
 
             {% set total_reservas = 0 %}
-            {% set total_day_use = 0 %}
+            {% set total_dayuse = 0 %}
             {% set total_fixos = 0 %}
 
             {% for d in dados %}
 
                 {% set total_reservas = total_reservas + d.reservas %}
-                {% set total_day_use = total_day_use + d.day_uses %}
+                {% set total_dayuse = total_dayuse + d.dayuse %}
                 {% set total_fixos = total_fixos + d.fixos %}
 
                 <tr>
-                    <td>
-                        {{ d.mes[5:7] }}/{{ d.mes[0:4] }}
-                    </td>
+                    <td>{{ d.mes[5:7] }}/{{ d.mes[0:4] }}</td>
                     <td>{{ d.reservas }}</td>
-                    <td>{{ d.day_uses }}</td>
+                    <td>{{ d.dayuse }}</td>
                     <td>{{ d.fixos }}</td>
                 </tr>
+
             {% endfor %}
 
-            <!-- Linha de Total -->
             <tr class="linha-total">
                 <td>Total</td>
                 <td>{{ total_reservas }}</td>
-                <td>{{ total_day_use }}</td>
+                <td>{{ total_dayuse }}</td>
                 <td>{{ total_fixos }}</td>
             </tr>
 

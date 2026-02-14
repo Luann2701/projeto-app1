@@ -1122,38 +1122,81 @@ def relatorio_mensal():
     conn = conectar()
     c = conn.cursor()
 
-    try:
-        # TESTE 1
-        c.execute("SELECT COUNT(*) FROM reservas")
-        total_reservas = c.fetchone()
-        print("OK reservas", total_reservas)
+    # ==========================
+    # RESERVAS PAGAS POR MÊS
+    # ==========================
+    c.execute("""
+        SELECT 
+            to_char(data, 'YYYY-MM') AS mes,
+            COUNT(*) 
+        FROM reservas
+        WHERE pago = TRUE
+        GROUP BY mes
+        ORDER BY mes
+    """)
+    reservas = c.fetchall() or []
 
-        # TESTE 2
-        c.execute("SELECT COUNT(*) FROM horarios")
-        total_horarios = c.fetchone()
-        print("OK horarios", total_horarios)
+    reservas_dict = {}
+    for mes, total in reservas:
+        reservas_dict[mes] = total
 
-        # TESTE 3 (AQUI NORMALMENTE QUEBRA)
-        c.execute("""
-            SELECT 
-                to_char(data, 'YYYY-MM') AS mes,
-                COUNT(*) 
-            FROM reservas
-            WHERE pago = TRUE
-            GROUP BY mes
-            ORDER BY mes
-        """)
-        reservas = c.fetchall()
-        print("OK reservas mes", reservas)
+    # ==========================
+    # DAY USE POR MÊS
+    # ==========================
+    c.execute("""
+        SELECT 
+            to_char(data, 'YYYY-MM') AS mes,
+            COUNT(*) 
+        FROM horarios
+        WHERE tipo = 'dayuse'
+        GROUP BY mes
+        ORDER BY mes
+    """)
+    dayuses = c.fetchall() or []
 
-        conn.close()
-        return "RELATORIO OK (SQL PASSOU)"
+    dayuse_dict = {}
+    for mes, total in dayuses:
+        dayuse_dict[mes] = total
 
-    except Exception as e:
-        conn.close()
-        return f"ERRO NO SQL: {e}"
+    # ==========================
+    # FIXOS POR MÊS
+    # ==========================
+    c.execute("""
+        SELECT 
+            to_char(criado_em, 'YYYY-MM') AS mes,
+            COUNT(*) 
+        FROM horarios
+        WHERE tipo = 'fixo' AND permanente = TRUE
+        GROUP BY mes
+        ORDER BY mes
+    """)
+    fixos = c.fetchall() or []
 
+    fixos_dict = {}
+    for mes, total in fixos:
+        fixos_dict[mes] = total
 
+    conn.close()
+
+    # ==========================
+    # UNIFICA OS MESES
+    # ==========================
+    meses = sorted(
+        set(reservas_dict.keys())
+        | set(dayuse_dict.keys())
+        | set(fixos_dict.keys())
+    )
+
+    dados = []
+    for mes in meses:
+        dados.append({
+            "mes": mes,
+            "reservas": reservas_dict.get(mes, 0),
+            "dayuse": dayuse_dict.get(mes, 0),
+            "fixos": fixos_dict.get(mes, 0),
+        })
+
+    return render_template("relatorio_mensal.html", dados=dados)
 
 
 # ======================
