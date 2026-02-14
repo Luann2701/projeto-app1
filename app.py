@@ -401,12 +401,17 @@ def telefone():
     )
 
     resultado = c.fetchone()
-    telefone = resultado[0] if resultado else None
 
-    # se já tiver telefone, pula etapa
+    telefone = (
+    resultado[0].strip()
+    if resultado and resultado[0] and resultado[0].strip() != ""
+    else None
+)
+
     if telefone:
-        conn.close()
-        return redirect("/esporte")
+     conn.close()
+    return redirect("/esporte")
+
 
     if request.method == "POST":
         tel = request.form["telefone"]
