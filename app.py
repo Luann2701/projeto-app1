@@ -399,7 +399,9 @@ def telefone():
         "SELECT telefone FROM usuarios WHERE usuario=%s",
         (session["usuario"],)
     )
-    telefone = c.fetchone()[0]
+
+    resultado = c.fetchone()
+    telefone = resultado[0] if resultado else None
 
     # se já tiver telefone, pula etapa
     if telefone:
