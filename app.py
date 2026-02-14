@@ -1116,7 +1116,43 @@ def painel_dono():
 
 @app.route("/relatorio_mensal")
 def relatorio_mensal():
-    return "ENTREI NO RELATORIO"
+    if "tipo" not in session or session["tipo"] != "dono":
+        return redirect("/")
+
+    conn = conectar()
+    c = conn.cursor()
+
+    try:
+        # TESTE 1
+        c.execute("SELECT COUNT(*) FROM reservas")
+        total_reservas = c.fetchone()
+        print("OK reservas", total_reservas)
+
+        # TESTE 2
+        c.execute("SELECT COUNT(*) FROM horarios")
+        total_horarios = c.fetchone()
+        print("OK horarios", total_horarios)
+
+        # TESTE 3 (AQUI NORMALMENTE QUEBRA)
+        c.execute("""
+            SELECT 
+                to_char(data, 'YYYY-MM') AS mes,
+                COUNT(*) 
+            FROM reservas
+            WHERE pago = TRUE
+            GROUP BY mes
+            ORDER BY mes
+        """)
+        reservas = c.fetchall()
+        print("OK reservas mes", reservas)
+
+        conn.close()
+        return "RELATORIO OK (SQL PASSOU)"
+
+    except Exception as e:
+        conn.close()
+        return f"ERRO NO SQL: {e}"
+
 
 
 
