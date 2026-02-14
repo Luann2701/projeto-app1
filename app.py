@@ -15,6 +15,8 @@ import requests
 import pytz
 import mercadopago
 
+DONO_EMAIL = os.getenv("DONO_EMAIL")
+DONO_SENHA = os.getenv("DONO_SENHA")
 
 def get_db_connection():
     return psycopg2.connect(
@@ -61,8 +63,6 @@ app.secret_key = os.getenv("SECRET_KEY")
 
 UPLOAD_FOLDER = "static/uploads/eventos"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
-DONO_EMAIL = os.getenv("DONO_EMAIL")
-DONO_SENHA = os.getenv("DONO_SENHA")
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -348,8 +348,6 @@ def login_dono():
         )
 
     return render_template("login_dono.html")
-
-
 
 # ======================
 # CADASTRO CLIENTE
