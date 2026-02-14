@@ -303,27 +303,27 @@ def login():
         senha = request.form["senha"]
 
         conn = conectar()
-        c = conn.cursor(dictionary=True)
+        c = conn.cursor()
         c.execute(
-            "SELECT * FROM usuarios WHERE usuario=%s AND tipo='cliente'",
+            "SELECT id, usuario, senha, tipo FROM usuarios WHERE usuario=%s AND tipo='cliente'",
             (usuario,)
         )
         user = c.fetchone()
         conn.close()
 
-        # 🔐 VERIFICAÇÃO SEGURA
-        if user and check_password_hash(user["senha"], senha):
-            session["usuario"] = usuario
-            session["tipo"] = "cliente"
+        # user = None se não existir
+        if user and check_password_hash(user[2], senha):
+            session["usuario"] = user[1]
+            session["tipo"] = user[3]
             return redirect("/telefone")
 
-        # ❌ login inválido SEM QUEBRAR
         return render_template(
             "error.html",
             mensagem="Usuário ou senha incorretos"
         )
 
     return render_template("login.html")
+
 
 
 
