@@ -248,12 +248,6 @@ def enviar_email_recuperacao(destino, token):
 # HORÁRIO DE BRASILIA
 # ======================
 
-@app.route("/gerar_hash")
-def gerar_hash():
-    from werkzeug.security import generate_password_hash
-    return generate_password_hash("SUA_SENHA_DO_DONO")
-
-
 def agora_brasilia():
     tz = pytz.timezone("America/Sao_Paulo")
     return datetime.now(tz)
@@ -334,19 +328,21 @@ def login():
 # LOGIN DONO
 # ======================
 
+from werkzeug.security import check_password_hash
+import os
+
+DONO_EMAIL = os.environ.get("DONO_EMAIL")
+DONO_SENHA_HASH = os.environ.get("DONO_SENHA_HASH")
+
 @app.route("/login_dono", methods=["GET", "POST"])
 def login_dono():
     if request.method == "POST":
         email = request.form["usuario"]
         senha = request.form["senha"]
 
-        dono_email = os.environ.get("DONO_EMAIL")
-        dono_hash = os.environ.get("DONO_SENHA_HASH")
-
         if (
-            email == dono_email
-            and dono_hash
-            and check_password_hash(dono_hash, senha)
+            email == DONO_EMAIL and
+            check_password_hash(DONO_SENHA_HASH, senha)
         ):
             session.clear()
             session["usuario"] = email
@@ -359,6 +355,7 @@ def login_dono():
         )
 
     return render_template("login_dono.html")
+
 
 
 # ======================
