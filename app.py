@@ -394,7 +394,7 @@ def telefone():
     conn = conectar()
     c = conn.cursor()
 
-    # busca telefone
+    # 🔎 Busca telefone do usuário
     c.execute(
         "SELECT telefone FROM usuarios WHERE usuario=%s",
         (session["usuario"],)
@@ -403,26 +403,34 @@ def telefone():
     resultado = c.fetchone()
 
     telefone = (
-    resultado[0].strip()
-    if resultado and resultado[0] and resultado[0].strip() != ""
-    else None
-)
+        resultado[0].strip()
+        if resultado and resultado[0] and resultado[0].strip() != ""
+        else None
+    )
 
+    # ✅ Se já tiver telefone, pula a etapa
     if telefone:
-     conn.close()
-    return redirect("/esporte")
+        conn.close()
+        return redirect("/esporte")
 
-
+    # 📩 Salvando telefone
     if request.method == "POST":
-        tel = request.form["telefone"]
+        tel = request.form["telefone"].strip()
+
+        if not tel:
+            conn.close()
+            return render_template(
+                "telefone.html",
+                erro="Informe um telefone válido"
+            )
 
         c.execute(
             "UPDATE usuarios SET telefone=%s WHERE usuario=%s",
             (tel, session["usuario"])
         )
+
         conn.commit()
         conn.close()
-
         return redirect("/esporte")
 
     conn.close()
