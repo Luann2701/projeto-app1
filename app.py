@@ -1130,7 +1130,7 @@ def relatorio_mensal():
     c.execute("SELECT COUNT(*) FROM reservas WHERE pago = TRUE")
     print("RESERVAS PAGAS:", c.fetchone()[0])
 
-    # 🔍 TOTAL HORARIOS
+    # 🔍 TOTAL HORÁRIOS
     c.execute("SELECT COUNT(*) FROM horarios")
     print("TOTAL HORARIOS:", c.fetchone()[0])
 
@@ -1138,8 +1138,8 @@ def relatorio_mensal():
     c.execute("SELECT COUNT(*) FROM horarios WHERE tipo = 'dayuse'")
     print("DAY USE:", c.fetchone()[0])
 
-    # 🔍 FIXOS
-    c.execute("SELECT COUNT(*) FROM horarios WHERE tipo = 'fixo' AND permanente = TRUE")
+    # 🔍 FIXOS (TABELA CORRETA)
+    c.execute("SELECT COUNT(*) FROM horarios_fixos WHERE permanente = TRUE")
     print("FIXOS:", c.fetchone()[0])
 
     print("===========================================")
@@ -1148,7 +1148,7 @@ def relatorio_mensal():
     c.execute("""
         SELECT 
             to_char(data, 'YYYY-MM') AS mes,
-            COUNT(*) 
+            COUNT(*)
         FROM reservas
         WHERE pago = TRUE
         GROUP BY mes
@@ -1160,7 +1160,7 @@ def relatorio_mensal():
     c.execute("""
         SELECT 
             to_char(data, 'YYYY-MM') AS mes,
-            COUNT(*) 
+            COUNT(*)
         FROM horarios
         WHERE tipo = 'dayuse'
         GROUP BY mes
@@ -1168,14 +1168,13 @@ def relatorio_mensal():
     """)
     day_uses = {row[0]: row[1] for row in c.fetchall()}
 
-    # 🟢 Fixos por mês
+    # 🟢 Fixos por mês (baseado na data de criação)
     c.execute("""
-        SELECT 
-            to_char(data, 'YYYY-MM') AS mes,
-            COUNT(*) 
-        FROM horarios
-        WHERE tipo = 'fixo'
-          AND permanente = TRUE
+        SELECT
+            to_char(criado_em, 'YYYY-MM') AS mes,
+            COUNT(*)
+        FROM horarios_fixos
+        WHERE permanente = TRUE
         GROUP BY mes
         ORDER BY mes
     """)
@@ -1183,6 +1182,7 @@ def relatorio_mensal():
 
     conn.close()
 
+    # 📅 Junta todos os meses existentes
     meses = sorted(set(reservas) | set(day_uses) | set(fixos))
 
     dados = []
