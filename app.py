@@ -1116,63 +1116,8 @@ def painel_dono():
 
 @app.route("/relatorio_mensal")
 def relatorio_mensal():
-    if "tipo" not in session or session["tipo"] != "dono":
-        return redirect("/")
+    return "ENTREI NO RELATORIO"
 
-    conn = conectar()
-    c = conn.cursor()
-
-    # 🔵 Reservas pagas por mês
-    c.execute("""
-        SELECT 
-            to_char(data, 'YYYY-MM') AS mes,
-            COUNT(*) 
-        FROM reservas
-        WHERE pago = TRUE
-        GROUP BY mes
-        ORDER BY mes
-    """)
-    reservas = {row[0]: row[1] for row in c.fetchall()}
-
-    # 🟠 Day Uses por mês
-    c.execute("""
-        SELECT 
-            to_char(data, 'YYYY-MM') AS mes,
-            COUNT(*) 
-        FROM horarios
-        WHERE tipo = 'dayuse'
-        GROUP BY mes
-        ORDER BY mes
-    """)
-    day_uses = {row[0]: row[1] for row in c.fetchall()}
-
-    # 🟢 Fixos por mês (TABELA CERTA)
-    c.execute("""
-        SELECT
-            to_char(criado_em, 'YYYY-MM') AS mes,
-            COUNT(*)
-        FROM horarios_fixos
-        WHERE permanente = TRUE
-        GROUP BY mes
-        ORDER BY mes
-    """)
-    fixos = {row[0]: row[1] for row in c.fetchall()}
-
-    conn.close()
-
-    # junta todos os meses
-    meses = sorted(set(reservas) | set(day_uses) | set(fixos))
-
-    dados = []
-    for mes in meses:
-        dados.append({
-            "mes": mes,
-            "reservas": reservas.get(mes, 0),
-            "day_uses": day_uses.get(mes, 0),
-            "fixos": fixos.get(mes, 0)
-        })
-
-    return render_template("relatorio_mensal.html", dados=dados)
 
 
 # ======================
