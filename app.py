@@ -17,7 +17,7 @@ import pytz
 import mercadopago
 
 DONO_EMAIL = os.getenv("DONO_EMAIL")
-DONO_SENHA = os.getenv("DONO_SENHA")
+DONO_SENHA_HASH = os.getenv("DONO_SENHA_HASH")
 
 def get_db_connection():
     return psycopg2.connect(
@@ -248,6 +248,12 @@ def enviar_email_recuperacao(destino, token):
 # HORÁRIO DE BRASILIA
 # ======================
 
+@app.route("/gerar_hash")
+def gerar_hash():
+    from werkzeug.security import generate_password_hash
+    return generate_password_hash("SUA_SENHA_DO_DONO")
+
+
 def agora_brasilia():
     tz = pytz.timezone("America/Sao_Paulo")
     return datetime.now(tz)
@@ -334,7 +340,14 @@ def login_dono():
         email = request.form["usuario"]
         senha = request.form["senha"]
 
-        if email == DONO_EMAIL and senha == DONO_SENHA:
+        dono_email = os.environ.get("DONO_EMAIL")
+        dono_hash = os.environ.get("DONO_SENHA_HASH")
+
+        if (
+            email == dono_email
+            and dono_hash
+            and check_password_hash(dono_hash, senha)
+        ):
             session.clear()
             session["usuario"] = email
             session["tipo"] = "dono"
@@ -346,6 +359,7 @@ def login_dono():
         )
 
     return render_template("login_dono.html")
+
 
 # ======================
 # CADASTRO CLIENTE
