@@ -1072,16 +1072,16 @@ def painel_dono():
 
     query = """
     SELECT 
-        COALESCE(r.nome, u.usuario, 'Não informado') AS cliente,
-        COALESCE(u.telefone, '-') AS telefone,
-        r.esporte,
-        r.quadra,
-        r.data,
-        r.horario,
-        COALESCE(r.pago, FALSE) AS pago
+    COALESCE(r.nome, u.usuario, 'Não informado') AS cliente,
+    COALESCE(r.telefone, u.telefone, '-') AS telefone,
+    r.esporte,
+    r.quadra,
+    r.data,
+    r.horario,
+    COALESCE(r.pago, FALSE) AS pago
     FROM reservas r
     LEFT JOIN usuarios u
-        ON u.usuario = r.usuario
+    ON u.usuario = r.usuario
     WHERE 1=1
 """
 
