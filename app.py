@@ -294,6 +294,8 @@ def inicio():
 
 from werkzeug.security import check_password_hash
 
+from werkzeug.security import check_password_hash
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -309,14 +311,20 @@ def login():
         user = c.fetchone()
         conn.close()
 
+        # 🔐 VERIFICAÇÃO SEGURA
         if user and check_password_hash(user["senha"], senha):
             session["usuario"] = usuario
             session["tipo"] = "cliente"
             return redirect("/telefone")
 
-        return render_template("error.html", mensagem="Login inválido")
+        # ❌ login inválido SEM QUEBRAR
+        return render_template(
+            "error.html",
+            mensagem="Usuário ou senha incorretos"
+        )
 
     return render_template("login.html")
+
 
 
 # ======================
