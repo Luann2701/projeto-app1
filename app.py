@@ -61,6 +61,8 @@ app.secret_key = os.getenv("SECRET_KEY")
 
 UPLOAD_FOLDER = "static/uploads/eventos"
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp'}
+DONO_EMAIL = os.getenv("DONO_EMAIL")
+DONO_SENHA = os.getenv("DONO_SENHA")
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
@@ -324,9 +326,6 @@ def login():
 
     return render_template("login.html")
 
-
-
-
 # ======================
 # LOGIN DONO
 # ======================
@@ -337,18 +336,19 @@ def login_dono():
         email = request.form["usuario"]
         senha = request.form["senha"]
 
-        if email == "administrador@gmail.com" and senha == "arenaca2026":
+        if email == DONO_EMAIL and senha == DONO_SENHA:
             session.clear()
             session["usuario"] = email
             session["tipo"] = "dono"
             return redirect("/painel_dono")
-        else:
-            return render_template(
-                "login_dono.html",
-                erro="❌ Usuário ou senha inválidos"
-            )
+
+        return render_template(
+            "login_dono.html",
+            erro="❌ Usuário ou senha inválidos"
+        )
 
     return render_template("login_dono.html")
+
 
 
 # ======================
