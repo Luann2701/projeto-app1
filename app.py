@@ -329,7 +329,6 @@ def login():
 # ======================
 
 from werkzeug.security import check_password_hash
-import os
 
 DONO_EMAIL = os.environ.get("DONO_EMAIL")
 DONO_SENHA_HASH = os.environ.get("DONO_SENHA_HASH")
@@ -340,33 +339,20 @@ def login_dono():
         email = request.form["usuario"]
         senha = request.form["senha"]
 
-        if (
-            email == DONO_EMAIL and
-            check_password_hash(DONO_SENHA_HASH, senha)
-        ):
+        if email == DONO_EMAIL and check_password_hash(DONO_SENHA_HASH, senha):
             session.clear()
             session["usuario"] = email
             session["tipo"] = "dono"
             return redirect("/painel_dono")
 
-        return render_template(
-            "login_dono.html",
-            erro="❌ Usuário ou senha inválidos"
-        )
+        return render_template("login_dono.html", erro="❌ Usuário ou senha inválidos")
 
     return render_template("login_dono.html")
-
 
 
 # ======================
 # CADASTRO CLIENTE
 # ======================
-
-@app.route("/gerar_hash")
-def gerar_hash():
-    from werkzeug.security import generate_password_hash
-    return generate_password_hash("SUA_SENHA_DO_DONO")
-
 
 @app.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
