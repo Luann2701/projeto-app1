@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, session, flash, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.middleware.proxy_fix import ProxyFix
 import psycopg2
 from datetime import datetime, timedelta
@@ -294,9 +295,6 @@ def inicio():
 # LOGIN CLIENTE
 # ======================
 
-from werkzeug.security import check_password_hash
-
-from werkzeug.security import check_password_hash
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -313,7 +311,6 @@ def login():
         user = c.fetchone()
         conn.close()
 
-        # user = None se não existir
         if user and check_password_hash(user[2], senha):
             session["usuario"] = user[1]
             session["tipo"] = user[3]
@@ -325,6 +322,7 @@ def login():
         )
 
     return render_template("login.html")
+
 
 # ======================
 # LOGIN DONO
@@ -358,12 +356,14 @@ def cadastro():
         usuario = request.form["usuario"]
         senha = request.form["senha"]
 
+        senha_hash = generate_password_hash(senha)
+
         try:
             conn = conectar()
             c = conn.cursor()
             c.execute(
                 "INSERT INTO usuarios (usuario, senha, tipo) VALUES (%s, %s, 'cliente')",
-                (usuario, senha),
+                (usuario, senha_hash),
             )
             conn.commit()
             conn.close()
@@ -373,7 +373,7 @@ def cadastro():
                 sucesso="✅ Usuário cadastrado com sucesso!"
             )
 
-        except:
+        except Exception as e:
             return render_template(
                 "cadastro.html",
                 erro="⚠️ Este usuário já existe."
@@ -1831,14 +1831,19 @@ def toggle_fixo_dia():
 # RESET MINHA SENHA
 # ======================
 
+from datetime import datetime
+from werkzeug.security import generate_password_hash
+
 @app.route("/reset_senha/<token>", methods=["GET", "POST"])
 def reset_senha(token):
     conn = conectar()
     c = conn.cursor()
 
+    # 1️⃣ Verifica se o token existe e se não expirou
     c.execute("""
-        SELECT reset_expira FROM usuarios
-        WHERE reset_token=%s
+        SELECT reset_expira
+        FROM usuarios
+        WHERE reset_token = %s
     """, (token,))
     user = c.fetchone()
 
@@ -1846,25 +1851,31 @@ def reset_senha(token):
         conn.close()
         return "❌ Link inválido ou expirado"
 
-    if datetime.now() > user[0]:
+    if user[0] is None or datetime.now() > user[0]:
         conn.close()
         return "⏰ Token expirado"
 
+    # 2️⃣ Se enviou nova senha
     if request.method == "POST":
         nova = request.form["senha"]
+        nova_hash = generate_password_hash(nova)
 
         c.execute("""
             UPDATE usuarios
-            SET senha=%s, reset_token=NULL, reset_expira=NULL
+            SET senha=%s,
+                reset_token=NULL,
+                reset_expira=NULL
             WHERE reset_token=%s
-        """, (nova, token))
+        """, (nova_hash, token))
 
         conn.commit()
         conn.close()
         return redirect("/login")
 
+    # 3️⃣ Apenas exibe o formulário
     conn.close()
     return render_template("reset_senha.html")
+
 
 # -----------------------
 
