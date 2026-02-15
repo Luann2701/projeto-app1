@@ -1219,12 +1219,14 @@ def relatorio_mensal():
 # RELATÓRIO MENSAL 2
 # ======================
 
-from flask import send_file, request
+from flask import send_file, request, abort
 from openpyxl import Workbook
 from openpyxl.chart import PieChart, Reference
+from openpyxl.chart.reference import Reference
 from datetime import datetime
-import os
 import tempfile
+import os
+
 
 @app.route("/relatorio_mensal/excel")
 def relatorio_mensal_excel():

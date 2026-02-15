@@ -24,6 +24,27 @@
             margin-bottom: 25px;
         }
 
+         .relatorio-acoes {
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 15px;
+}
+
+         .btn-excel {
+    background: #1D6F42;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.btn-excel:hover {
+    background: #155a34;
+}
+
         .tabela-relatorio {
             width: 100%;
             border-collapse: collapse;
@@ -78,8 +99,15 @@
 <div class="relatorio-container">
 
     <div class="relatorio-titulo">
-        📊 Relatório Mensal de Uso
-    </div>
+    📊 Relatório Mensal de Uso
+</div>
+
+<div class="relatorio-acoes">
+    <a href="{{ url_for('relatorio_mensal_excel') }}" class="btn-excel">
+        📥 Baixar Excel
+    </a>
+</div>
+
 
     {% if dados and dados|length > 0 %}
     <table class="tabela-relatorio">
