@@ -50,13 +50,17 @@ load_dotenv()
 
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-app.config.update(
-    SESSION_COOKIE_SAMESITE="None",
-    SESSION_COOKIE_SECURE=True
+app.secret_key = os.environ.get(
+    "SECRET_KEY",
+    "jogaki_dev_fallback_key_123"
 )
 
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE="Lax"
+)
 
-app.secret_key = os.getenv("SECRET_KEY")
 
 # ======================
 # CONFIGURAÇÃO DE UPLOAD DE EVENTOS  
@@ -437,6 +441,8 @@ def telefone():
         )
         conn.commit()
         conn.close()
+        print("SESSION:", dict(session))
+        print("USUARIO:", session.get("usuario"))
 
         return redirect("/esporte")
 
