@@ -1215,6 +1215,110 @@ def relatorio_mensal():
 
     return render_template("relatorio_mensal.html", dados=dados)
 
+# ======================
+# RELATÓRIO MENSAL 2
+# ======================
+
+from flask import send_file, request
+from openpyxl import Workbook
+from openpyxl.chart import PieChart, Reference
+from datetime import datetime
+import os
+import tempfile
+
+@app.route("/relatorio_mensal/excel")
+def relatorio_mensal_excel():
+
+    if session.get("tipo") != "dono":
+        abort(403)
+
+    # 📅 Data limite
+    data_str = request.args.get("data")
+    data_limite = (
+        datetime.strptime(data_str, "%Y-%m-%d").date()
+        if data_str
+        else datetime.today().date()
+    )
+
+    mes = data_limite.strftime("%Y-%m")
+
+    conn = conectar()
+    c = conn.cursor()
+
+    # 🔎 CONSULTAS
+    c.execute("""
+        SELECT COUNT(*) FROM horarios
+        WHERE tipo = 'ocupado'
+          AND data <= %s
+    """, (data_limite,))
+    ocupados = c.fetchone()[0]
+
+    c.execute("""
+        SELECT COUNT(*) FROM reservas
+        WHERE origem = 'day_use'
+          AND data <= %s
+    """, (data_limite,))
+    day_use = c.fetchone()[0]
+
+    c.execute("""
+        SELECT COUNT(*) FROM horarios
+        WHERE permanente = TRUE
+    """)
+    fixos = c.fetchone()[0]
+
+    c.execute("""
+        SELECT COUNT(*) FROM horarios
+        WHERE tipo = 'livre'
+          AND data <= %s
+    """, (data_limite,))
+    livres = c.fetchone()[0]
+
+    c.execute("""
+        SELECT COUNT(*) FROM horarios
+        WHERE tipo = 'fechado'
+          AND data <= %s
+    """, (data_limite,))
+    fechados = c.fetchone()[0]
+
+    conn.close()
+
+    total = ocupados + day_use + fixos + livres + fechados
+
+    # 📊 CRIA EXCEL
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Relatório Mensal"
+
+    ws.append(["Categoria", "Quantidade"])
+    ws.append(["Ocupado", ocupados])
+    ws.append(["Day Use", day_use])
+    ws.append(["Fixos", fixos])
+    ws.append(["Livre", livres])
+    ws.append(["Arena Fechada", fechados])
+
+    # 🥧 GRÁFICO
+    chart = PieChart()
+    chart.title = f"Distribuição de Uso ({mes})"
+
+    labels = Reference(ws, min_col=1, min_row=2, max_row=6)
+    data = Reference(ws, min_col=2, min_row=1, max_row=6)
+
+    chart.add_data(data, titles_from_data=True)
+    chart.set_categories(labels)
+
+    ws.add_chart(chart, "D2")
+
+    # 💾 SALVA TEMPORÁRIO
+    nome_arquivo = f"RelatorioMensal_{data_limite}.xlsx"
+    caminho = os.path.join(tempfile.gettempdir(), nome_arquivo)
+
+    wb.save(caminho)
+
+    return send_file(
+        caminho,
+        as_attachment=True,
+        download_name=nome_arquivo
+    )
 
 # ======================
 # GERENCIAR HORÁRIOS (DONO)
