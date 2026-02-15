@@ -141,10 +141,11 @@
                 <td>{{ d.dayuse }}</td>
                 <td>{{ d.fixos }}</td>
                 <td>
-                <a href="{{ url_for('baixar_relatorio_excel', mes=d.mes) }}"
-                class="btn-excel">
-                ⬇ Baixar
+                <a href="{{ url_for('relatorio_mensal_excel', data=d.mes ~ '-15') }}"
+               class="btn btn-success btn-sm">
+               ⬇ Excel
                 </a>
+
                 </td>
                 </tr>
 

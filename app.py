@@ -390,6 +390,8 @@ def cadastro():
 # TELEFONE
 # ======================
 
+import re
+
 @app.route("/telefone", methods=["GET", "POST"])
 def telefone():
     if "usuario" not in session:
@@ -398,31 +400,40 @@ def telefone():
     conn = conectar()
     c = conn.cursor()
 
-    # Busca telefone do usuário
+    # 🔎 Busca telefone
     c.execute(
         "SELECT telefone FROM usuarios WHERE usuario=%s",
         (session["usuario"],)
     )
     resultado = c.fetchone()
 
-    telefone = (
-        resultado[0].strip()
-        if resultado and resultado[0] and resultado[0].strip() != ""
-        else None
-    )
+    telefone_db = resultado[0] if resultado and resultado[0] else ""
 
-    # 👉 SE JÁ TEM TELEFONE, NÃO MOSTRA A TELA
-    if telefone:
+    # 🔥 remove tudo que não é número
+    telefone_limpo = re.sub(r"\D", "", telefone_db)
+
+    # 👉 SE TEM TELEFONE VÁLIDO (8+ dígitos)
+    if len(telefone_limpo) >= 8:
         conn.close()
         return redirect("/esporte")
 
-    # 👉 SE NÃO TEM, ESPERA O POST
+    # 👉 POST
     if request.method == "POST":
-        tel = request.form["telefone"]
+        tel = request.form.get("telefone", "")
+
+        tel_limpo = re.sub(r"\D", "", tel)
+
+        # ❌ evita salvar telefone inválido
+        if len(tel_limpo) < 8:
+            conn.close()
+            return render_template(
+                "telefone.html",
+                erro="Informe um telefone válido"
+            )
 
         c.execute(
             "UPDATE usuarios SET telefone=%s WHERE usuario=%s",
-            (tel, session["usuario"])
+            (tel_limpo, session["usuario"])
         )
         conn.commit()
         conn.close()
