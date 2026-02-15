@@ -112,13 +112,17 @@
     {% if dados and dados|length > 0 %}
     <table class="tabela-relatorio">
         <thead>
-            <tr>
-                <th>Mês</th>
-                <th>Reservas Pagas</th>
-                <th>Day Uses</th>
-                <th>🔁 Fixos</th>
-            </tr>
-        </thead>
+    <tr>
+        <th>Mês</th>
+        <th>Reservas Pagas</th>
+        <th>Day Uses</th>
+        <th>Fixos</th>
+        <th>
+            📄 EXCEL<br>
+            <small style="font-weight:normal;">Relatório</small>
+        </th>
+    </tr>
+       </thead>
         <tbody>
 
             {% set total_reservas = 0 %}
@@ -132,10 +136,16 @@
                 {% set total_fixos = total_fixos + d.fixos %}
 
                 <tr>
-                    <td>{{ d.mes[5:7] }}/{{ d.mes[0:4] }}</td>
-                    <td>{{ d.reservas }}</td>
-                    <td>{{ d.dayuse }}</td>
-                    <td>{{ d.fixos }}</td>
+                <td>{{ d.mes[5:7] }}/{{ d.mes[0:4] }}</td>
+                <td>{{ d.reservas }}</td>
+                <td>{{ d.dayuse }}</td>
+                <td>{{ d.fixos }}</td>
+                <td>
+                <a href="{{ url_for('baixar_relatorio_excel', mes=d.mes) }}"
+                class="btn-excel">
+                ⬇ Baixar
+                </a>
+                </td>
                 </tr>
 
             {% endfor %}
