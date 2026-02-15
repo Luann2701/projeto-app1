@@ -1234,17 +1234,16 @@ from openpyxl.chart import PieChart, Reference
 from openpyxl.chart.reference import Reference
 from datetime import datetime
 import os
+from openpyxl import Workbook
+from openpyxl.chart import PieChart, Reference
+from datetime import datetime
+import tempfile, os
 
 @app.route("/relatorio_mensal/excel")
 def relatorio_mensal_excel():
 
     if session.get("tipo") != "dono":
         abort(403)
-
-    from openpyxl import Workbook
-    from openpyxl.chart import PieChart, Reference
-    from datetime import datetime
-    import tempfile, os
 
     data_str = request.args.get("data")
     data_limite = (
@@ -1258,51 +1257,46 @@ def relatorio_mensal_excel():
     conn = conectar()
     c = conn.cursor()
 
-    # ✅ OCUPADOS
+    # 🔎 CONTAGENS (MESMA LÓGICA DA TELA)
     c.execute("""
         SELECT COUNT(*) FROM horarios
         WHERE tipo = 'ocupado'
-          AND data <= %s
-    """, (data_limite,))
-    ocupados = c.fetchone()[0] or 0
+          AND to_char(data, 'YYYY-MM') = %s
+    """, (mes,))
+    ocupados = c.fetchone()[0]
 
-    # ✅ DAY USE (vem de RESERVAS)
     c.execute("""
-        SELECT COUNT(*) FROM reservas
-        WHERE origem = 'day_use'
-          AND data <= %s
-    """, (data_limite,))
-    day_use = c.fetchone()[0] or 0
+        SELECT COUNT(*) FROM horarios
+        WHERE tipo = 'dayuse'
+          AND to_char(data, 'YYYY-MM') = %s
+    """, (mes,))
+    day_use = c.fetchone()[0]
 
-    # ✅ FIXOS (permanentes)
     c.execute("""
         SELECT COUNT(*) FROM horarios
         WHERE tipo = 'fixo'
           AND permanente = TRUE
-    """)
-    fixos = c.fetchone()[0] or 0
+          AND to_char(data, 'YYYY-MM') = %s
+    """, (mes,))
+    fixos = c.fetchone()[0]
 
-    # ✅ LIVRES
     c.execute("""
         SELECT COUNT(*) FROM horarios
         WHERE tipo = 'livre'
-          AND data <= %s
-    """, (data_limite,))
-    livres = c.fetchone()[0] or 0
+          AND to_char(data, 'YYYY-MM') = %s
+    """, (mes,))
+    livres = c.fetchone()[0]
 
-    # ✅ ARENA FECHADA
     c.execute("""
         SELECT COUNT(*) FROM horarios
         WHERE tipo = 'fechado'
-          AND data <= %s
-    """, (data_limite,))
-    fechados = c.fetchone()[0] or 0
+          AND to_char(data, 'YYYY-MM') = %s
+    """, (mes,))
+    fechados = c.fetchone()[0]
 
     conn.close()
 
-    # ==========================
-    # EXCEL
-    # ==========================
+    # 📊 EXCEL
     wb = Workbook()
     ws = wb.active
     ws.title = "Relatório Mensal"
@@ -1322,10 +1316,12 @@ def relatorio_mensal_excel():
 
     chart.add_data(data, titles_from_data=True)
     chart.set_categories(labels)
+
     ws.add_chart(chart, "D2")
 
-    nome_arquivo = f"RelatorioMensal_{data_limite}.xlsx"
+    nome_arquivo = f"RelatorioMensal_{mes}.xlsx"
     caminho = os.path.join(tempfile.gettempdir(), nome_arquivo)
+
     wb.save(caminho)
 
     return send_file(
