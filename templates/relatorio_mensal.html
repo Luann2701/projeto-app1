@@ -102,13 +102,6 @@
     📊 Relatório Mensal de Uso
 </div>
 
-<div class="relatorio-acoes">
-    <a href="{{ url_for('relatorio_mensal_excel') }}" class="btn-excel">
-        📥 Baixar Excel
-    </a>
-</div>
-
-
     {% if dados and dados|length > 0 %}
     <table class="tabela-relatorio">
         <thead>
