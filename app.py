@@ -1241,80 +1241,68 @@ def relatorio_mensal_excel():
     if session.get("tipo") != "dono":
         abort(403)
 
-    from datetime import datetime
     from openpyxl import Workbook
     from openpyxl.chart import PieChart, Reference
-    import tempfile
-    import os
+    from datetime import datetime
+    import tempfile, os
 
-    # 📅 Data escolhida (ou hoje)
     data_str = request.args.get("data")
-    data_base = (
+    data_limite = (
         datetime.strptime(data_str, "%Y-%m-%d").date()
         if data_str
         else datetime.today().date()
     )
 
-    mes_ref = data_base.strftime("%Y-%m")
+    mes = data_limite.strftime("%Y-%m")
 
     conn = conectar()
     c = conn.cursor()
 
-    # ======================
-    # OCUPADOS
-    # ======================
+    # ✅ OCUPADOS
     c.execute("""
         SELECT COUNT(*) FROM horarios
         WHERE tipo = 'ocupado'
-          AND to_char(data, 'YYYY-MM') = %s
-    """, (mes_ref,))
-    ocupados = c.fetchone()[0]
+          AND data <= %s
+    """, (data_limite,))
+    ocupados = c.fetchone()[0] or 0
 
-    # ======================
-    # DAY USE (CORRETO)
-    # ======================
+    # ✅ DAY USE (vem de RESERVAS)
     c.execute("""
         SELECT COUNT(*) FROM reservas
         WHERE origem = 'day_use'
-          AND to_char(data, 'YYYY-MM') = %s
-    """, (mes_ref,))
-    day_use = c.fetchone()[0]
+          AND data <= %s
+    """, (data_limite,))
+    day_use = c.fetchone()[0] or 0
 
-    # ======================
-    # FIXOS (POR MÊS)
-    # ======================
+    # ✅ FIXOS (permanentes)
     c.execute("""
         SELECT COUNT(*) FROM horarios
         WHERE tipo = 'fixo'
           AND permanente = TRUE
-          AND to_char(data, 'YYYY-MM') = %s
-    """, (mes_ref,))
-    fixos = c.fetchone()[0]
+    """)
+    fixos = c.fetchone()[0] or 0
 
-    # ======================
-    # ARENA FECHADA
-    # ======================
+    # ✅ LIVRES
+    c.execute("""
+        SELECT COUNT(*) FROM horarios
+        WHERE tipo = 'livre'
+          AND data <= %s
+    """, (data_limite,))
+    livres = c.fetchone()[0] or 0
+
+    # ✅ ARENA FECHADA
     c.execute("""
         SELECT COUNT(*) FROM horarios
         WHERE tipo = 'fechado'
-          AND to_char(data, 'YYYY-MM') = %s
-    """, (mes_ref,))
-    fechados = c.fetchone()[0]
+          AND data <= %s
+    """, (data_limite,))
+    fechados = c.fetchone()[0] or 0
 
     conn.close()
 
-    # ======================
-    # LIVRES (CALCULADO)
-    # ======================
-    TOTAL_HORARIOS_MES = 30 * 12  # ajuste se necessário
-    livres = max(
-        TOTAL_HORARIOS_MES - (ocupados + day_use + fixos + fechados),
-        0
-    )
-
-    # ======================
-    # CRIA EXCEL
-    # ======================
+    # ==========================
+    # EXCEL
+    # ==========================
     wb = Workbook()
     ws = wb.active
     ws.title = "Relatório Mensal"
@@ -1326,24 +1314,17 @@ def relatorio_mensal_excel():
     ws.append(["Livre", livres])
     ws.append(["Arena Fechada", fechados])
 
-    # ======================
-    # GRÁFICO
-    # ======================
     chart = PieChart()
-    chart.title = f"Distribuição de Uso ({mes_ref})"
+    chart.title = f"Distribuição de Uso ({mes})"
 
     labels = Reference(ws, min_col=1, min_row=2, max_row=6)
     data = Reference(ws, min_col=2, min_row=1, max_row=6)
 
     chart.add_data(data, titles_from_data=True)
     chart.set_categories(labels)
-
     ws.add_chart(chart, "D2")
 
-    # ======================
-    # SALVAR
-    # ======================
-    nome_arquivo = f"RelatorioMensal_{mes_ref}.xlsx"
+    nome_arquivo = f"RelatorioMensal_{data_limite}.xlsx"
     caminho = os.path.join(tempfile.gettempdir(), nome_arquivo)
     wb.save(caminho)
 
