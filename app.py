@@ -1254,6 +1254,10 @@ def relatorio_mensal_excel():
         abort(403)
 
     from calendar import monthrange
+    from datetime import datetime
+    from openpyxl import Workbook
+    from openpyxl.chart import PieChart, Reference
+    import tempfile, os
 
     data_str = request.args.get("data")
     data_limite = (
@@ -1263,9 +1267,9 @@ def relatorio_mensal_excel():
 
     ano = data_limite.year
     mes = data_limite.month
-    dias_mes = monthrange(ano, mes)[1]
 
-    HORAS_POR_DIA = 14   # ajuste se precisar
+    dias_mes = monthrange(ano, mes)[1]
+    HORAS_POR_DIA = 14   # ajuste se mudar sua grade
     QUADRAS = 3
 
     TOTAL_HORARIOS = dias_mes * HORAS_POR_DIA * QUADRAS
@@ -1273,52 +1277,70 @@ def relatorio_mensal_excel():
     conn = conectar()
     c = conn.cursor()
 
+    # ======================
     # OCUPADOS
+    # ======================
     c.execute("""
         SELECT COUNT(*)
         FROM reservas
         WHERE pago = TRUE
-          AND date_part('month', data) = %s
-          AND date_part('year', data) = %s
+          AND EXTRACT(MONTH FROM data) = %s
+          AND EXTRACT(YEAR FROM data) = %s
     """, (mes, ano))
-    ocupados = c.fetchone()[0]
+    ocupados = c.fetchone()[0] or 0
 
+    # ======================
     # DAY USE (PADRÃO ÚNICO)
+    # ======================
     c.execute("""
         SELECT COUNT(*)
         FROM reservas
         WHERE origem = 'day_use'
-          AND date_part('month', data) = %s
-          AND date_part('year', data) = %s
+          AND EXTRACT(MONTH FROM data) = %s
+          AND EXTRACT(YEAR FROM data) = %s
     """, (mes, ano))
-    day_use = c.fetchone()[0]
+    day_use = c.fetchone()[0] or 0
 
+    # ======================
     # FIXOS (SEM MULTIPLICAR)
+    # ======================
     c.execute("""
-        SELECT COUNT(DISTINCT hora, quadra)
-        FROM horarios
-        WHERE tipo = 'fixo'
-          AND permanente = TRUE
+        SELECT COUNT(*) FROM (
+            SELECT DISTINCT hora, quadra
+            FROM horarios
+            WHERE tipo = 'fixo'
+              AND permanente = TRUE
+        ) t
     """)
-    fixos = c.fetchone()[0]
+    fixos = c.fetchone()[0] or 0
 
+    # ======================
     # ARENA FECHADA
+    # ======================
     c.execute("""
-        SELECT COUNT(DISTINCT data, hora, quadra)
-        FROM horarios
-        WHERE tipo = 'fechado'
-          AND date_part('month', data) = %s
-          AND date_part('year', data) = %s
+        SELECT COUNT(*) FROM (
+            SELECT DISTINCT data, hora, quadra
+            FROM horarios
+            WHERE tipo = 'fechado'
+              AND EXTRACT(MONTH FROM data) = %s
+              AND EXTRACT(YEAR FROM data) = %s
+        ) t
     """, (mes, ano))
-    fechados = c.fetchone()[0]
+    fechados = c.fetchone()[0] or 0
 
     conn.close()
 
-    livres = TOTAL_HORARIOS - (
-        ocupados + day_use + fixos + fechados
+    # ======================
+    # LIVRES (CÁLCULO)
+    # ======================
+    livres = max(
+        TOTAL_HORARIOS - (ocupados + day_use + fixos + fechados),
+        0
     )
 
-    # ================= EXCEL =================
+    # ======================
+    # EXCEL
+    # ======================
     wb = Workbook()
     ws = wb.active
     ws.title = "Relatório Mensal"
