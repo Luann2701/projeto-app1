@@ -1231,19 +1231,8 @@ def relatorio_mensal():
 from flask import send_file, request, abort
 from openpyxl import Workbook
 from openpyxl.chart import PieChart, Reference
-from openpyxl.chart.reference import Reference
-from datetime import datetime
-import os
-from openpyxl import Workbook
-from openpyxl.chart import PieChart, Reference
-from datetime import datetime
-import tempfile, os
-
-from flask import send_file, request, abort
-from openpyxl import Workbook
-from openpyxl.chart import PieChart, Reference
 from datetime import datetime, date
-import calendar
+from calendar import monthrange
 import tempfile
 import os
 
@@ -1253,30 +1242,33 @@ def relatorio_mensal_excel():
     if session.get("tipo") != "dono":
         abort(403)
 
-    from datetime import date
-    from calendar import monthrange
-
-    # 📅 Data limite
+    # ======================
+    # DATA BASE
+    # ======================
     data_str = request.args.get("data")
-    data_limite = (
+    data_base = (
         datetime.strptime(data_str, "%Y-%m-%d").date()
         if data_str
         else date.today()
     )
 
-    ano = data_limite.year
-    mes = data_limite.month
+    ano = data_base.year
+    mes = data_base.month
     mes_str = f"{ano}-{mes:02d}"
 
-    # 📆 intervalo do mês
     primeiro_dia = date(ano, mes, 1)
     ultimo_dia = date(ano, mes, monthrange(ano, mes)[1])
+    total_dias = ultimo_dia.day
+
+    # CONFIGURAÇÃO FIXA DO SISTEMA
+    QUADRAS = 3
+    HORARIOS_POR_DIA = 14  # 🔥 ajuste conforme sua arena
 
     conn = conectar()
     c = conn.cursor()
 
     # ======================
-    # CONTAGENS REAIS
+    # CONTAGENS POR TIPO (REAIS)
     # ======================
     def contar(tipo):
         c.execute("""
@@ -1285,27 +1277,37 @@ def relatorio_mensal_excel():
             WHERE tipo = %s
               AND data BETWEEN %s AND %s
         """, (tipo, primeiro_dia, ultimo_dia))
-        return c.fetchone()[0]
+        return c.fetchone()[0] or 0
 
     ocupados = contar("ocupado")
     dayuse = contar("dayuse")
-    fixos = contar("fixo")
     fechados = contar("fechada")
 
     # ======================
-    # TOTAL POSSÍVEL DE HORÁRIOS
+    # FIXOS (PERMANENTES)
     # ======================
     c.execute("""
-        SELECT COUNT(DISTINCT hora) FROM horarios
+        SELECT COUNT(DISTINCT hora, quadra)
+        FROM horarios
+        WHERE tipo = 'fixo'
+          AND permanente = TRUE
     """)
-    horarios_por_dia = c.fetchone()[0] or 0
+    fixos_base = c.fetchone()[0] or 0
 
-    total_dias = ultimo_dia.day
-    quadras = 3  # 🔥 ajuste se mudar
+    fixos = fixos_base * total_dias
 
-    total_possivel = horarios_por_dia * total_dias * quadras
+    # ======================
+    # LIVRES (GRADE REAL)
+    # ======================
+    total_possivel = HORARIOS_POR_DIA * QUADRAS * total_dias
 
-    livres = total_possivel - (ocupados + dayuse + fixos + fechados)
+    livres = total_possivel - (
+        ocupados +
+        dayuse +
+        fixos +
+        fechados
+    )
+
     if livres < 0:
         livres = 0
 
