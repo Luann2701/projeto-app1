@@ -1253,93 +1253,72 @@ def relatorio_mensal_excel():
     if session.get("tipo") != "dono":
         abort(403)
 
-    # =========================
-    # CONFIGURAÇÕES
-    # =========================
+    from calendar import monthrange
+
+    data_str = request.args.get("data")
+    data_limite = (
+        datetime.strptime(data_str, "%Y-%m-%d").date()
+        if data_str else datetime.today().date()
+    )
+
+    ano = data_limite.year
+    mes = data_limite.month
+    dias_mes = monthrange(ano, mes)[1]
+
+    HORAS_POR_DIA = 14   # ajuste se precisar
     QUADRAS = 3
-    HORARIOS_POR_DIA = 12  # ajuste se necessário
 
-    # =========================
-    # DATA
-    # =========================
-    data_str = request.args.get("mes")  # formato: YYYY-MM
-
-    if not data_str:
-        hoje = date.today()
-        ano = hoje.year
-        mes_num = hoje.month
-    else:
-        ano, mes_num = map(int, data_str.split("-"))
-
-    primeiro_dia = date(ano, mes_num, 1)
-    ultimo_dia = date(ano, mes_num, calendar.monthrange(ano, mes_num)[1])
-
-    dias_no_mes = (ultimo_dia - primeiro_dia).days + 1
-    total_slots = dias_no_mes * HORARIOS_POR_DIA * QUADRAS
-
-    mes_label = f"{ano}-{str(mes_num).zfill(2)}"
+    TOTAL_HORARIOS = dias_mes * HORAS_POR_DIA * QUADRAS
 
     conn = conectar()
     c = conn.cursor()
 
-    # =========================
     # OCUPADOS
-    # =========================
     c.execute("""
-        SELECT COUNT(*) FROM horarios
-        WHERE tipo = 'ocupado'
-          AND data BETWEEN %s AND %s
-    """, (primeiro_dia, ultimo_dia))
+        SELECT COUNT(*)
+        FROM reservas
+        WHERE pago = TRUE
+          AND date_part('month', data) = %s
+          AND date_part('year', data) = %s
+    """, (mes, ano))
     ocupados = c.fetchone()[0]
 
-    # =========================
-    # DAY USE
-    # =========================
+    # DAY USE (PADRÃO ÚNICO)
     c.execute("""
-        SELECT COUNT(*) FROM reservas
+        SELECT COUNT(*)
+        FROM reservas
         WHERE origem = 'day_use'
-          AND data BETWEEN %s AND %s
-    """, (primeiro_dia, ultimo_dia))
+          AND date_part('month', data) = %s
+          AND date_part('year', data) = %s
+    """, (mes, ano))
     day_use = c.fetchone()[0]
 
-    # =========================
-    # FIXOS (permanentes)
-    # =========================
+    # FIXOS (SEM MULTIPLICAR)
     c.execute("""
-        SELECT COUNT(*) FROM horarios
+        SELECT COUNT(DISTINCT hora, quadra)
+        FROM horarios
         WHERE tipo = 'fixo'
           AND permanente = TRUE
     """)
-    fixos_por_semana = c.fetchone()[0]
+    fixos = c.fetchone()[0]
 
-    # Cada fixo ocupa TODAS as semanas do mês
-    semanas_no_mes = calendar.monthcalendar(ano, mes_num)
-    semanas = len(semanas_no_mes)
-
-    fixos = fixos_por_semana * semanas
-
-    # =========================
     # ARENA FECHADA
-    # =========================
     c.execute("""
-        SELECT COUNT(*) FROM horarios
+        SELECT COUNT(DISTINCT data, hora, quadra)
+        FROM horarios
         WHERE tipo = 'fechado'
-          AND data BETWEEN %s AND %s
-    """, (primeiro_dia, ultimo_dia))
+          AND date_part('month', data) = %s
+          AND date_part('year', data) = %s
+    """, (mes, ano))
     fechados = c.fetchone()[0]
 
     conn.close()
 
-    # =========================
-    # LIVRES (CÁLCULO REAL)
-    # =========================
-    livres = total_slots - (ocupados + day_use + fixos + fechados)
-    if livres < 0:
-        livres = 0
+    livres = TOTAL_HORARIOS - (
+        ocupados + day_use + fixos + fechados
+    )
 
-    # =========================
-    # EXCEL
-    # =========================
+    # ================= EXCEL =================
     wb = Workbook()
     ws = wb.active
     ws.title = "Relatório Mensal"
@@ -1351,11 +1330,8 @@ def relatorio_mensal_excel():
     ws.append(["Livre", livres])
     ws.append(["Arena Fechada", fechados])
 
-    # =========================
-    # GRÁFICO
-    # =========================
     chart = PieChart()
-    chart.title = f"Distribuição de Uso ({mes_label})"
+    chart.title = f"Distribuição de Uso ({ano}-{mes:02d})"
 
     labels = Reference(ws, min_col=1, min_row=2, max_row=6)
     data = Reference(ws, min_col=2, min_row=1, max_row=6)
@@ -1365,18 +1341,12 @@ def relatorio_mensal_excel():
 
     ws.add_chart(chart, "D2")
 
-    # =========================
-    # SALVAR
-    # =========================
-    nome_arquivo = f"RelatorioMensal_{mes_label}.xlsx"
+    nome_arquivo = f"RelatorioMensal_{ano}-{mes:02d}.xlsx"
     caminho = os.path.join(tempfile.gettempdir(), nome_arquivo)
     wb.save(caminho)
 
-    return send_file(
-        caminho,
-        as_attachment=True,
-        download_name=nome_arquivo
-    )
+    return send_file(caminho, as_attachment=True)
+
 
 # ======================
 # GERENCIAR HORÁRIOS (DONO)
