@@ -1242,14 +1242,19 @@ def relatorio_mensal_excel():
     if session.get("tipo") != "dono":
         abort(403)
 
+    from openpyxl import Workbook
+    from openpyxl.chart import PieChart, Reference
+    from datetime import datetime, date
+    from calendar import monthrange
+    import tempfile, os
+
     # ======================
     # DATA BASE
     # ======================
     data_str = request.args.get("data")
     data_base = (
         datetime.strptime(data_str, "%Y-%m-%d").date()
-        if data_str
-        else date.today()
+        if data_str else date.today()
     )
 
     ano = data_base.year
@@ -1258,58 +1263,50 @@ def relatorio_mensal_excel():
 
     primeiro_dia = date(ano, mes, 1)
     ultimo_dia = date(ano, mes, monthrange(ano, mes)[1])
-    total_dias = ultimo_dia.day
 
-    # CONFIGURAÇÃO FIXA DO SISTEMA
+    # CONFIG FIXA
     QUADRAS = 3
-    HORARIOS_POR_DIA = 14  # 🔥 ajuste conforme sua arena
+    HORARIOS_POR_DIA = 14
 
     conn = conectar()
     c = conn.cursor()
 
     # ======================
-    # CONTAGENS POR TIPO (REAIS)
-    # ======================
-    def contar(tipo):
-        c.execute("""
-            SELECT COUNT(*)
-            FROM horarios
-            WHERE tipo = %s
-              AND data BETWEEN %s AND %s
-        """, (tipo, primeiro_dia, ultimo_dia))
-        return c.fetchone()[0] or 0
-
-    ocupados = contar("ocupado")
-    dayuse = contar("dayuse")
-    fechados = contar("fechada")
-
-    # ======================
-    # FIXOS (PERMANENTES)
+    # CONTAGEM REAL POR TIPO
     # ======================
     c.execute("""
-        SELECT COUNT(DISTINCT hora, quadra)
+        SELECT tipo, COUNT(*)
         FROM horarios
-        WHERE tipo = 'fixo'
-          AND permanente = TRUE
-    """)
-    fixos_base = c.fetchone()[0] or 0
+        WHERE data BETWEEN %s AND %s
+        GROUP BY tipo
+    """, (primeiro_dia, ultimo_dia))
 
-    fixos = fixos_base * total_dias
+    resultados = c.fetchall()
+
+    # Normaliza
+    contagem = {
+        "ocupado": 0,
+        "dayuse": 0,
+        "fixo": 0,
+        "fechada": 0
+    }
+
+    for tipo, total in resultados:
+        contagem[tipo] = total
+
+    ocupados = contagem["ocupado"]
+    dayuse = contagem["dayuse"]
+    fixos = contagem["fixo"]
+    fechados = contagem["fechada"]
 
     # ======================
-    # LIVRES (GRADE REAL)
+    # LIVRES (CORRETO)
     # ======================
-    total_possivel = HORARIOS_POR_DIA * QUADRAS * total_dias
+    total_dias = (ultimo_dia - primeiro_dia).days + 1
+    total_possivel = QUADRAS * HORARIOS_POR_DIA * total_dias
 
-    livres = total_possivel - (
-        ocupados +
-        dayuse +
-        fixos +
-        fechados
-    )
-
-    if livres < 0:
-        livres = 0
+    total_ocupado = ocupados + dayuse + fixos + fechados
+    livres = max(total_possivel - total_ocupado, 0)
 
     conn.close()
 
@@ -1347,93 +1344,6 @@ def relatorio_mensal_excel():
         download_name=nome_arquivo
     )
 
-
-# ======================
-# GERENCIAR HORÁRIOS (DONO)
-# ======================
-
-@app.route("/admin/definir_horario", methods=["POST"])
-def definir_horario():
-
-    if "tipo" not in session or session["tipo"] != "dono":
-        abort(403)
-
-    data = request.form.get("data")
-    hora = request.form.get("hora")
-    quadra = request.form.get("quadra")
-
-    tipo = request.form.get("tipo")
-    if tipo:
-        tipo = tipo.lower().replace(" ", "").replace("_", "")
-
-    conn = conectar()
-    c = conn.cursor()
-
-    # 🔥 Remove qualquer regra anterior do dono (agenda diária)
-    c.execute("""
-        DELETE FROM horarios
-        WHERE data = %s AND hora = %s AND quadra = %s
-    """, (data, hora, quadra))
-
-    # ======================
-    # LIVRE → REMOVE FIXO E SUBTRAI DO RELATÓRIO
-    # ======================
-    if tipo == "livre" or not tipo:
-
-        # 🔑 REMOVE HORÁRIO FIXO PERMANENTE (ESSA ERA A FALTA)
-        c.execute("""
-            DELETE FROM horarios
-            WHERE hora = %s
-              AND quadra = %s
-              AND tipo = 'fixo'
-              AND permanente = TRUE
-        """, (hora, quadra))
-
-        # Remove reservas (se existirem)
-        c.execute("""
-            DELETE FROM reservas
-            WHERE data = %s AND horario = %s AND quadra = %s
-        """, (data, hora, quadra))
-
-        # DESATIVA HISTÓRICO ATIVO
-        c.execute("""
-            UPDATE historico_horarios
-            SET ativo = FALSE
-            WHERE id = (
-                SELECT id
-                FROM historico_horarios
-                WHERE data = %s
-                  AND hora = %s
-                  AND quadra = %s
-                  AND ativo = TRUE
-                ORDER BY criado_em DESC
-                LIMIT 1
-            )
-            AND ativo = TRUE
-        """, (data, hora, quadra))
-
-    # ======================
-    # OCUPADO / FIXO / DAY USE → SOMA NO RELATÓRIO
-    # ======================
-    else:
-        # 🔑 REGRA EXISTENTE (mantida)
-        permanente = True if tipo == "fixo" else False
-
-        c.execute("""
-            INSERT INTO horarios (data, hora, quadra, tipo, permanente)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (data, hora, quadra, tipo, permanente))
-
-        # REGISTRA HISTÓRICO (continua igual)
-        c.execute("""
-            INSERT INTO historico_horarios (data, hora, quadra, origem)
-            VALUES (%s, %s, %s, %s)
-        """, (data, hora, quadra, tipo))
-
-    conn.commit()
-    conn.close()
-
-    return redirect(request.referrer)
 
 
 # ==================================================================
