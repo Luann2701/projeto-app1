@@ -288,11 +288,36 @@ def teste_mp():
     }
 
 
+import re
+
 @app.route("/")
 def inicio():
-    if "usuario" in session:
-        return redirect("/telefone")  # já logado
-    return render_template("escolha.html")
+
+    # 🔒 Não logado
+    if "usuario" not in session:
+        return render_template("escolha.html")
+
+    # 🔎 Verifica telefone no banco
+    conn = conectar()
+    c = conn.cursor()
+
+    c.execute(
+        "SELECT telefone FROM usuarios WHERE usuario=%s",
+        (session["usuario"],)
+    )
+    resultado = c.fetchone()
+    conn.close()
+
+    telefone = resultado[0] if resultado and resultado[0] else ""
+    telefone_limpo = re.sub(r"\D", "", telefone)
+
+    # 📞 Se NÃO tem telefone válido
+    if len(telefone_limpo) < 8:
+        return redirect("/telefone")
+
+    # ✅ Se já tem telefone válido
+    return redirect("/esporte")
+
 
 
 # ======================
