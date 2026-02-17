@@ -1294,20 +1294,16 @@ def relatorio_mensal_excel():
     fechados = contar("fechada")
 
     # ==========================
-    # FIXOS (NÃO filtra por data)
+    # FIXOS (1 POR CLIENTE)
     # ==========================
     c.execute("""
-        SELECT COUNT(*)
-        FROM (
-            SELECT hora, quadra
-            FROM horarios
-            WHERE LOWER(tipo) = 'fixo'
-            GROUP BY hora, quadra
-        ) AS fixos_unicos
+        SELECT COUNT(DISTINCT cliente)
+    FROM horarios
+    WHERE LOWER(tipo) = 'fixo'
     """)
 
     resultado = c.fetchone()
-    fixos = resultado[0] if resultado else 0
+    fixos = resultado[0] if resultado and resultado[0] else 0
 
     # ==========================
     # TOTAL POSSÍVEL DO MÊS
