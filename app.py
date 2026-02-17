@@ -1297,9 +1297,10 @@ def relatorio_mensal_excel():
     # FIXOS (1 POR CLIENTE)
     # ==========================
     c.execute("""
-        SELECT COUNT(DISTINCT cliente)
+        SELECT COUNT(DISTINCT telefone)
     FROM horarios
     WHERE LOWER(tipo) = 'fixo'
+      AND permanente = true
     """)
 
     resultado = c.fetchone()
