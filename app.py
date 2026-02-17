@@ -1246,7 +1246,7 @@ def relatorio_mensal_excel():
         abort(403)
 
     # ==========================
-    # DATA BASE (SEGURA)
+    # DATA BASE
     # ==========================
     data_str = request.args.get("data")
 
@@ -1267,7 +1267,7 @@ def relatorio_mensal_excel():
     total_dias = ultimo_dia.day
 
     # ==========================
-    # CONFIGURAÇÃO DA ARENA
+    # CONFIGURAÇÃO
     # ==========================
     QUADRAS = 3
     HORARIOS_POR_DIA = 14
@@ -1276,15 +1276,15 @@ def relatorio_mensal_excel():
     c = conn.cursor()
 
     # ==========================
-    # CONTAGEM POR TIPO (NO MÊS)
+    # CONTAGEM NORMAL (por registro)
     # ==========================
     def contar(tipo):
         c.execute("""
             SELECT COUNT(*)
             FROM horarios
-            WHERE tipo = %s
+            WHERE LOWER(tipo) = %s
               AND data BETWEEN %s AND %s
-        """, (tipo, primeiro_dia, ultimo_dia))
+        """, (tipo.lower(), primeiro_dia, ultimo_dia))
         resultado = c.fetchone()
         return resultado[0] if resultado else 0
 
@@ -1293,13 +1293,17 @@ def relatorio_mensal_excel():
     fechados = contar("fechada")
 
     # ==========================
-    # FIXOS (1 por configuração)
+    # FIXOS (1 por hora + quadra)
     # ==========================
     c.execute("""
-        SELECT COUNT(DISTINCT hora || '-' || quadra)
-        FROM horarios
-        WHERE tipo = 'fixo'
-          AND data BETWEEN %s AND %s
+        SELECT COUNT(*)
+        FROM (
+            SELECT hora, quadra
+            FROM horarios
+            WHERE LOWER(tipo) = 'fixo'
+              AND data BETWEEN %s AND %s
+            GROUP BY hora, quadra
+        ) AS fixos_unicos
     """, (primeiro_dia, ultimo_dia))
 
     resultado = c.fetchone()
@@ -1361,7 +1365,6 @@ def relatorio_mensal_excel():
         as_attachment=True,
         download_name=nome_arquivo
     )
-
 
 
 # ======================
