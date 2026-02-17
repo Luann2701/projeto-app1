@@ -1276,13 +1276,14 @@ def relatorio_mensal_excel():
     c = conn.cursor()
 
     # ==========================
-    # CONTAGEM NORMAL (por registro)
+    # CONTAGEM NORMAL (usa data)
     # ==========================
     def contar(tipo):
         c.execute("""
             SELECT COUNT(*)
             FROM horarios
             WHERE LOWER(tipo) = %s
+              AND data IS NOT NULL
               AND data BETWEEN %s AND %s
         """, (tipo.lower(), primeiro_dia, ultimo_dia))
         resultado = c.fetchone()
@@ -1293,7 +1294,7 @@ def relatorio_mensal_excel():
     fechados = contar("fechada")
 
     # ==========================
-    # FIXOS (1 por hora + quadra)
+    # FIXOS (NÃO filtra por data)
     # ==========================
     c.execute("""
         SELECT COUNT(*)
@@ -1301,10 +1302,9 @@ def relatorio_mensal_excel():
             SELECT hora, quadra
             FROM horarios
             WHERE LOWER(tipo) = 'fixo'
-              AND data BETWEEN %s AND %s
             GROUP BY hora, quadra
         ) AS fixos_unicos
-    """, (primeiro_dia, ultimo_dia))
+    """)
 
     resultado = c.fetchone()
     fixos = resultado[0] if resultado else 0
@@ -1317,8 +1317,8 @@ def relatorio_mensal_excel():
     livres = total_possivel - (
         ocupados +
         dayuse +
-        fixos +
-        fechados
+        fechados +
+        fixos
     )
 
     if livres < 0:
