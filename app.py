@@ -1236,7 +1236,6 @@ from calendar import monthrange
 import tempfile
 import os
 
-
 @app.route("/relatorio_mensal/excel")
 def relatorio_mensal_excel():
 
@@ -1294,25 +1293,17 @@ def relatorio_mensal_excel():
     fechados = contar("fechada")
 
     # ==========================
-    # FIXOS PERMANENTES (CORRIGIDO - SEMANAL)
+    # FIXOS (1 por configuração)
     # ==========================
-    import calendar
-
     c.execute("""
-        SELECT dia_semana, COUNT(DISTINCT hora || '-' || quadra)
+        SELECT COUNT(DISTINCT hora || '-' || quadra)
         FROM horarios
         WHERE tipo = 'fixo'
-          AND permanente = TRUE
-        GROUP BY dia_semana
-    """)
+          AND data BETWEEN %s AND %s
+    """, (primeiro_dia, ultimo_dia))
 
-    fixos = 0
-    cal = calendar.monthcalendar(ano, mes)
-
-    for dia_semana, quantidade in c.fetchall():
-        # Conta quantas vezes esse dia da semana aparece no mês
-        vezes_no_mes = sum(1 for semana in cal if semana[dia_semana] != 0)
-        fixos += quantidade * vezes_no_mes
+    resultado = c.fetchone()
+    fixos = resultado[0] if resultado else 0
 
     # ==========================
     # TOTAL POSSÍVEL DO MÊS
@@ -1370,6 +1361,7 @@ def relatorio_mensal_excel():
         as_attachment=True,
         download_name=nome_arquivo
     )
+
 
 
 # ======================
