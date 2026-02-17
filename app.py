@@ -1294,23 +1294,25 @@ def relatorio_mensal_excel():
     fechados = contar("fechada")
 
     # ==========================
-    # FIXOS PERMANENTES
+    # FIXOS PERMANENTES (CORRIGIDO - SEMANAL)
     # ==========================
-    # Conta apenas os fixos que existem cadastrados
-    # Depois multiplica pelo número de dias do mês
-    # (caso seu sistema não tenha dia_semana)
+    import calendar
 
     c.execute("""
-        SELECT COUNT(DISTINCT hora || '-' || quadra)
+        SELECT dia_semana, COUNT(DISTINCT hora || '-' || quadra)
         FROM horarios
         WHERE tipo = 'fixo'
           AND permanente = TRUE
+        GROUP BY dia_semana
     """)
 
-    resultado = c.fetchone()
-    fixos_base = resultado[0] if resultado and resultado[0] else 0
+    fixos = 0
+    cal = calendar.monthcalendar(ano, mes)
 
-    fixos = fixos_base * total_dias
+    for dia_semana, quantidade in c.fetchall():
+        # Conta quantas vezes esse dia da semana aparece no mês
+        vezes_no_mes = sum(1 for semana in cal if semana[dia_semana] != 0)
+        fixos += quantidade * vezes_no_mes
 
     # ==========================
     # TOTAL POSSÍVEL DO MÊS
