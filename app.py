@@ -1228,7 +1228,7 @@ def relatorio_mensal():
 # RELATÓRIO MENSAL 2
 # ======================
 
-from flask import send_file, request, abort
+from flask import send_file, request, abort, session
 from openpyxl import Workbook
 from openpyxl.chart import PieChart, Reference
 from datetime import datetime, date
@@ -1236,21 +1236,28 @@ from calendar import monthrange
 import tempfile
 import os
 
+
 @app.route("/relatorio_mensal/excel")
 def relatorio_mensal_excel():
 
+    # ==========================
+    # PROTEÇÃO
+    # ==========================
     if session.get("tipo") != "dono":
         abort(403)
 
-    # ======================
-    # DATA BASE
-    # ======================
+    # ==========================
+    # DATA BASE (SEGURA)
+    # ==========================
     data_str = request.args.get("data")
-    data_base = (
-        datetime.strptime(data_str, "%Y-%m-%d").date()
-        if data_str
-        else date.today()
-    )
+
+    try:
+        if data_str:
+            data_base = datetime.strptime(data_str, "%Y-%m-%d").date()
+        else:
+            data_base = date.today()
+    except ValueError:
+        abort(400, "Data inválida")
 
     ano = data_base.year
     mes = data_base.month
@@ -1260,16 +1267,18 @@ def relatorio_mensal_excel():
     ultimo_dia = date(ano, mes, monthrange(ano, mes)[1])
     total_dias = ultimo_dia.day
 
-    # CONFIGURAÇÃO FIXA DO SISTEMA
+    # ==========================
+    # CONFIGURAÇÃO DA ARENA
+    # ==========================
     QUADRAS = 3
-    HORARIOS_POR_DIA = 14  # 🔥 ajuste conforme sua arena
+    HORARIOS_POR_DIA = 14
 
     conn = conectar()
     c = conn.cursor()
 
-    # ======================
-    # CONTAGENS POR TIPO (REAIS)
-    # ======================
+    # ==========================
+    # CONTAGEM POR TIPO (NO MÊS)
+    # ==========================
     def contar(tipo):
         c.execute("""
             SELECT COUNT(*)
@@ -1277,28 +1286,35 @@ def relatorio_mensal_excel():
             WHERE tipo = %s
               AND data BETWEEN %s AND %s
         """, (tipo, primeiro_dia, ultimo_dia))
-        return c.fetchone()[0] or 0
+        resultado = c.fetchone()
+        return resultado[0] if resultado else 0
 
     ocupados = contar("ocupado")
     dayuse = contar("dayuse")
     fechados = contar("fechada")
 
-    # ======================
-    # FIXOS (PERMANENTES)
-    # ======================
+    # ==========================
+    # FIXOS PERMANENTES
+    # ==========================
+    # Conta apenas os fixos que existem cadastrados
+    # Depois multiplica pelo número de dias do mês
+    # (caso seu sistema não tenha dia_semana)
+
     c.execute("""
-        SELECT COUNT(DISTINCT hora, quadra)
+        SELECT COUNT(DISTINCT hora || '-' || quadra)
         FROM horarios
         WHERE tipo = 'fixo'
           AND permanente = TRUE
     """)
-    fixos_base = c.fetchone()[0] or 0
+
+    resultado = c.fetchone()
+    fixos_base = resultado[0] if resultado and resultado[0] else 0
 
     fixos = fixos_base * total_dias
 
-    # ======================
-    # LIVRES (GRADE REAL)
-    # ======================
+    # ==========================
+    # TOTAL POSSÍVEL DO MÊS
+    # ==========================
     total_possivel = HORARIOS_POR_DIA * QUADRAS * total_dias
 
     livres = total_possivel - (
@@ -1313,9 +1329,9 @@ def relatorio_mensal_excel():
 
     conn.close()
 
-    # ======================
-    # EXCEL
-    # ======================
+    # ==========================
+    # CRIANDO EXCEL
+    # ==========================
     wb = Workbook()
     ws = wb.active
     ws.title = "Relatório Mensal"
@@ -1327,6 +1343,9 @@ def relatorio_mensal_excel():
     ws.append(["Livre", livres])
     ws.append(["Arena Fechada", fechados])
 
+    # ==========================
+    # GRÁFICO
+    # ==========================
     chart = PieChart()
     chart.title = f"Distribuição de Uso ({mes_str})"
 
@@ -1337,6 +1356,9 @@ def relatorio_mensal_excel():
     chart.set_categories(labels)
     ws.add_chart(chart, "D2")
 
+    # ==========================
+    # SALVA TEMPORÁRIO
+    # ==========================
     nome_arquivo = f"RelatorioMensal_{mes_str}.xlsx"
     caminho = os.path.join(tempfile.gettempdir(), nome_arquivo)
     wb.save(caminho)
