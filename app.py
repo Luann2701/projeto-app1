@@ -318,8 +318,6 @@ def inicio():
     # ✅ Se já tem telefone válido
     return redirect("/esporte")
 
-
-
 # ======================
 # LOGIN CLIENTE
 # ======================
@@ -1407,21 +1405,23 @@ def definir_horario():
     if tipo:
         tipo = tipo.lower().replace(" ", "").replace("_", "")
 
+    # 🔥 NOVO → pega valor personalizado (se existir)
+    valor_personalizado = request.form.get("valor_personalizado")
+
     conn = conectar()
     c = conn.cursor()
 
-    # 🔥 Remove qualquer regra anterior do dono (agenda diária)
+    # 🔥 Remove regra diária anterior
     c.execute("""
         DELETE FROM horarios
         WHERE data = %s AND hora = %s AND quadra = %s
     """, (data, hora, quadra))
 
-    # ======================
-    # LIVRE → REMOVE FIXO E SUBTRAI DO RELATÓRIO
-    # ======================
+    # =====================================================
+    # LIVRE → REMOVE FIXO PERMANENTE + LIMPA RESERVAS
+    # =====================================================
     if tipo == "livre" or not tipo:
 
-        # 🔑 REMOVE HORÁRIO FIXO PERMANENTE (ESSA ERA A FALTA)
         c.execute("""
             DELETE FROM horarios
             WHERE hora = %s
@@ -1430,13 +1430,11 @@ def definir_horario():
               AND permanente = TRUE
         """, (hora, quadra))
 
-        # Remove reservas (se existirem)
         c.execute("""
             DELETE FROM reservas
             WHERE data = %s AND horario = %s AND quadra = %s
         """, (data, hora, quadra))
 
-        # DESATIVA HISTÓRICO ATIVO
         c.execute("""
             UPDATE historico_horarios
             SET ativo = FALSE
@@ -1450,14 +1448,28 @@ def definir_horario():
                 ORDER BY criado_em DESC
                 LIMIT 1
             )
-            AND ativo = TRUE
         """, (data, hora, quadra))
 
-    # ======================
-    # OCUPADO / FIXO / DAY USE → SOMA NO RELATÓRIO
-    # ======================
+    # =====================================================
+    # 💰 VALOR PERSONALIZADO (PROMOÇÃO)
+    # =====================================================
+    elif tipo == "personalizado" and valor_personalizado:
+
+        c.execute("""
+            INSERT INTO horarios (data, hora, quadra, tipo, permanente, valor_personalizado)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (data, hora, quadra, "livre", False, valor_personalizado))
+
+        c.execute("""
+            INSERT INTO historico_horarios (data, hora, quadra, origem)
+            VALUES (%s, %s, %s, %s)
+        """, (data, hora, quadra, "personalizado"))
+
+    # =====================================================
+    # OCUPADO / FIXO / DAY USE / FECHADA
+    # =====================================================
     else:
-        # 🔑 REGRA EXISTENTE (mantida)
+
         permanente = True if tipo == "fixo" else False
 
         c.execute("""
@@ -1465,7 +1477,6 @@ def definir_horario():
             VALUES (%s, %s, %s, %s, %s)
         """, (data, hora, quadra, tipo, permanente))
 
-        # REGISTRA HISTÓRICO (continua igual)
         c.execute("""
             INSERT INTO historico_horarios (data, hora, quadra, origem)
             VALUES (%s, %s, %s, %s)
