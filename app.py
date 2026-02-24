@@ -647,7 +647,7 @@ def horarios(esporte, quadra, data):
     # 🛠 HORÁRIOS DO DONO (DATA ESPECÍFICA)
     # ==================================================
     c.execute("""
-        SELECT hora, tipo
+        SELECT hora, tipo, valor_personalizado
         FROM horarios
         WHERE data = %s
           AND quadra = %s

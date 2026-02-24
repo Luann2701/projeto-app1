@@ -71,7 +71,7 @@
                     <option value="dayuse" {% if tipo == "dayuse" %}selected{% endif %}>Day Use</option>
                     <option value="fechada" {% if tipo == "fechada" %}selected{% endif %}>Arena Fechada</option>
                     <option value="fixo" {% if tipo == "fixo" %}selected{% endif %}>Horário Fixo</option>
-                    <option value="personalizado">💰 Valor Personalizado</option>
+                    <option value="personalizado"{% if tipo == "personalizado" %}selected{% endif %}>💰 Valor Personalizado</option>
                 </select>
             {% endif %}
 
