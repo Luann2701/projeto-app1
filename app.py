@@ -163,8 +163,8 @@ def criar_banco():
 # GARANTE COLUNAS NOVAS EM RESERVAS
 # ======================
     c.execute("""
-DO $$
-BEGIN
+    DO $$
+    BEGIN
 
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
@@ -229,6 +229,22 @@ END$$;
     )
     """)
 
+# ======================
+# GARANTE COLUNA DIA_SEMANA
+# ======================
+    c.execute("""
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='horarios'
+        AND column_name='dia_semana'
+    ) THEN
+        ALTER TABLE horarios
+        ADD COLUMN dia_semana INTEGER;
+    END IF;
+END$$;
+""")
     # ======================
     # CRIA DONO PADRÃO
     # ======================
