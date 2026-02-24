@@ -930,7 +930,9 @@ def cancelar_pagamento(reserva_id):
         data=data
     ))
 
-
+# ==================================
+# RESERVAS && PAGAMENTO(POUCO)
+# ==================================
 
 @app.route("/reservar", methods=["POST"])
 def reservar():
@@ -939,17 +941,33 @@ def reservar():
 
     usuario = session["usuario"]
     email = session.get("email", "cliente@arenacorpoativo.com")
-    telefone = session.get("telefone", "")  # 🔥 agora salva telefone
+    telefone = session.get("telefone", "")
 
     esporte = request.form["esporte"]
     quadra = request.form["quadra"]
     data = request.form["data"]
     horario = request.form["horario"]
 
-    valor = 1  # teste
-
     conn = conectar()
     c = conn.cursor()
+
+    # 🔥 0️⃣ BUSCA VALOR PERSONALIZADO (ANTES DE TUDO)
+    c.execute("""
+        SELECT valor_personalizado
+        FROM horarios
+        WHERE quadra = %s
+          AND data = %s
+          AND hora = %s
+          AND tipo = 'personalizado'
+        LIMIT 1
+    """, (quadra, data, horario))
+
+    resultado_valor = c.fetchone()
+
+    if resultado_valor and resultado_valor[0]:
+        valor = float(resultado_valor[0])
+    else:
+        valor = VALOR_HORARIO  # usa valor padrão que você já tem
 
     # 🔒 1️⃣ TRAVA REAL
     c.execute("""
