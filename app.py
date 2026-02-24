@@ -712,7 +712,7 @@ def horarios(esporte, quadra, data):
           AND (permanente IS NULL OR permanente = FALSE)
     """, (data, quadra))
 
-    for hora, tipo in c.fetchall():
+    for hora, tipo, valor_personalizado in c.fetchall():
         hora_str = str(hora)[:5]
 
         if hora_str in tipos_horarios:
