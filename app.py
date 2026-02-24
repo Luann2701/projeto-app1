@@ -98,7 +98,15 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 
 def conectar():
     try:
-        return psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(DATABASE_URL)
+
+        # 🔥 FORÇA FUSO HORÁRIO DO BRASIL
+        cur = conn.cursor()
+        cur.execute("SET TIME ZONE 'America/Sao_Paulo';")
+        cur.close()
+
+        return conn
+
     except Exception as e:
         print("❌ Erro ao conectar no banco:", e)
         return None
