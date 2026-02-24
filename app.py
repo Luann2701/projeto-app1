@@ -159,6 +159,48 @@ def criar_banco():
     )
     """)
 
+# ======================
+# GARANTE COLUNAS NOVAS EM RESERVAS
+# ======================
+    c.execute("""
+DO $$
+BEGIN
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='reservas'
+        AND column_name='telefone'
+    ) THEN
+        ALTER TABLE reservas ADD COLUMN telefone TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='reservas'
+        AND column_name='status'
+    ) THEN
+        ALTER TABLE reservas ADD COLUMN status TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='reservas'
+        AND column_name='payment_id'
+    ) THEN
+        ALTER TABLE reservas ADD COLUMN payment_id TEXT;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='reservas'
+        AND column_name='external_reference'
+    ) THEN
+        ALTER TABLE reservas ADD COLUMN external_reference TEXT;
+    END IF;
+
+END$$;
+""")
+
     # ======================
     # TABELA EVENTOS
     # ======================
