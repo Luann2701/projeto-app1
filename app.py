@@ -1456,9 +1456,9 @@ def definir_horario():
     elif tipo == "personalizado" and valor_personalizado:
 
         c.execute("""
-            INSERT INTO horarios (data, hora, quadra, tipo, permanente, valor_personalizado)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (data, hora, quadra, "livre", False, valor_personalizado))
+        INSERT INTO horarios (data, hora, quadra, tipo, permanente, valor_personalizado)
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (data, hora, quadra, "personalizado", False, valor_personalizado))
 
         c.execute("""
             INSERT INTO historico_horarios (data, hora, quadra, origem)
@@ -1486,7 +1486,6 @@ def definir_horario():
     conn.close()
 
     return redirect(request.referrer)
-
 
 # ==================================================================
 # RESERVA MANUAL DO DONO
