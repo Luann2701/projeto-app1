@@ -619,6 +619,16 @@ def horarios(esporte, quadra, data):
     dia_semana = data_escolhida.weekday()
 
     # ==================================================
+    # 🔥 LIMPA RESERVAS EXPIRADAS
+    # ==================================================
+    c.execute("""
+        DELETE FROM reservas
+        WHERE pago = FALSE
+          AND criado_em < NOW() - INTERVAL '10 minutes'
+    """)
+    conn.commit()
+
+    # ==================================================
     # 🔒 CLIENTE: HOJE + 6 DIAS
     # ==================================================
     if session.get("tipo") != "dono":
@@ -636,16 +646,6 @@ def horarios(esporte, quadra, data):
 
     conn = conectar()
     c = conn.cursor()
-
-    # ==================================================
-    # 🔥 LIMPA RESERVAS EXPIRADAS
-    # ==================================================
-    c.execute("""
-        DELETE FROM reservas
-        WHERE pago = FALSE
-          AND criado_em < NOW() - INTERVAL '10 minutes'
-    """)
-    conn.commit()
 
     # ==================================================
     # ✅ RESERVAS PAGAS
@@ -1021,18 +1021,6 @@ def reservar():
     ))
 
     reserva_id = c.fetchone()[0]
-
-    # 🔥 3️⃣ MARCA HORÁRIO COMO OCUPADO IMEDIATAMENTE
-    c.execute("""
-        INSERT INTO horarios (
-            data, hora, tipo, quadra
-        )
-        VALUES (%s, %s, 'ocupado', %s)
-    """, (
-        data,
-        horario,
-        quadra
-    ))
 
     conn.commit()
     conn.close()
