@@ -483,12 +483,19 @@ def cadastro():
 # TELEFONE
 # ======================
 
+from flask_session import Session
+
+app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_FILE_DIR"] = "/tmp/flask_sessions"
+app.config["SESSION_PERMANENT"] = False
+Session(app)
+
 import re
 
 @app.route("/telefone", methods=["GET", "POST"])
 def telefone():
     if "usuario" not in session:
-        return redirect("/login")
+        return redirect("/")  # era /login, muda para /
 
     conn = conectar()
     c = conn.cursor()
