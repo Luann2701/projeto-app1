@@ -637,14 +637,24 @@ def horarios(esporte, quadra, data):
     conn = conectar()
     c = conn.cursor()
 
-    # ==================================================
-    # 🔥 LIMPA RESERVAS EXPIRADAS
-    # ==================================================
+    # 🔥 LIMPA RESERVAS EXPIRADAS E LIBERA HORÁRIOS JUNTOS
     c.execute("""
-        DELETE FROM reservas
-        WHERE pago = FALSE
-          AND criado_em < NOW() - INTERVAL '10 minutes'
-    """)
+    DELETE FROM reservas
+    WHERE pago = FALSE
+      AND criado_em < NOW() - INTERVAL '10 minutes'
+    RETURNING quadra, data, horario
+""")
+    expiradas = c.fetchall()
+    
+    for quadra_exp, data_exp, horario_exp in expiradas:
+     c.execute("""
+        DELETE FROM horarios 
+        WHERE quadra = %s
+          AND data = %s
+          AND hora = %s::time
+          AND tipo = 'reservado'
+    """, (quadra_exp, data_exp, horario_exp))
+
     conn.commit()
 
     # ==================================================
@@ -1027,7 +1037,7 @@ def reservar():
         INSERT INTO horarios (
             data, hora, tipo, quadra
         )
-        VALUES (%s, %s, 'ocupado', %s)
+        VALUES (%s, %s, 'reservado', %s)
     """, (
         data,
         horario,
