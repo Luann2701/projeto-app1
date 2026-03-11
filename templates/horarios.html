@@ -11,10 +11,35 @@
 <div class="card">
     <h1>⏰ Horários</h1>
 
+    <!-- CONTROLE DE SELEÇÃO EM MASSA -->
+    {% if tipo_usuario == "dono" %}
+    <div style="margin-bottom:15px;">
+        <label>
+            <input type="checkbox" id="selecionarTodos">
+            Selecionar todos
+        </label>
+
+        <select id="tipoGlobal">
+            <option value="">Alterar selecionados...</option>
+            <option value="livre">Livre</option>
+            <option value="ocupado">🔒 Ocupado</option>
+            <option value="dayuse">Day Use</option>
+            <option value="fechada">Arena Fechada</option>
+        </select>
+
+        <button onclick="aplicarSelecionados()">Aplicar</button>
+    </div>
+    {% endif %}
+
     {% for h in horarios %}
         {% set tipo = tipos_horarios.get(h) %}
 
         <div class="linha-horario">
+
+            <!-- CHECKBOX APENAS PARA DONO -->
+            {% if tipo_usuario == "dono" %}
+            <input type="checkbox" class="checkHorario" value="{{ h }}">
+            {% endif %}
 
             <!-- ================= CLIENTE ================= -->
             {% if tipo_usuario != "dono" %}
@@ -119,17 +144,19 @@
 </div>
 
 <script>
+
 let selectAtual = null;
 let valorAnterior = null;
 
 function mudarTipoHorario(select, horario) {
+
     const tipo = select.value;
 
     selectAtual = select;
     valorAnterior = select.dataset.atual || "livre";
 
-    // SE FOR VALOR PERSONALIZADO
     if (tipo === "personalizado") {
+
         let valor = prompt("Digite o valor promocional:");
 
         if (!valor || isNaN(valor)) {
@@ -143,6 +170,7 @@ function mudarTipoHorario(select, horario) {
     }
 
     if (tipo === "ocupado" || tipo === "fixo") {
+
         document.getElementById("rm_horario").value = horario;
         document.getElementById("rm_tipo").value = tipo;
 
@@ -150,6 +178,7 @@ function mudarTipoHorario(select, horario) {
             (tipo === "fixo") ? "HORÁRIO FIXO" : "RESERVA MANUAL";
 
         document.getElementById("modalReserva").style.display = "flex";
+
         return;
     }
 
@@ -157,7 +186,9 @@ function mudarTipoHorario(select, horario) {
 }
 
 function enviarDireto(tipo, horario, valor = null) {
+
     const form = document.createElement("form");
+
     form.method = "POST";
     form.action = "/admin/definir_horario";
 
@@ -176,6 +207,52 @@ function enviarDireto(tipo, horario, valor = null) {
 function fecharModal() {
     document.getElementById("modalReserva").style.display = "none";
 }
+
+/* ================= SELEÇÃO EM MASSA ================= */
+
+document.getElementById("selecionarTodos")?.addEventListener("change", function() {
+
+    document.querySelectorAll(".checkHorario").forEach(c => {
+
+        c.checked = this.checked;
+
+    });
+
+});
+
+function aplicarSelecionados(){
+
+    const tipo = document.getElementById("tipoGlobal").value;
+
+    if(!tipo){
+        alert("Escolha um tipo");
+        return;
+    }
+
+    const horarios = [];
+
+    document.querySelectorAll(".checkHorario:checked").forEach(c=>{
+
+        horarios.push(c.value);
+
+    });
+
+    if(horarios.length === 0){
+
+        alert("Nenhum horário selecionado");
+
+        return;
+
+    }
+
+    horarios.forEach(h => {
+
+        enviarDireto(tipo, h);
+
+    });
+
+}
+
 </script>
 
 {% if tipo_usuario != "dono" %}
