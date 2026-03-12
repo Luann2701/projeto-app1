@@ -13,7 +13,6 @@
 
     {% for h in horarios %}
         {% set tipo = tipos_horarios.get(h) %}
-        {% set valor = valores_personalizados.get(h) if valores_personalizados else None %}
 
         <div class="linha-horario">
 
@@ -23,7 +22,7 @@
                 {% if h in pendentes %}
                     <button class="btn pendente" disabled>
                         {{ h }}<br>
-                        <small>⏳ Reservado até {{ expiracao.get(h, "--:--") }}</small>
+                        <small>⏳ Reservado até {{ expiracao[h] }}</small>
                     </button>
 
                 {% elif tipo == "fixo" %}
@@ -52,15 +51,7 @@
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="data" value="{{ data }}">
                         <input type="hidden" name="horario" value="{{ h }}">
-                        <button type="submit" class="btn horario-btn">
-    {{ h }}
-
-    {% if valor is not none %}
-        <span class="promo">PROMOÇÃO</span>
-        <span class="preco">R$ {{ "%.2f"|format(valor)|replace('.', ',') }}</span>
-    {% endif %}
-
-</button>
+                        <button type="submit" class="btn">{{ h }}</button>
                     </form>
                 {% endif %}
 
