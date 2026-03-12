@@ -664,17 +664,17 @@ def horarios(esporte, quadra, data):
     WHERE pago = FALSE
       AND criado_em < NOW() - INTERVAL '10 minutes'
     RETURNING quadra, data, horario
-""")
+    """)
     expiradas = c.fetchall()
-    
+
     for quadra_exp, data_exp, horario_exp in expiradas:
-     c.execute("""
-        DELETE FROM horarios 
-        WHERE quadra = %s
-          AND data = %s
-          AND hora = %s::time
-          AND tipo = 'reservado'
-    """, (quadra_exp, data_exp, horario_exp))
+        c.execute("""
+            DELETE FROM horarios 
+            WHERE quadra = %s
+              AND data = %s
+              AND hora = %s::time
+              AND tipo = 'reservado'
+        """, (quadra_exp, data_exp, horario_exp))
 
     conn.commit()
 
@@ -716,9 +716,10 @@ def horarios(esporte, quadra, data):
     # ==================================================
     tipos_horarios = {}
     ocupados_dono = set()
+    valores_personalizados = {}
 
     # ==================================================
-    # 🔒 HORÁRIOS FIXOS (FUNCIONA NO DIA E NAS SEMANAS)
+    # 🔒 HORÁRIOS FIXOS
     # ==================================================
     c.execute("""
         SELECT h.hora
@@ -755,10 +756,14 @@ def horarios(esporte, quadra, data):
         hora_str = str(hora)[:5]
 
         if hora_str in tipos_horarios:
-            continue  # fixo nunca é sobrescrito
+            continue
 
         tipo_normalizado = tipo.lower().replace(" ", "").replace("_", "")
         tipos_horarios[hora_str] = tipo_normalizado
+
+        # ✅ SALVA VALOR PROMOCIONAL
+        if valor_personalizado:
+            valores_personalizados[hora_str] = float(valor_personalizado)
 
         if tipo_normalizado in ["ocupado", "dayuse", "fechada"]:
             ocupados_dono.add(hora_str)
@@ -780,6 +785,7 @@ def horarios(esporte, quadra, data):
         pendentes=pendentes,
         expiracao=expiracao,
         tipos_horarios=tipos_horarios,
+        valores_personalizados=valores_personalizados,
         tipo_usuario=session.get("tipo")
     )
 
