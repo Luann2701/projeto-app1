@@ -253,6 +253,20 @@ BEGIN
     END IF;
 END$$;
 """)
+    
+    c.execute("""
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='horarios'
+        AND column_name='valor_personalizado'
+    ) THEN
+        ALTER TABLE horarios
+        ADD COLUMN valor_personalizado NUMERIC;
+    END IF;
+END$$;
+""")
     # ======================
     # CRIA DONO PADRÃO
     # ======================
