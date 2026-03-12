@@ -57,7 +57,7 @@
 
     {% if valor is not none %}
         <span class="promo">PROMOÇÃO</span>
-        <span class="preco">R$ {{ "%.2f"|format(valor).replace('.', ',') }}</span>
+        <span class="preco">R$ {{ "%.2f"|format(valor)|replace('.', ',') }}</span>
     {% endif %}
 
 </button>
