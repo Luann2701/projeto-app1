@@ -116,9 +116,9 @@ def criar_banco():
     if not conn:
         print("⚠️ Banco indisponível. Tabelas não criadas.")
         return
-
+ 
     c = conn.cursor()
-    
+ 
     # ======================
     # TABELA USUÁRIOS
     # ======================
@@ -132,25 +132,22 @@ def criar_banco():
         reset_expira TIMESTAMP
     )
     """)
-
+ 
     # ======================
-    # GARANTE COLUNA TELEFONE
+    # GARANTE COLUNA TELEFONE EM USUARIOS
     # ======================
     c.execute("""
     DO $$
     BEGIN
         IF NOT EXISTS (
-            SELECT 1 
-            FROM information_schema.columns 
-            WHERE table_name='usuarios'
-            AND column_name='telefone'
+            SELECT 1 FROM information_schema.columns
+            WHERE table_name='usuarios' AND column_name='telefone'
         ) THEN
-            ALTER TABLE usuarios
-            ADD COLUMN telefone TEXT;
+            ALTER TABLE usuarios ADD COLUMN telefone TEXT;
         END IF;
     END$$;
     """)
-
+ 
     # ======================
     # TABELA RESERVAS
     # ======================
@@ -166,49 +163,37 @@ def criar_banco():
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-
-# ======================
-# GARANTE COLUNAS NOVAS EM RESERVAS
-# ======================
+ 
+    # ======================
+    # GARANTE COLUNAS NOVAS EM RESERVAS
+    # ======================
     c.execute("""
     DO $$
     BEGIN
-
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='reservas'
-        AND column_name='telefone'
-    ) THEN
-        ALTER TABLE reservas ADD COLUMN telefone TEXT;
-    END IF;
-
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='reservas'
-        AND column_name='status'
-    ) THEN
-        ALTER TABLE reservas ADD COLUMN status TEXT;
-    END IF;
-
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='reservas'
-        AND column_name='payment_id'
-    ) THEN
-        ALTER TABLE reservas ADD COLUMN payment_id TEXT;
-    END IF;
-
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='reservas'
-        AND column_name='external_reference'
-    ) THEN
-        ALTER TABLE reservas ADD COLUMN external_reference TEXT;
-    END IF;
-
-END$$;
-""")
-
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='reservas' AND column_name='telefone') THEN
+            ALTER TABLE reservas ADD COLUMN telefone TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='reservas' AND column_name='status') THEN
+            ALTER TABLE reservas ADD COLUMN status TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='reservas' AND column_name='payment_id') THEN
+            ALTER TABLE reservas ADD COLUMN payment_id TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='reservas' AND column_name='external_reference') THEN
+            ALTER TABLE reservas ADD COLUMN external_reference TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='reservas' AND column_name='nome') THEN
+            ALTER TABLE reservas ADD COLUMN nome TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='reservas' AND column_name='email') THEN
+            ALTER TABLE reservas ADD COLUMN email TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='reservas' AND column_name='origem') THEN
+            ALTER TABLE reservas ADD COLUMN origem TEXT;
+        END IF;
+    END$$;
+    """)
+ 
     # ======================
     # TABELA EVENTOS
     # ======================
@@ -220,11 +205,10 @@ END$$;
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-
+ 
     # ======================
     # TABELA HORÁRIOS (DONO)
     # ======================
-
     c.execute("""
     CREATE TABLE IF NOT EXISTS horarios (
         id SERIAL PRIMARY KEY,
@@ -236,54 +220,74 @@ END$$;
         criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
-
-# ======================
-# GARANTE COLUNA DIA_SEMANA
-# ======================
+ 
+    # ======================
+    # GARANTE COLUNAS NOVAS EM HORARIOS
+    # ======================
     c.execute("""
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='horarios'
-        AND column_name='dia_semana'
-    ) THEN
-        ALTER TABLE horarios
-        ADD COLUMN dia_semana INTEGER;
-    END IF;
-END$$;
-""")
-    
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='horarios' AND column_name='dia_semana') THEN
+            ALTER TABLE horarios ADD COLUMN dia_semana INTEGER;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='horarios' AND column_name='valor_personalizado') THEN
+            ALTER TABLE horarios ADD COLUMN valor_personalizado NUMERIC;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='horarios' AND column_name='cliente') THEN
+            ALTER TABLE horarios ADD COLUMN cliente TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='horarios' AND column_name='email') THEN
+            ALTER TABLE horarios ADD COLUMN email TEXT;
+        END IF;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='horarios' AND column_name='telefone') THEN
+            ALTER TABLE horarios ADD COLUMN telefone TEXT;
+        END IF;
+    END$$;
+    """)
+ 
+    # ======================
+    # TABELA CANCELAMENTOS FIXOS
+    # (cancela horário fixo apenas em um dia específico)
+    # ======================
     c.execute("""
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='horarios'
-        AND column_name='valor_personalizado'
-    ) THEN
-        ALTER TABLE horarios
-        ADD COLUMN valor_personalizado NUMERIC;
-    END IF;
-END$$;
-""")
+    CREATE TABLE IF NOT EXISTS cancelamentos_fixos (
+        id SERIAL PRIMARY KEY,
+        quadra TEXT NOT NULL,
+        hora TIME NOT NULL,
+        data DATE NOT NULL,
+        UNIQUE (quadra, hora, data)
+    )
+    """)
+ 
+    # ======================
+    # TABELA HISTÓRICO DE HORÁRIOS
+    # (usado no relatório mensal)
+    # ======================
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS historico_horarios (
+        id SERIAL PRIMARY KEY,
+        data DATE,
+        hora TIME,
+        quadra TEXT,
+        origem TEXT,
+        ativo BOOLEAN DEFAULT TRUE,
+        criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+ 
     # ======================
     # CRIA DONO PADRÃO
     # ======================
-    c.execute(
-        "SELECT 1 FROM usuarios WHERE tipo = %s",
-        ("dono",)
-    )
-    
+    c.execute("SELECT 1 FROM usuarios WHERE tipo = %s", ("dono",))
+ 
     if not c.fetchone():
         c.execute(
             "INSERT INTO usuarios (usuario, senha, tipo) VALUES (%s, %s, %s)",
             ("admin", "1234", "dono")
         )
-
+ 
     conn.commit()
     conn.close()
-
 
 # CRIA AS TABELAS AO INICIAR O APP
 criar_banco()
@@ -2082,11 +2086,11 @@ def cancelar_fixo_dia():
     hora = request.form["hora"]
     data = request.form["data"]
 
-    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    conn = conectar()
     cur = conn.cursor()
 
     cur.execute("""
-        INSERT INTO cancelamentos_fixo (quadra, hora, data)
+        INSERT INTO cancelamentos_fixos (quadra, hora, data)
         VALUES (%s, %s, %s)
         ON CONFLICT DO NOTHING
     """, (quadra, hora, data))
