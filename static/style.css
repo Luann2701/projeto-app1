@@ -904,3 +904,22 @@ img, video, iframe {
     color: #fff;
 }
 
+.horario-btn {
+    position: relative;
+    font-weight: bold;
+}
+
+.promo {
+    background: #ff4d4d;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    margin-left: 6px;
+}
+
+.preco {
+    display: block;
+    font-size: 12px;
+    color: #2e7d32;
+}

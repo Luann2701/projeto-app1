@@ -147,7 +147,7 @@
 
     <h1>💳 Pagamento via Pix</h1>
 
-    <h2>Valor: R$ {{ valor }},00</h2>
+    <h2>Valor: R$ {{ "%.2f"|format(valor).replace('.', ',') }}</h2>
 
     <p>
         Pague o Pix usando <strong>qualquer banco</strong>.<br>

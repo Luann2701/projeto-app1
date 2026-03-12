@@ -13,6 +13,7 @@
 
     {% for h in horarios %}
         {% set tipo = tipos_horarios.get(h) %}
+        {% set valor = valores_personalizados.get(h) %}
 
         <div class="linha-horario">
 
@@ -51,7 +52,15 @@
                         <input type="hidden" name="quadra" value="{{ quadra }}">
                         <input type="hidden" name="data" value="{{ data }}">
                         <input type="hidden" name="horario" value="{{ h }}">
-                        <button type="submit" class="btn">{{ h }}</button>
+                        <button type="submit" class="btn horario-btn">
+    {{ h }}
+
+    {% if valor %}
+        <span class="promo">PROMOÇÃO</span>
+        <span class="preco">R$ {{ "%.2f"|format(valor).replace('.', ',') }}</span>
+    {% endif %}
+
+</button>
                     </form>
                 {% endif %}
 
