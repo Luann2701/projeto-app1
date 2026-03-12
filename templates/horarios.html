@@ -23,7 +23,7 @@
                 {% if h in pendentes %}
                     <button class="btn pendente" disabled>
                         {{ h }}<br>
-                        <small>⏳ Reservado até {{ expiracao[h] }}</small>
+                        <small>⏳ Reservado até {{ expiracao.get(h, "--:--") }}</small>
                     </button>
 
                 {% elif tipo == "fixo" %}
@@ -55,7 +55,7 @@
                         <button type="submit" class="btn horario-btn">
     {{ h }}
 
-    {% if valor %}
+    {% if valor is not none %}
         <span class="promo">PROMOÇÃO</span>
         <span class="preco">R$ {{ "%.2f"|format(valor).replace('.', ',') }}</span>
     {% endif %}

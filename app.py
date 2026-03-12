@@ -762,8 +762,8 @@ def horarios(esporte, quadra, data):
         tipos_horarios[hora_str] = tipo_normalizado
 
         # ✅ SALVA VALOR PROMOCIONAL
-        if valor_personalizado:
-            valores_personalizados[hora_str] = float(valor_personalizado)
+        if valor_personalizado is not None:
+         valores_personalizados[hora_str] = float(valor_personalizado)
 
         if tipo_normalizado in ["ocupado", "dayuse", "fechada"]:
             ocupados_dono.add(hora_str)
