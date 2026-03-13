@@ -593,10 +593,10 @@ def datas(esporte, quadra):
     hoje = datetime.now().date()
 
     if session.get("tipo") == "dono":
-        # 📅 DONO → mês inteiro (30 dias)
-        dias = [hoje + timedelta(days=i) for i in range(30)]
+        # 📅 DONO → 30 dias antes + 30 dias depois
+        dias = [hoje + timedelta(days=i) for i in range(-30, 31)]
 
-    else: 
+    else:
         # 👤 CLIENTE → hoje + 6 dias
         dias = [hoje + timedelta(days=i) for i in range(7)]
 
