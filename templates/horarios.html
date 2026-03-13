@@ -1,199 +1,320 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <title>Horários</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta charset="UTF-8">
+<title>Horários</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body class="fundo-logo">
 
 <div class="card">
-    <h1>⏰ Horários</h1>
+<h1>⏰ Horários</h1>
 
-    {% for h in horarios %}
-        {% set tipo = tipos_horarios.get(h) %}
+{% for h in horarios %}
+{% set tipo = tipos_horarios.get(h) %}
 
-        <div class="linha-horario">
+<div class="linha-horario">
 
-            <!-- ================= CLIENTE ================= -->
-            {% if tipo_usuario != "dono" %}
+<!-- ================= CLIENTE ================= -->
+{% if tipo_usuario != "dono" %}
 
-                {% if h in pendentes %}
-                    <button class="btn pendente" disabled>
-                        {{ h }}<br>
-                        <small>⏳ Reservado até {{ expiracao[h] }}</small>
-                    </button>
+{% if h in pendentes %}
+<button class="btn pendente" disabled>
+{{ h }}<br>
+<small>⏳ Reservado até {{ expiracao[h] }}</small>
+</button>
 
-                {% elif tipo == "fixo" %}
-                    <button class="btn bloqueado fixo" disabled>
-                        {{ h }} (Horário fixo)
-                    </button>
+{% elif tipo == "fixo" %}
+<button class="btn bloqueado fixo" disabled>
+{{ h }} (Horário fixo)
+</button>
 
-                {% elif tipo == "dayuse" %}
-                    <button class="btn bloqueado" disabled>
-                        {{ h }} (Day Use)
-                    </button>
+{% elif tipo == "dayuse" %}
+<button class="btn bloqueado" disabled>
+{{ h }} (Day Use)
+</button>
 
-                {% elif tipo == "fechada" %}
-                    <button class="btn bloqueado" disabled>
-                        {{ h }} (Arena fechada)
-                    </button>
+{% elif tipo == "fechada" %}
+<button class="btn bloqueado" disabled>
+{{ h }} (Arena fechada)
+</button>
 
-                    {% elif tipo == "personalizado" %}
-                    <form method="POST" action="/reservar">
-                    <input type="hidden" name="esporte" value="{{ esporte }}">
-                    <input type="hidden" name="quadra" value="{{ quadra }}">
-                    <input type="hidden" name="data" value="{{ data }}">
-                    <input type="hidden" name="horario" value="{{ h }}">
-                    <button type="submit" class="btn promocao">
-                    {{ h }} 🔥 Promoção R$ {{ valores_promocionais[h] }}
-                    </button>
-                    </form>       
+{% elif tipo == "personalizado" %}
+<form method="POST" action="/reservar">
+<input type="hidden" name="esporte" value="{{ esporte }}">
+<input type="hidden" name="quadra" value="{{ quadra }}">
+<input type="hidden" name="data" value="{{ data }}">
+<input type="hidden" name="horario" value="{{ h }}">
 
-                {% elif h in ocupados %}
-                    <button class="btn bloqueado" disabled>
-                        {{ h }} (Ocupado)
-                    </button>
+<button type="submit" class="btn promocao">
+{{ h }} 🔥 Promoção R$ {{ valores_promocionais[h] }}
+</button>
 
-                {% else %}
-                    <form method="POST" action="/reservar">
-                        <input type="hidden" name="esporte" value="{{ esporte }}">
-                        <input type="hidden" name="quadra" value="{{ quadra }}">
-                        <input type="hidden" name="data" value="{{ data }}">
-                        <input type="hidden" name="horario" value="{{ h }}">
-                        <button type="submit" class="btn">{{ h }}</button>
-                    </form>
-                {% endif %}
+</form>
 
-            {% endif %}
+{% elif h in ocupados %}
+<button class="btn bloqueado" disabled>
+{{ h }} (Ocupado)
+</button>
 
-            <!-- ================= DONO ================= -->
-            {% if tipo_usuario == "dono" %}
-                <span class="horario-texto">{{ h }}</span>
+{% else %}
+<form method="POST" action="/reservar">
 
-                <select
-                    data-atual="{{ tipo or 'livre' }}"
-                    onchange="mudarTipoHorario(this, '{{ h }}')"
-                    {% if tipo == "fixo" %}disabled{% endif %}>
+<input type="hidden" name="esporte" value="{{ esporte }}">
+<input type="hidden" name="quadra" value="{{ quadra }}">
+<input type="hidden" name="data" value="{{ data }}">
+<input type="hidden" name="horario" value="{{ h }}">
 
-                    <option value="livre" {% if not tipo %}selected{% endif %}>Livre</option>
-                    <option value="ocupado" {% if tipo == "ocupado" %}selected{% endif %}>🔒 Ocupado</option>
-                    <option value="dayuse" {% if tipo == "dayuse" %}selected{% endif %}>Day Use</option>
-                    <option value="fechada" {% if tipo == "fechada" %}selected{% endif %}>Arena Fechada</option>
-                    <option value="fixo" {% if tipo == "fixo" %}selected{% endif %}>Horário Fixo</option>
-                    <option value="personalizado"{% if tipo == "personalizado" %}selected{% endif %}>💰 Valor Personalizado</option>
-                </select>
-            {% endif %}
+<button type="submit" class="btn">
+{{ h }}
+</button>
 
-        </div>
-    {% endfor %}
+</form>
+{% endif %}
 
-    {% if tipo_usuario == "dono" %}
-        <a href="/datas/{{ esporte }}/{{ quadra }}" class="btn secundario">⬅ Voltar</a>
-    {% else %}
-        <a href="/quadras/{{ esporte }}" class="btn secundario">⬅ Voltar</a>
-    {% endif %}
+{% endif %}
+
+
+<!-- ================= DONO ================= -->
+{% if tipo_usuario == "dono" %}
+
+<span class="horario-texto">{{ h }}</span>
+
+<select
+data-atual="{{ tipo or 'livre' }}"
+onchange="mudarTipoHorario(this,'{{ h }}')"
+{% if tipo == "fixo" %}disabled{% endif %}>
+
+<option value="livre" {% if not tipo %}selected{% endif %}>Livre</option>
+<option value="ocupado" {% if tipo == "ocupado" %}selected{% endif %}>🔒 Ocupado</option>
+<option value="dayuse" {% if tipo == "dayuse" %}selected{% endif %}>Day Use</option>
+<option value="fechada" {% if tipo == "fechada" %}selected{% endif %}>Arena Fechada</option>
+<option value="fixo" {% if tipo == "fixo" %}selected{% endif %}>Horário Fixo</option>
+<option value="personalizado" {% if tipo == "personalizado" %}selected{% endif %}>💰 Valor Personalizado</option>
+
+</select>
+
+{% endif %}
+
+</div>
+{% endfor %}
+
+
+{% if tipo_usuario == "dono" %}
+<a href="/datas/{{ esporte }}/{{ quadra }}" class="btn secundario">⬅ Voltar</a>
+{% else %}
+<a href="/quadras/{{ esporte }}" class="btn secundario">⬅ Voltar</a>
+{% endif %}
+
 </div>
 
-<!-- ================= MODAL ================= -->
+
+<!-- ================= MODAL RESERVA ================= -->
+
 <div id="modalReserva" class="modal-overlay">
-    <form method="POST" action="/admin/reserva_manual" class="modal-box">
 
-        <h3 id="tituloModal">Reserva Manual</h3>
+<form method="POST" action="/admin/reserva_manual" class="modal-box">
 
-        <input name="nome" placeholder="Nome" required>
-        <input name="telefone" placeholder="Telefone" required>
-        <input name="email" placeholder="Email (opcional)">
+<h3 id="tituloModal">Reserva Manual</h3>
 
-        <select name="esporte" required>
-            <option value="">Selecione o esporte</option>
-            <option value="Beach Tennis">Beach Tennis</option>
-            <option value="Futevôlei">Futevôlei</option>
-        </select>
+<input name="nome" placeholder="Nome" required>
+<input name="telefone" placeholder="Telefone" required>
+<input name="email" placeholder="Email (opcional)">
 
-        <label>
-            <input type="checkbox" name="pago" value="true"> Pago
-        </label>
+<select name="esporte" required>
 
-        <input type="hidden" name="quadra" value="{{ quadra }}">
-        <input type="hidden" name="data" value="{{ data }}">
-        <input type="hidden" name="horario" id="rm_horario">
-        <input type="hidden" name="tipo" id="rm_tipo">
+<option value="">Selecione o esporte</option>
+<option value="Beach Tennis">Beach Tennis</option>
+<option value="Futevôlei">Futevôlei</option>
 
-        <div class="modal-actions">
-            <button type="button" class="cancelar" onclick="fecharModal()">Cancelar</button>
-            <button type="submit" class="salvar">Salvar</button>
-        </div>
+</select>
 
-    </form>
+<label>
+<input type="checkbox" name="pago" value="true"> Pago
+</label>
+
+<input type="hidden" name="quadra" value="{{ quadra }}">
+<input type="hidden" name="data" value="{{ data }}">
+<input type="hidden" name="horario" id="rm_horario">
+<input type="hidden" name="tipo" id="rm_tipo">
+
+<div class="modal-actions">
+
+<button type="button" class="cancelar" onclick="fecharModal()">Cancelar</button>
+<button type="submit" class="salvar">Salvar</button>
+
 </div>
+
+</form>
+</div>
+
+
+
+<!-- ================= MODAL PROMOÇÃO ================= -->
+
+<div id="modalPromocao" class="modal-overlay">
+
+<div class="modal-box">
+
+<h3>💰 Definir Promoção</h3>
+
+<input
+type="number"
+id="valorPromo"
+placeholder="Digite o valor da promoção"
+required
+>
+
+<div class="modal-actions">
+
+<button class="cancelar" onclick="fecharPromocao()">Cancelar</button>
+
+<button class="salvar" onclick="salvarPromocao()">Salvar</button>
+
+</div>
+
+</div>
+
+</div>
+
+
 
 <script>
-let selectAtual = null;
-let valorAnterior = null;
 
-function mudarTipoHorario(select, horario) {
-    const tipo = select.value;
+let selectAtual = null
+let valorAnterior = null
+let horarioPromo = null
 
-    selectAtual = select;
-    valorAnterior = select.dataset.atual || "livre";
 
-    // SE FOR VALOR PERSONALIZADO
-    if (tipo === "personalizado") {
-        let valor = prompt("Digite o valor promocional:");
+function mudarTipoHorario(select,horario){
 
-        if (!valor || isNaN(valor)) {
-            alert("Valor inválido");
-            select.value = valorAnterior;
-            return;
-        }
+const tipo = select.value
 
-        enviarDireto(tipo, horario, valor);
-        return;
-    }
+selectAtual = select
+valorAnterior = select.dataset.atual || "livre"
 
-    if (tipo === "ocupado" || tipo === "fixo") {
-        document.getElementById("rm_horario").value = horario;
-        document.getElementById("rm_tipo").value = tipo;
 
-        document.getElementById("tituloModal").innerText =
-            (tipo === "fixo") ? "HORÁRIO FIXO" : "RESERVA MANUAL";
+if(tipo === "personalizado"){
 
-        document.getElementById("modalReserva").style.display = "flex";
-        return;
-    }
+horarioPromo = horario
 
-    enviarDireto(tipo, horario);
+document.getElementById("valorPromo").value = ""
+
+document.getElementById("modalPromocao").style.display="flex"
+
+return
+
 }
 
-function enviarDireto(tipo, horario, valor = null) {
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "/admin/definir_horario";
 
-    form.innerHTML = `
-        <input type="hidden" name="data" value="{{ data }}">
-        <input type="hidden" name="hora" value="${horario}">
-        <input type="hidden" name="quadra" value="{{ quadra }}">
-        <input type="hidden" name="tipo" value="${tipo}">
-        ${valor ? `<input type="hidden" name="valor_personalizado" value="${valor}">` : ""}
-    `;
+if(tipo === "ocupado" || tipo === "fixo"){
 
-    document.body.appendChild(form);
-    form.submit();
+document.getElementById("rm_horario").value = horario
+
+document.getElementById("rm_tipo").value = tipo
+
+
+document.getElementById("tituloModal").innerText =
+(tipo === "fixo") ? "HORÁRIO FIXO" : "RESERVA MANUAL"
+
+
+document.getElementById("modalReserva").style.display="flex"
+
+return
+
 }
 
-function fecharModal() {
-    document.getElementById("modalReserva").style.display = "none";
+
+enviarDireto(tipo,horario)
+
 }
+
+
+
+function salvarPromocao(){
+
+let valor = document.getElementById("valorPromo").value
+
+if(!valor || isNaN(valor)){
+
+alert("Valor inválido")
+
+selectAtual.value = valorAnterior
+
+return
+
+}
+
+document.getElementById("modalPromocao").style.display="none"
+
+enviarDireto("personalizado",horarioPromo,valor)
+
+}
+
+
+
+function fecharPromocao(){
+
+document.getElementById("modalPromocao").style.display="none"
+
+selectAtual.value = valorAnterior
+
+}
+
+
+
+function enviarDireto(tipo,horario,valor=null){
+
+const form = document.createElement("form")
+
+form.method="POST"
+
+form.action="/admin/definir_horario"
+
+
+form.innerHTML = `
+
+<input type="hidden" name="data" value="{{ data }}">
+
+<input type="hidden" name="hora" value="${horario}">
+
+<input type="hidden" name="quadra" value="{{ quadra }}">
+
+<input type="hidden" name="tipo" value="${tipo}">
+
+${valor ? `<input type="hidden" name="valor_personalizado" value="${valor}">` : ""}
+
+`
+
+document.body.appendChild(form)
+
+form.submit()
+
+}
+
+
+
+function fecharModal(){
+
+document.getElementById("modalReserva").style.display="none"
+
+}
+
 </script>
+
+
 
 {% if tipo_usuario != "dono" %}
+
 <script>
-    setTimeout(() => location.reload(), 15000);
+
+setTimeout(() => location.reload(),15000)
+
 </script>
+
 {% endif %}
+
 
 </body>
 </html>
