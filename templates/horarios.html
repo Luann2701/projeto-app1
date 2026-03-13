@@ -31,19 +31,16 @@
 </button>
 
 {% elif tipo == "dayuse" %}
-<div class="dayuse-container">
-    <button class="btn bloqueado" disabled>
-        {{ h }}  Day Use
-    </button>
-
-    <span class="info-icon" onclick="toggleInfo(this)">
+<button class="btn bloqueado dayuse-btn" disabled>
+    {{ h }} Day Use
+    <span class="info-icon" onclick="toggleInfo(event, this)">
         ?
         <span class="tooltip">
             Day Use: você pode ir neste horário sem reserva prévia
             e jogar com outras pessoas presentes pagando um valor reduzido.
         </span>
     </span>
-</div>
+</button>
 
 {% elif tipo == "fechada" %}
 <button class="btn bloqueado" disabled>
@@ -196,137 +193,73 @@ let selectAtual = null
 let valorAnterior = null
 let horarioPromo = null
 
-
-function mudarTipoHorario(select,horario){
-
-const tipo = select.value
-
-selectAtual = select
-valorAnterior = select.dataset.atual || "livre"
-
-
-if(tipo === "personalizado"){
-
-horarioPromo = horario
-
-document.getElementById("valorPromo").value = ""
-
-document.getElementById("modalPromocao").style.display="flex"
-
-return
-
+// ✅ FORA de qualquer função
+function toggleInfo(event, el) {
+    event.stopPropagation();
+    let tip = el.querySelector(".tooltip");
+    tip.style.display = tip.style.display === "block" ? "none" : "block";
 }
 
+function mudarTipoHorario(select, horario) {
+    const tipo = select.value
+    selectAtual = select
+    valorAnterior = select.dataset.atual || "livre"
 
-if(tipo === "ocupado" || tipo === "fixo"){
+    if (tipo === "personalizado") {
+        horarioPromo = horario
+        document.getElementById("valorPromo").value = ""
+        document.getElementById("modalPromocao").style.display = "flex"
+        return
+    }
 
-document.getElementById("rm_horario").value = horario
+    if (tipo === "ocupado" || tipo === "fixo") {
+        document.getElementById("rm_horario").value = horario
+        document.getElementById("rm_tipo").value = tipo
+        document.getElementById("tituloModal").innerText =
+            (tipo === "fixo") ? "HORÁRIO FIXO" : "RESERVA MANUAL"
+        document.getElementById("modalReserva").style.display = "flex"
+        return
+    }
 
-document.getElementById("rm_tipo").value = tipo
-
-
-document.getElementById("tituloModal").innerText =
-(tipo === "fixo") ? "HORÁRIO FIXO" : "RESERVA MANUAL"
-
-
-document.getElementById("modalReserva").style.display="flex"
-
-return
-
+    enviarDireto(tipo, horario)
 }
 
-
-enviarDireto(tipo,horario)
-
+function salvarPromocao() {
+    let valor = document.getElementById("valorPromo").value
+    if (!valor || isNaN(valor)) {
+        alert("Valor inválido")
+        selectAtual.value = valorAnterior
+        return
+    }
+    document.getElementById("modalPromocao").style.display = "none"
+    enviarDireto("personalizado", horarioPromo, valor)
 }
 
-
-
-function salvarPromocao(){
-
-let valor = document.getElementById("valorPromo").value
-
-if(!valor || isNaN(valor)){
-
-alert("Valor inválido")
-
-selectAtual.value = valorAnterior
-
-return
-
+function fecharPromocao() {
+    document.getElementById("modalPromocao").style.display = "none"
+    selectAtual.value = valorAnterior
 }
 
-document.getElementById("modalPromocao").style.display="none"
-
-enviarDireto("personalizado",horarioPromo,valor)
-
+function enviarDireto(tipo, horario, valor = null) {
+    const form = document.createElement("form")
+    form.method = "POST"
+    form.action = "/admin/definir_horario"
+    form.innerHTML = `
+        <input type="hidden" name="data" value="{{ data }}">
+        <input type="hidden" name="hora" value="${horario}">
+        <input type="hidden" name="quadra" value="{{ quadra }}">
+        <input type="hidden" name="tipo" value="${tipo}">
+        ${valor ? `<input type="hidden" name="valor_personalizado" value="${valor}">` : ""}
+    `
+    document.body.appendChild(form)
+    form.submit()
 }
 
-
-
-function fecharPromocao(){
-
-document.getElementById("modalPromocao").style.display="none"
-
-selectAtual.value = valorAnterior
-
-}
-
-function toggleInfo(el){
-
-let tip = el.querySelector(".tooltip")
-
-if(tip.style.display === "block"){
-tip.style.display = "none"
-
-}else{
-
-tip.style.display = "block"
-
-}
-
-}
-
-
-function enviarDireto(tipo,horario,valor=null){
-
-const form = document.createElement("form")
-
-form.method="POST"
-
-form.action="/admin/definir_horario"
-
-
-form.innerHTML = `
-
-<input type="hidden" name="data" value="{{ data }}">
-
-<input type="hidden" name="hora" value="${horario}">
-
-<input type="hidden" name="quadra" value="{{ quadra }}">
-
-<input type="hidden" name="tipo" value="${tipo}">
-
-${valor ? `<input type="hidden" name="valor_personalizado" value="${valor}">` : ""}
-
-`
-
-document.body.appendChild(form)
-
-form.submit()
-
-}
-
-
-
-function fecharModal(){
-
-document.getElementById("modalReserva").style.display="none"
-
+function fecharModal() {
+    document.getElementById("modalReserva").style.display = "none"
 }
 
 </script>
-
 
 
 {% if tipo_usuario != "dono" %}

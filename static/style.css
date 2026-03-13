@@ -930,39 +930,44 @@ img, video, iframe {
     font-weight: bold;
 }
 
-.dayuse-container{
-    display:flex;
-    align-items:center;
-    gap:8px;
+.dayuse-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
-.info-icon{
-    position:relative;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:20px;
-    height:20px;
-    border-radius:50%;
-    background:#2196f3;
-    color:white;
-    font-size:13px;
-    font-weight:bold;
-    cursor:pointer;
+.info-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #2196f3;
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    flex-shrink: 0; /* evita que o ícone encolha */
 }
 
-.tooltip{
-    display:none;
-    position:absolute;
-    bottom:28px;
-    left:-80px;
-    width:200px;
-    background:#333;
-    color:white;
-    padding:8px;
-    border-radius:6px;
-    font-size:12px;
-    text-align:center;
-    z-index:10;
+.tooltip {
+    display: none;
+    position: absolute;
+    bottom: 28px;
+    left: -80px;
+    width: 200px;
+    background: #333;
+    color: white;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    text-align: center;
+    z-index: 10;
 }
+
+
 
