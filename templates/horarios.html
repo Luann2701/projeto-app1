@@ -41,9 +41,15 @@
                     </button>
 
                     {% elif tipo == "personalizado" %}
-                    <button class="btn promocao">
+                    <form method="POST" action="/reservar">
+                    <input type="hidden" name="esporte" value="{{ esporte }}">
+                    <input type="hidden" name="quadra" value="{{ quadra }}">
+                    <input type="hidden" name="data" value="{{ data }}">
+                    <input type="hidden" name="horario" value="{{ h }}">
+                    <button type="submit" class="btn promocao">
                     {{ h }} 🔥 Promoção R$ {{ valores_promocionais[h] }}
-                    </button>       
+                    </button>
+                    </form>       
 
                 {% elif h in ocupados %}
                     <button class="btn bloqueado" disabled>
