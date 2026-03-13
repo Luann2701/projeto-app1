@@ -40,6 +40,11 @@
                         {{ h }} (Arena fechada)
                     </button>
 
+                    {% elif tipo == "personalizado" %}
+                    <button class="btn promocao">
+                    {{ h }} 🔥 Promoção R$ {{ valores_promocionais[h] }}
+                    </button>       
+
                 {% elif h in ocupados %}
                     <button class="btn bloqueado" disabled>
                         {{ h }} (Ocupado)

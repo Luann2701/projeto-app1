@@ -700,8 +700,10 @@ def horarios(esporte, quadra, data):
     # ==================================================
     # MAPAS
     # ==================================================
+    
     tipos_horarios = {}
     ocupados_dono = set()
+    valores_promocionais = {}
 
     # ==================================================
     # 🔒 HORÁRIOS FIXOS (FUNCIONA NO DIA E NAS SEMANAS)
@@ -746,6 +748,9 @@ def horarios(esporte, quadra, data):
         tipo_normalizado = tipo.lower().replace(" ", "").replace("_", "")
         tipos_horarios[hora_str] = tipo_normalizado
 
+        if tipo_normalizado == "personalizado" and valor_personalizado:
+         valores_promocionais[hora_str] = valor_personalizado
+
         if tipo_normalizado in ["ocupado", "dayuse", "fechada"]:
             ocupados_dono.add(hora_str)
 
@@ -757,17 +762,18 @@ def horarios(esporte, quadra, data):
     ocupados = list(set(ocupados_reserva) | ocupados_dono)
 
     return render_template(
-        "horarios.html",
-        esporte=esporte,
-        quadra=quadra,
-        data=data,
-        horarios=lista_horarios,
-        ocupados=ocupados,
-        pendentes=pendentes,
-        expiracao=expiracao,
-        tipos_horarios=tipos_horarios,
-        tipo_usuario=session.get("tipo")
-    )
+    "horarios.html",
+    esporte=esporte,
+    quadra=quadra,
+    data=data,
+    horarios=lista_horarios,
+    ocupados=ocupados,
+    pendentes=pendentes,
+    expiracao=expiracao,
+    tipos_horarios=tipos_horarios,
+    valores_promocionais=valores_promocionais,
+    tipo_usuario=session.get("tipo")
+)
 
 # ==========================
 # HORÁRIOS FIXOS NOVA TELA
