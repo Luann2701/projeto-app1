@@ -31,9 +31,10 @@
 </button>
 
 {% elif tipo == "dayuse" %}
-<button class="btn bloqueado dayuse-btn" disabled>
-
-    {{ h }}  Day Use
+<div class="dayuse-container">
+    <button class="btn bloqueado" disabled>
+        {{ h }}  Day Use
+    </button>
 
     <span class="info-icon" onclick="toggleInfo(this)">
         ?
@@ -42,8 +43,7 @@
             e jogar com outras pessoas presentes pagando um valor reduzido.
         </span>
     </span>
-
-</button>
+</div>
 
 {% elif tipo == "fechada" %}
 <button class="btn bloqueado" disabled>
