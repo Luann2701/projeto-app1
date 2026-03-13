@@ -31,9 +31,19 @@
 </button>
 
 {% elif tipo == "dayuse" %}
-<button class="btn bloqueado" disabled>
-{{ h }} (Day Use)
-</button>
+<div class="dayuse-container">
+    <button class="btn bloqueado" disabled>
+        {{ h }}  Day Use
+    </button>
+
+    <span class="info-icon" onclick="toggleInfo(this)">
+        ?
+        <span class="tooltip">
+            Day Use: você pode ir neste horário sem reserva prévia
+            e jogar com outras pessoas presentes pagando um valor reduzido.
+        </span>
+    </span>
+</div>
 
 {% elif tipo == "fechada" %}
 <button class="btn bloqueado" disabled>
@@ -262,6 +272,20 @@ selectAtual.value = valorAnterior
 
 }
 
+function toggleInfo(el){
+
+let tip = el.querySelector(".tooltip")
+
+if(tip.style.display === "block"){
+tip.style.display = "none"
+
+}else{
+
+tip.style.display = "block"
+
+}
+
+}
 
 
 function enviarDireto(tipo,horario,valor=null){
