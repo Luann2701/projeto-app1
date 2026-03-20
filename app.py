@@ -1817,7 +1817,14 @@ def webhook_mercadopago():
           AND tipo = 'reservado'
     """, (data_reserva, horario_reserva, quadra_reserva))
 
-   
+    # 5️⃣-b Remove entrada personalizado para não bloquear o front
+    c.execute("""
+        DELETE FROM horarios
+        WHERE data = %s
+          AND hora = %s::time
+          AND quadra = %s
+          AND tipo = 'personalizado'
+    """, (data_reserva, horario_reserva, quadra_reserva))
 
     # se nada foi atualizado, não continua (webhook duplicado, por ex.)
     if c.rowcount == 0:
