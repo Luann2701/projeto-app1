@@ -47,6 +47,11 @@
 {{ h }} (Arena fechada)
 </button>
 
+{% elif h in ocupados %}
+<button class="btn bloqueado" disabled>
+{{ h }} (Ocupado)
+</button>
+
 {% elif tipo == "personalizado" %}
 <form method="POST" action="/reservar">
 <input type="hidden" name="esporte" value="{{ esporte }}">
@@ -59,11 +64,6 @@
 </button>
 
 </form>
-
-{% elif h in ocupados %}
-<button class="btn bloqueado" disabled>
-{{ h }} (Ocupado)
-</button>
 
 {% else %}
 <form method="POST" action="/reservar">
